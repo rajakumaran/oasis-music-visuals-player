@@ -1,0 +1,185 @@
+<div [class]="selectedTheme().base + ' ' + selectedTheme().text + ' min-h-screen flex flex-col p-4 sm:p-6 lg:p-8 transition-colors duration-500'">
+
+  <!-- Header -->
+  <header class="flex-shrink-0 flex items-center justify-between mb-4">
+    <h1 class="text-2xl sm:text-3xl font-bold tracking-wider" [class]="selectedTheme().accent">
+      <i class="fa-solid fa-wave-square mr-2"></i>AUDIO OASIS
+    </h1>
+    <div class="flex items-center gap-4">
+      <label [class]="'cursor-pointer p-2 rounded-md ' + selectedTheme().button + ' ' + selectedTheme().buttonHover" title="Set Visualizer Background">
+        <i class="fa-solid fa-image"></i>
+        <input type="file" (change)="onBgImageChange($event)" class="hidden" accept="image/*">
+      </label>
+      <div class="relative">
+        <select (change)="selectTheme(themes[$any($event.target).value])" [class]="'appearance-none rounded-md py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 ' + selectedTheme().button + ' ' + selectedTheme().text">
+          @for (theme of themes; track theme.name; let i = $index) {
+            <option [value]="i">{{ theme.name }}</option>
+          }
+        </select>
+        <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-6 h-full min-h-0">
+
+    <!-- Playlist Section -->
+    <div class="lg:col-span-1 bg-black/20 p-4 rounded-lg flex flex-col min-h-[300px] lg:min-h-0">
+      <h2 class="text-xl font-semibold mb-3 border-b border-white/10 pb-2">Playlist</h2>
+      <div class="flex-grow overflow-y-auto pr-2">
+        @if (playlist().length === 0) {
+          <div class="text-center text-gray-400 h-full flex flex-col items-center justify-center">
+             <i class="fa-solid fa-music text-4xl mb-2"></i>
+             <p>Upload audio files to begin.</p>
+          </div>
+        } @else {
+          <ul>
+            @for (track of playlist(); track track.url; let i = $index) {
+              <li 
+                (click)="audioService.selectTrack(i)"
+                class="flex items-center p-2 rounded-md cursor-pointer transition-colors"
+                [class.playing]="currentTrackIndex() === i"
+                [class]="currentTrackIndex() === i ? selectedTheme().highlight : selectedTheme().buttonHover"
+              >
+                @if (currentTrackIndex() === i && isPlaying()) {
+                  <i class="fa-solid fa-volume-high w-6 text-sm" [class]="selectedTheme().accent"></i>
+                } @else {
+                  <i class="fa-solid fa-play w-6 text-sm text-gray-500"></i>
+                }
+                <span class="ml-2 truncate" [title]="track.name">{{ track.name }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+       <label class="mt-4 w-full text-center px-4 py-3 rounded-md cursor-pointer transition-colors" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover">
+          <i class="fa-solid fa-upload mr-2"></i>
+          <span>Upload Music Files</span>
+          <input type="file" (change)="onFileChange($event)" multiple accept="audio/*,video/mp4" class="hidden">
+      </label>
+    </div>
+
+    <!-- Equalizer Section -->
+    <div class="lg:col-span-2 bg-black/20 p-4 sm:p-6 rounded-lg flex flex-col justify-between">
+      <h2 class="text-xl font-semibold mb-3 border-b border-white/10 pb-2">7-Band Graphic Equalizer</h2>
+      <!-- Visualizer Display -->
+      
+      <div [class]="'w-full h-48 sm:h-64 rounded-t-lg p-2 border-b-2 border-black/20 flex items-end justify-center gap-[1px] ' + selectedTheme().display">
+         @for (barHeight of visualizerBars(); track $index) {
+            <div 
+              class="w-full rounded-t-sm transition-all duration-75" 
+              [class]="selectedTheme().bar"
+              [style.height.%]="barHeight * 100" 
+              [style.box-shadow]="barHeight > 0.1 ? '0 0 8px' : 'none'"
+            ></div>
+         }
+      </div>
+
+      <!-- Faders -->
+      <div class="grid grid-cols-7 gap-x-2 sm:gap-x-4 pt-4">
+        @for(gain of gainValues(); track $index) {
+          <div class="flex flex-col items-center">
+            <input 
+              type="range" 
+              min="-20" 
+              max="20" 
+              step="0.5" 
+              [value]="gain" 
+              (input)="onGainChange($event, $index)"
+              class="w-full"
+            >
+            <span class="mt-2 text-xs sm:text-sm font-mono">{{ bandFrequencies[$index] }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  </main>
+  
+  <!-- Player Controls -->
+  <footer class="flex-shrink-0 bg-black/20 p-4 rounded-lg mt-6">
+    <div class="flex items-center">
+        <div class="w-1/4">
+             @if (currentTrack(); as track) {
+                <p class="font-bold truncate" [title]="track.name">{{ track.name }}</p>
+                <p class="text-sm text-gray-400">Audio Oasis Player</p>
+            } @else {
+                <p class="font-bold">No Track Loaded</p>
+            }
+             <!-- Ticker -->
+            <div class="w-full h-5 relative overflow-hidden mt-1 text-sm">
+                <p class="absolute whitespace-nowrap will-change-transform"
+                   [class]="selectedTheme().accent + ' ' + animationClass()">
+                    {{ currentTickerMessage() }}
+                </p>
+            </div>
+        </div>
+        <div class="w-1/2 flex flex-col items-center px-4">
+             <div class="flex items-center gap-6 text-2xl">
+                <button (click)="audioService.previous()" [disabled]="playlist().length < 2" class="disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-backward-step"></i>
+                </button>
+                <button (click)="audioService.togglePlay()" [disabled]="!currentTrack()" class="w-12 h-12 rounded-full flex items-center justify-center text-3xl disabled:opacity-50 disabled:cursor-not-allowed" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover">
+                    <i class="fa-solid" [class]="isPlaying() ? 'fa-pause' : 'fa-play'"></i>
+                </button>
+                <button (click)="audioService.next()" [disabled]="playlist().length < 2" class="disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-forward-step"></i>
+                </button>
+             </div>
+             <div class="w-full flex items-center gap-2 text-xs mt-2">
+                <span>{{ formatTime(currentTime()) }}</span>
+                <input type="range" class="w-full"
+                       [value]="currentTime()" (input)="onSeek($event)"
+                       min="0" [max]="duration() || 0" step="0.1"
+                       [style.--thumb-bg]="selectedTheme().sliderThumb" [style.--track-bg]="selectedTheme().sliderTrack">
+                <span>{{ formatTime(duration()) }}</span>
+             </div>
+                <input 
+                    type="range"
+                    min="0"
+                    [max]="duration()"
+                    [value]="currentTime()"
+                    (input)="onSeek($event)"
+                    class="w-full"
+                    [disabled]="!currentTrack()"
+                >
+                <span class="text-xs font-mono">{{ formatTime(duration()) }}</span>
+            </div>
+        </div>
+        <div class="w-1/4 flex items-center justify-end gap-3 pr-2">
+           <i class="fa-solid fa-bolt text-lg" title="Sensitivity" [class]="selectedTheme().accent"></i>
+           <input 
+              type="range" 
+              class="w-full max-w-40"
+              min="0.5" 
+              max="2.5" 
+              step="0.1" 
+              [value]="sensitivity()" 
+              (input)="onSensitivityChange($event)"
+              [style.--thumb-bg]="selectedTheme().sliderThumb" 
+              [style.--track-bg]="selectedTheme().sliderTrack"
+          >
+        </div>
+    <!-- </div> -->
+  </footer>
+</div>
+
+<!-- Dynamic styles for theme -->
+<style>
+  .playing {
+    /* Ensure highlight color is applied */
+  }
+
+  input[type=range]::-webkit-slider-runnable-track {
+    background-color: {{ selectedTheme().sliderTrack }};
+  }
+  input[type=range]::-moz-range-track {
+    background-color: {{ selectedTheme().sliderTrack }};
+  }
+  input[type=range]::-webkit-slider-thumb {
+    background-color: {{ selectedTheme().sliderThumb }};
+  }
+  input[type=range]::-moz-range-thumb {
+    background-color: {{ selectedTheme().sliderThumb }};
+  }
+</style>
