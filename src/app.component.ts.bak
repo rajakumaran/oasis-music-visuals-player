@@ -7,9 +7,9 @@ import { FullscreenToggleComponent } from './fullscreen-toggle/fullscreen-toggle
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FullscreenToggleComponent],
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css'],
+  styleUrl: './app.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements OnInit, OnDestroy {
@@ -66,9 +66,8 @@ selectedTheme: WritableSignal<EqualizerTheme> = signal(this.themes[0]);
     'Welcome to the Audio Oasis Equalizer...',
     'Built with Angular and a passion for classic Hi-Fi.',
     '',
-    'Tip1: You can set a custom background for the visualizer.',
-    'Tip2: Tune the Graphic equalizer controls for an enhanced listening experience.',
-    'Tip3: Choose the various styles from the drop down for an enhanced visual experience.',
+    'Tip1: Tune the Graphic equalizer controls for an enhanced listening experience.',
+    'Tip2: Choose the various styles from the drop down for an enhanced visual experience.',
     'By Mr. Muthukumaran Azhagesan ( Kumar ), https://linktr.ee/muthukumaran.azhagesan',
   ];
   // ^ ^ ^ - END OF USER-EDITABLE TEXT - ^ ^ ^
@@ -158,9 +157,27 @@ selectedTheme: WritableSignal<EqualizerTheme> = signal(this.themes[0]);
     }
   }
 
+  onPlayPauseClick(): void {
+    if (!this.isPlaying() && this.currentTrack()) {
+      // Corresponds to Tailwind's 'lg' breakpoint. We only scroll on smaller
+      // screens where the layout is stacked vertically and the visualizer
+      // might be off-screen.
+      if (window.innerWidth < 1024) {
+        // A small timeout ensures the scroll happens smoothly after the click event.
+        setTimeout(() => {
+          document.getElementById('visualizer-section')?.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center'
+          });
+        }, 50);
+      }
+    }
+    this.audioService.togglePlay();
+  }
+
   onGainChange(event: Event, index: number) {
-    const value = parseFloat((event.target as HTMLInputElement).value);
-    this.audioService.changeGain(index, value);
+    const gain = parseFloat((event.target as HTMLInputElement).value);
+    this.audioService.changeGain(index, gain);
   }
 
   onSeek(event: Event) {
@@ -171,13 +188,7 @@ selectedTheme: WritableSignal<EqualizerTheme> = signal(this.themes[0]);
   onSensitivityChange(event: Event) {
     const value = parseFloat((event.target as HTMLInputElement).value);
     this.sensitivity.set(value);
-}  
-  //formatTime(seconds: number): string {
-  //  if (isNaN(seconds) || seconds < 0) return '00:00';
-  //  const min = Math.floor(seconds / 60);
-  //  const sec = Math.floor(seconds % 60);
-  //  return `${min < 10 ? '0' : ''}${min}:${sec < 10 ? '0' : ''}${sec}`;
-  //}
+  }
 
   selectTheme(theme: EqualizerTheme) {
     this.selectedTheme.set(theme);

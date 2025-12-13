@@ -30,6 +30,8 @@ export class AudioService {
   });
 
   constructor() {
+    this.loadDefaultPlaylist();
+
     effect(() => {
       const track = this.currentTrack();
       if (track && this.audioElement) {
@@ -93,11 +95,37 @@ export class AudioService {
     });
   }
 
+  loadDefaultPlaylist() {
+    const defaultTracks: Track[] = [
+    
+      { name: 'AI Music Track1', url: '/assets/music/sample-ai-track1.mp3', duration: '...' },
+      { name: 'AI Music Track2', url: '/assets/music/sample-ai-track2.mp3', duration: '...' },
+      { name: 'AI Music Track3', url: '/assets/music/sample-ai-track3.mp3', duration: '...' },
+      { name: 'AI Music Track4', url: '/assets/music/sample-ai-track4.mp3', duration: '...' },
+      { name: 'AI Music Track5', url: '/assets/music/sample-ai-track5.mp3', duration: '...' },
+      { name: 'AI Music Track6', url: '/assets/music/sample-ai-track6.mp3', duration: '...' },
+      { name: 'AI Music Track7', url: '/assets/music/sample-ai-track7.mp3', duration: '...' },
+      { name: 'AI Music Track8', url: '/assets/music/sample-ai-track8.mp3', duration: '...' },
+      { name: 'AI Music Track9', url: '/assets/music/sample-ai-track9.mp3', duration: '...' },
+      { name: 'AI Music Track10', url: '/assets/music/sample-ai-track10.mp3', duration: '...' },
+
+    ];
+    this.playlist.set(defaultTracks);
+    if (defaultTracks.length > 0) {
+      this.currentTrackIndex.set(0);
+      this.isPlaying.set(false);
+    }
+  }
+
   async loadFiles(files: FileList) {
     await this.initAudioContext();
     
-    // Revoke old object URLs
-    this.playlist().forEach(track => URL.revokeObjectURL(track.url));
+    // Revoke old object URLs, checking if they are from uploaded files
+    this.playlist().forEach(track => {
+      if (track.file) {
+        URL.revokeObjectURL(track.url)
+      }
+    });
     
     const newTracks: Track[] = Array.from(files)
       .filter(file => file.type.startsWith('audio/') || file.type === 'video/mp4')
@@ -110,24 +138,22 @@ export class AudioService {
     this.playlist.set(newTracks);
     if (newTracks.length > 0) {
       this.currentTrackIndex.set(0);
-      this.isPlaying.set(false);
+      this.isPlaying.set(true); // Auto-play uploaded tracks
     }
   }
 
   selectTrack(index: number) {
     if(index >= 0 && index < this.playlist().length) {
-      const shouldPlay = this.isPlaying();
+      const shouldPlay = this.isPlaying() || this.currentTrackIndex() !== index;
       this.currentTrackIndex.set(index);
-      if(!shouldPlay) {
-          // if it was paused, keep it paused on new track
-          this.isPlaying.set(false);
-      } else {
-          this.isPlaying.set(true); // if it was playing, start playing new track
-      }
+      this.isPlaying.set(shouldPlay);
     }
   }
 
   togglePlay() {
+      if (!this.audioContext) {
+        this.initAudioContext();
+      }
       if (this.audioContext && this.audioContext.state === 'suspended') {
           this.audioContext.resume();
       }
@@ -138,17 +164,19 @@ export class AudioService {
 
   next() {
     const idx = this.currentTrackIndex();
-    if (idx !== null) {
+    if (idx !== null && this.playlist().length > 1) {
       const newIndex = (idx + 1) % this.playlist().length;
       this.currentTrackIndex.set(newIndex);
+      this.isPlaying.set(true);
     }
   }
 
   previous() {
     const idx = this.currentTrackIndex();
-    if (idx !== null) {
+    if (idx !== null && this.playlist().length > 1) {
       const newIndex = (idx - 1 + this.playlist().length) % this.playlist().length;
       this.currentTrackIndex.set(newIndex);
+      this.isPlaying.set(true);
     }
   }
 

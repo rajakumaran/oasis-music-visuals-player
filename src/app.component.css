@@ -1,1 +1,122 @@
 /* This can be used for styles that are hard to achieve with Tailwind or for component-specific overrides. */
+/* Styles for vertical EQ faders */
+input[type=range].vertical {
+  writing-mode: bt-lr; /* IE */
+  -webkit-appearance: slider-vertical; /* WebKit */
+  width: 8px;
+  height: 100%;
+  padding: 0 5px;
+}
+
+/* --- 3D Bar Visualizer Styles --- */
+.bar-3d {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  /* Leave a 4px gap on the right for the side face */
+  width: calc(100% - 4px); 
+  transition: height 75ms ease-out;
+  border-radius: 1px;
+}
+
+/* Top face of the 3D bar */
+.bar-3d::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px; /* Determines the "depth" of the top face */
+  background: inherit; /* Inherits gradient/color from the parent */
+  filter: brightness(1.5); /* Make it appear lighter, as if lit from above */
+  transform: translateY(-100%);
+  border-radius: 1px 1px 0 0;
+}
+
+/* Side face of the 3D bar */
+.bar-3d::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 100%;
+  width: 4px; /* Same as the gap left in .bar-3d width */
+  height: 100%;
+  background: inherit;
+  filter: brightness(0.6); /* Make it appear darker, as if in shadow */
+  border-radius: 0 1px 1px 0;
+}
+
+
+/* --- 3D Classic LED Visualizer Styles --- */
+.led-segment {
+  /* Creates an inset shadow to give the segment depth */
+  box-shadow: inset 0 0 2px 1px rgba(0,0,0,0.5);
+  position: relative;
+  transition: background-color 100ms ease-in-out, opacity 100ms ease-in-out;
+  border-radius: 1px;
+}
+
+.led-off {
+  background-color: #374151; /* gray-700 */
+  opacity: 0.3;
+}
+
+/* Add a pseudo-element to create the "glow" effect on lit LEDs */
+.led-on::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    right: 1px;
+    bottom: 1px;
+    border-radius: 1px;
+    /* The glow color is inherited from the parent's text color */
+    box-shadow: 0 0 4px 1px currentColor;
+}
+
+.led-green {
+  background-color: #22c55e; /* green-500 */
+  color: #22c55e;
+}
+
+.led-yellow {
+  background-color: #facc15; /* yellow-400 */
+  color: #facc15;
+}
+
+.led-red {
+  background-color: #ef4444; /* red-600 */
+  color: #ef4444;
+}
+
+/* --- Ticker Animation --- */
+@keyframes scroll-left {
+  from { transform: translateX(100%); }
+  to { transform: translateX(-100%); }
+}
+
+@keyframes scroll-right {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+.animate-left {
+  animation: scroll-left 20s linear infinite;
+}
+
+.animate-right {
+  animation: scroll-right 20s linear infinite;
+}
+
+/* --- Fullscreen Styles --- */
+#visualizer-display-wrapper:fullscreen {
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  background: black !important; /* Force black background for immersion */
+}
+
+#visualizer-display-wrapper:fullscreen .visualizer-content {
+  width: 100%;
+  flex-grow: 1;
+}
