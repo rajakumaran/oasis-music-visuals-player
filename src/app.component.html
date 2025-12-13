@@ -36,10 +36,9 @@
         } @else {
           <ul>
             @for (track of playlist(); track track.url; let i = $index) {
-              <li 
+              <li
                 (click)="audioService.selectTrack(i)"
                 class="flex items-center p-2 rounded-md cursor-pointer transition-colors"
-                [class.playing]="currentTrackIndex() === i"
                 [class]="currentTrackIndex() === i ? selectedTheme().highlight : selectedTheme().buttonHover"
               >
                 @if (currentTrackIndex() === i && isPlaying()) {
@@ -61,35 +60,80 @@
     </div>
 
     <!-- Equalizer Section -->
-    <div class="lg:col-span-2 bg-black/20 p-4 sm:p-6 rounded-lg flex flex-col justify-between">
-      <h2 class="text-xl font-semibold mb-3 border-b border-white/10 pb-2">7-Band Graphic Equalizer</h2>
+    <div id="visualizer-section" class="lg:col-span-2 bg-black/20 p-4 sm:p-6 rounded-lg flex flex-col justify-between">
+      <div class="flex justify-between items-center border-b border-white/10 pb-2 mb-3">
+        <h2 class="text-xl font-semibold">7-Band Graphic Equalizer</h2>
+      </div>
+
       <!-- Visualizer Display -->
-      
-      <div [class]="'w-full h-48 sm:h-64 rounded-t-lg p-2 border-b-2 border-black/20 flex items-end justify-center gap-[1px] ' + selectedTheme().display">
-         @for (barHeight of visualizerBars(); track $index) {
-            <div 
-              class="w-full rounded-t-sm transition-all duration-75" 
-              [class]="selectedTheme().bar"
-              [style.height.%]="barHeight * 100" 
-              [style.box-shadow]="barHeight > 0.1 ? '0 0 8px' : 'none'"
-            ></div>
-         }
+      <div
+        id="visualizer-display-wrapper"
+        class="w-full h-48 sm:h-64 rounded-lg relative overflow-hidden bg-cover bg-center transition-all duration-500"
+        [style.background-image]="backgroundImageUrl() ? 'url(' + backgroundImageUrl()! + ')' : 'none'"
+      >
+        <app-fullscreen-toggle targetElementId="visualizer-display-wrapper"></app-fullscreen-toggle>
+        <div
+          [class]="'absolute inset-0 transition-opacity ' + selectedTheme().display"
+          [style.opacity]="backgroundImageUrl() ? 0.6 : 1"
+        ></div>
+        <div class="visualizer-content relative w-full h-full p-2 flex items-end justify-center gap-[3px] sm:gap-[4px]">
+            @switch (selectedTheme().type) {
+              @case ('led') {
+                @for (litSegments of ledBars(); track $index) {
+                  <div class="flex-1 h-full flex flex-col-reverse gap-[2px]">
+                    @for (segment of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]; track segment) {
+                      <div class="led-segment w-full h-full"
+                           [class]="segment < litSegments ?
+                             (segment > 12 ? 'led-on led-red' :
+                             (segment > 8 ? 'led-on led-yellow' :
+                             'led-on led-green')) : 'led-off'">
+                      </div>
+                    }
+                  </div>
+                }
+              }
+              @case ('3d') {
+                @for (barHeight of visualizerBars(); track $index) {
+                    <div class="flex-1 h-full relative">
+                        <div
+                          class="bar-3d"
+                          [class]="selectedTheme().bar"
+                          [style.height.%]="barHeight * 100"
+                        ></div>
+                    </div>
+                }
+              }
+              @case ('shadow') {
+                @for (barHeight of visualizerBars(); track $index) {
+                    <div
+                      class="flex-1 self-end rounded-t-sm transition-[height] duration-75 ease-out"
+                      [class]="selectedTheme().bar"
+                      [style.height.%]="barHeight * 100"
+                    ></div>
+                }
+              }
+            }
+        </div>
       </div>
 
       <!-- Faders -->
       <div class="grid grid-cols-7 gap-x-2 sm:gap-x-4 pt-4">
         @for(gain of gainValues(); track $index) {
-          <div class="flex flex-col items-center">
-            <input 
-              type="range" 
-              min="-20" 
-              max="20" 
-              step="0.5" 
-              [value]="gain" 
-              (input)="onGainChange($event, $index)"
-              class="w-full"
-            >
-            <span class="mt-2 text-xs sm:text-sm font-mono">{{ bandFrequencies[$index] }}</span>
+          <div class="flex flex-col items-center gap-2">
+             <div class="h-24 flex items-center justify-center">
+                <input
+                  type="range"
+                  orient="vertical"
+                  min="-20"
+                  max="20"
+                  step="0.5"
+                  [value]="gain"
+                  (input)="onGainChange($event, $index)"
+                  class="h-full vertical"
+                  [style.--thumb-bg]="selectedTheme().sliderThumb" [style.--track-bg]="selectedTheme().sliderTrack"
+                >
+            </div>
+            <span class="text-xs sm:text-sm font-mono">{{ bandFrequencies[$index] }}</span>
           </div>
         }
       </div>
@@ -103,6 +147,7 @@
              @if (currentTrack(); as track) {
                 <p class="font-bold truncate" [title]="track.name">{{ track.name }}</p>
                 <p class="text-sm text-gray-400">Audio Oasis Player</p>
+                
             } @else {
                 <p class="font-bold">No Track Loaded</p>
             }
