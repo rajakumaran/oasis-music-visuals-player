@@ -98,16 +98,16 @@ export class AudioService {
   loadDefaultPlaylist() {
     const defaultTracks: Track[] = [
     
-      { name: 'AI Music Track1', url: '/assets/music/sample-ai-track1.mp3', duration: '...' },
-      { name: 'AI Music Track2', url: '/assets/music/sample-ai-track2.mp3', duration: '...' },
-      { name: 'AI Music Track3', url: '/assets/music/sample-ai-track3.mp3', duration: '...' },
-      { name: 'AI Music Track4', url: '/assets/music/sample-ai-track4.mp3', duration: '...' },
-      { name: 'AI Music Track5', url: '/assets/music/sample-ai-track5.mp3', duration: '...' },
-      { name: 'AI Music Track6', url: '/assets/music/sample-ai-track6.mp3', duration: '...' },
-      { name: 'AI Music Track7', url: '/assets/music/sample-ai-track7.mp3', duration: '...' },
-      { name: 'AI Music Track8', url: '/assets/music/sample-ai-track8.mp3', duration: '...' },
-      { name: 'AI Music Track9', url: '/assets/music/sample-ai-track9.mp3', duration: '...' },
-      { name: 'AI Music Track10', url: '/assets/music/sample-ai-track10.mp3', duration: '...' },
+      { name: 'AI Music Track1', url: 'assets/music/sample-ai-track1.mp3', duration: '...' },
+      { name: 'AI Music Track2', url: 'assets/music/sample-ai-track2.mp3', duration: '...' },
+      { name: 'AI Music Track3', url: 'assets/music/sample-ai-track3.mp3', duration: '...' },
+      { name: 'AI Music Track4', url: 'assets/music/sample-ai-track4.mp3', duration: '...' },
+      { name: 'AI Music Track5', url: 'assets/music/sample-ai-track5.mp3', duration: '...' },
+      { name: 'AI Music Track6', url: 'assets/music/sample-ai-track6.mp3', duration: '...' },
+      { name: 'AI Music Track7', url: 'assets/music/sample-ai-track7.mp3', duration: '...' },
+      { name: 'AI Music Track8', url: 'assets/music/sample-ai-track8.mp3', duration: '...' },
+      { name: 'AI Music Track9', url: 'assets/music/sample-ai-track9.mp3', duration: '...' },
+      { name: 'AI Music Track10', url: 'assets/music/sample-ai-track10.mp3', duration: '...' },
 
     ];
     this.playlist.set(defaultTracks);

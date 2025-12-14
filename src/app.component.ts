@@ -2,12 +2,11 @@ import { Component, ChangeDetectionStrategy, inject, signal, computed, WritableS
 import { CommonModule } from '@angular/common';
 import { AudioService } from './services/audio.service';
 import { EqualizerTheme } from './models/equalizer-theme.model';
-import { FullscreenToggleComponent } from './fullscreen-toggle/fullscreen-toggle.component';
-
+import { FullscreenToggleComponent } from './fullscreen-toggle/fullscreen-toggle.component'; 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FullscreenToggleComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,7 +26,6 @@ export class AppComponent implements OnInit, OnDestroy {
     { name: 'Azure Glow', type: '3d', base: 'bg-gray-800', display: 'bg-gray-900', bar: 'bg-gradient-to-t from-blue-500 to-cyan-300 shadow-[0_0_4px_#38bdf8]', sliderTrack: 'bg-gray-700', sliderThumb: 'bg-blue-400', text: 'text-gray-300', accent: 'text-cyan-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-blue-600/50' },
     { name: 'Gold Standard', type: '3d', base: 'bg-[#f0e6d2]', display: 'bg-[#2c2c2c]', bar: 'bg-gradient-to-t from-blue-600 to-blue-400 shadow-[0_0_4px_#60a5fa]', sliderTrack: 'bg-gray-500', sliderThumb: 'bg-[#d4af37]', text: 'text-white', accent: 'text-blue-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-blue-500/50' },
     { name: 'Emerald Mono', type: '3d', base: 'bg-black', display: 'bg-gray-900 border border-gray-700', bar: 'bg-gradient-to-t from-[#00bfff] to-[#00ffff] shadow-[0_0_4px_#00ffff]', sliderTrack: 'bg-gray-700', sliderThumb: 'bg-green-500', text: 'text-green-400 font-mono', accent: 'text-green-400', button: 'bg-gray-800', buttonHover: 'hover:bg-gray-700', highlight: 'bg-cyan-500/50' },
-    { name: 'Retro Sunset', type: '3d', base: 'bg-gradient-to-b from-[#0f0c29] via-[#302b63] to-[#24243e]', display: 'bg-black/30', bar: 'bg-gradient-to-t from-pink-500 via-purple-500 to-yellow-500 shadow-[0_0_4px_#ec4899]', sliderTrack: 'bg-purple-900/50', sliderThumb: 'bg-pink-500', text: 'text-cyan-300', accent: 'text-yellow-400', button: 'bg-purple-800/50', buttonHover: 'hover:bg-purple-700/50', highlight: 'bg-pink-500/50' },
     { name: 'Amber Classic', type: '3d', base: 'bg-gray-300', display: 'bg-gray-800', bar: 'bg-gradient-to-t from-amber-500 to-yellow-300 shadow-[0_0_4px_#f59e0b]', sliderTrack: 'bg-gray-500', sliderThumb: 'bg-gray-200', text: 'text-gray-200', accent: 'text-amber-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-amber-500/50' },
     { name: 'Fireside', type: '3d', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-gradient-to-t from-amber-600 to-amber-400 shadow-[0_0_4px_#fbbf24]', sliderTrack: 'bg-gray-700', sliderThumb: 'bg-amber-500', text: 'text-gray-300', accent: 'text-amber-500', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-amber-600/50' },
     { name: 'Classic LED', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-gray-700', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-gray-400', text: 'text-gray-300', accent: 'text-green-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-green-600/50' },
@@ -156,6 +154,24 @@ selectedTheme: WritableSignal<EqualizerTheme> = signal(this.themes[0]);
       const newUrl = URL.createObjectURL(input.files[0]);
       this.backgroundImageUrl.set(newUrl);
     }
+  }
+
+  onPlayPauseClick(): void {
+    if (!this.isPlaying() && this.currentTrack()) {
+      // Corresponds to Tailwind's 'lg' breakpoint. We only scroll on smaller
+      // screens where the layout is stacked vertically and the visualizer
+      // might be off-screen.
+      if (window.innerWidth < 1024) {
+        // A small timeout ensures the scroll happens smoothly after the click event.
+        setTimeout(() => {
+          document.getElementById('visualizer-section')?.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center'
+          });
+        }, 50);
+      }
+    }
+    this.audioService.togglePlay();
   }
 
   onGainChange(event: Event, index: number) {
