@@ -5,13 +5,14 @@
     <h1 class="text-2xl sm:text-3xl font-bold tracking-wider" [class]="selectedTheme().accent">
       <i class="fa-solid fa-wave-square mr-2"></i>AUDIO OASIS
     </h1>
+    <div class="text-xs sm:text-sm font-sans tracking-wider" [class]="selectedTheme().accent">Built by Muthukumaran Azhagesan (Kumar). Check his <a href="https://linktr.ee/muthukumaran.azhagesan" target="_blank">Linktree</a> for his many AI apps, AI projects, and his career history so far</div>
     <div class="flex items-center gap-4">
       <label [class]="'cursor-pointer p-2 rounded-md ' + selectedTheme().button + ' ' + selectedTheme().buttonHover" title="Set Visualizer Background">
         <i class="fa-solid fa-image"></i>
         <input type="file" (change)="onBgImageChange($event)" class="hidden" accept="image/*">
       </label>
       <div class="relative">
-        <select (change)="selectTheme(themes[$any($event.target).value])" [class]="'appearance-none rounded-md py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 ' + selectedTheme().button + ' ' + selectedTheme().text">
+        <select (change)="selectTheme($any($event.target).value)" [value]="themes.indexOf(selectedTheme())" [class]="'appearance-none rounded-md py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 ' + selectedTheme().button + ' ' + selectedTheme().text">
           @for (theme of themes; track theme.name; let i = $index) {
             <option [value]="i">{{ theme.name }}</option>
           }
@@ -25,7 +26,7 @@
   <main class="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-6 h-full min-h-0">
 
     <!-- Playlist Section -->
-    <div class="lg:col-span-1 bg-black/20 p-4 rounded-lg flex flex-col min-h-[300px] lg:min-h-0">
+    <div class="lg-col-span-1 bg-black/20 p-4 rounded-lg flex flex-col min-h-[300px] lg:min-h-0">
       <h2 class="text-xl font-semibold mb-3 border-b border-white/10 pb-2">Playlist</h2>
       <div class="flex-grow overflow-y-auto pr-2">
         @if (playlist().length === 0) {
@@ -36,7 +37,7 @@
         } @else {
           <ul>
             @for (track of playlist(); track track.url; let i = $index) {
-              <li
+              <li 
                 (click)="audioService.selectTrack(i)"
                 class="flex items-center p-2 rounded-md cursor-pointer transition-colors"
                 [class]="currentTrackIndex() === i ? selectedTheme().highlight : selectedTheme().buttonHover"
@@ -64,29 +65,30 @@
       <div class="flex justify-between items-center border-b border-white/10 pb-2 mb-3">
         <h2 class="text-xl font-semibold">7-Band Graphic Equalizer</h2>
       </div>
-
+      
       <!-- Visualizer Display -->
-      <div
+      <div 
         id="visualizer-display-wrapper"
         class="w-full h-48 sm:h-64 rounded-lg relative overflow-hidden bg-cover bg-center transition-all duration-500"
         [style.background-image]="backgroundImageUrl() ? 'url(' + backgroundImageUrl()! + ')' : 'none'"
       >
         <app-fullscreen-toggle targetElementId="visualizer-display-wrapper"></app-fullscreen-toggle>
-        <div
+        <div 
           [class]="'absolute inset-0 transition-opacity ' + selectedTheme().display"
           [style.opacity]="backgroundImageUrl() ? 0.6 : 1"
         ></div>
-        <div class="visualizer-content relative w-full h-full p-2 flex items-end justify-center gap-[3px] sm:gap-[4px]">
+        <div class="visualizer-content relative w-full h-full p-2 flex items-end justify-center" style="gap: 2px;">
             @switch (selectedTheme().type) {
               @case ('led') {
                 @for (litSegments of ledBars(); track $index) {
-                  <div class="flex-1 h-full flex flex-col-reverse gap-[2px]">
+                  <div class="flex-1 h-full flex flex-col-reverse justify-start items-center" style="gap: 2px;">
                     @for (segment of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]; track segment) {
-                      <div class="led-segment w-full h-full"
-                           [class]="segment < litSegments ?
-                             (segment > 12 ? 'led-on led-red' :
-                             (segment > 8 ? 'led-on led-yellow' :
-                             'led-on led-green')) : 'led-off'">
+                      <div class="led-segment"
+                           [class]="segment < litSegments ? (isKaleidoscope() ? 'led-on' : (segment > 12 ? 'led-on led-red' : (segment > 8 ? 'led-on led-yellow' : 'led-on led-green'))) : 'led-off'"
+                           [style.width.px]="ledSegmentWidth()"
+                           [style.height.px]="ledSegmentHeight()"
+                           [style.background-color]="isKaleidoscope() && segment < litSegments ? 'hsl(' + (($index * 5 + segment * 15 + kaleidoscopeHueShift()) % 360) + ', 100%, 50%)' : null"
+                           [style.color]="isKaleidoscope() && segment < litSegments ? 'hsl(' + (($index * 5 + segment * 15 + kaleidoscopeHueShift()) % 360) + ', 100%, 50%)' : null">
                       </div>
                     }
                   </div>
@@ -95,8 +97,8 @@
               @case ('3d') {
                 @for (barHeight of visualizerBars(); track $index) {
                     <div class="flex-1 h-full relative">
-                        <div
-                          class="bar-3d"
+                        <div 
+                          class="bar-3d" 
                           [class]="selectedTheme().bar"
                           [style.height.%]="barHeight * 100"
                         ></div>
@@ -105,37 +107,112 @@
               }
               @case ('shadow') {
                 @for (barHeight of visualizerBars(); track $index) {
-                    <div
-                      class="flex-1 self-end rounded-t-sm transition-[height] duration-75 ease-out"
+                    <div 
+                      class="flex-1 self-end transition-[height] duration-75 ease-out" 
                       [class]="selectedTheme().bar"
                       [style.height.%]="barHeight * 100"
                     ></div>
                 }
               }
+              @case ('glossy') {
+                @for (barHeight of visualizerBars(); track $index) {
+                  <div 
+                    class="flex-1 self-end bar-glossy" 
+                    [class]="selectedTheme().bar"
+                    [style.height.%]="barHeight * 100"
+                  ></div>
+                }
+              }
+              @case ('glass') {
+                @for (barHeight of visualizerBars(); track $index) {
+                  <div 
+                    class="flex-1 self-end bar-glass" 
+                    [class]="selectedTheme().bar"
+                    [style.height.%]="barHeight * 100"
+                  ></div>
+                }
+              }
             }
         </div>
-      </div>
-
-      <!-- Faders -->
-      <div class="grid grid-cols-7 gap-x-2 sm:gap-x-4 pt-4">
-        @for(gain of gainValues(); track $index) {
-          <div class="flex flex-col items-center gap-2">
-             <div class="h-24 flex items-center justify-center">
-                <input
-                  type="range"
-                  orient="vertical"
-                  min="-20"
-                  max="20"
-                  step="0.5"
-                  [value]="gain"
-                  (input)="onGainChange($event, $index)"
-                  class="h-full vertical"
-                  [style.--thumb-bg]="selectedTheme().sliderThumb" [style.--track-bg]="selectedTheme().sliderTrack"
-                >
-            </div>
-            <span class="text-xs sm:text-sm font-mono">{{ bandFrequencies[$index] }}</span>
+         @if (showOpportunisticTicker()) {
+          <div class="opportunistic-ticker absolute top-1/2 -translate-y-1/2 w-full h-10 backdrop-blur-sm flex items-center overflow-hidden">
+            <p class="whitespace-nowrap text-lg font-semibold text-white/90 animate-left">
+              {{ opportunisticTickerMessage() }}
+            </p>
           </div>
         }
+      </div>
+
+      <!-- Faders & Controls -->
+      <div class="pt-4">
+        <div class="grid grid-cols-7 gap-x-2 sm:gap-x-4">
+          @for(gain of gainValues(); track $index) {
+            <div class="flex flex-col items-center gap-2">
+               <div class="h-24 flex items-center justify-center">
+                  <input 
+                    type="range" 
+                    orient="vertical"
+                    min="-20" 
+                    max="20" 
+                    step="0.5" 
+                    [value]="gain" 
+                    (input)="onGainChange($event, $index)"
+                    class="h-full vertical"
+                    [style.--thumb-bg]="selectedTheme().sliderThumb" [style.--track-bg]="selectedTheme().sliderTrack"
+                  >
+              </div>
+              <span class="text-xs sm:text-sm font-mono">{{ bandFrequencies[$index] }}</span>
+            </div>
+          }
+        </div>
+        
+        <!-- Advanced Controls -->
+        <div class="mt-4 text-sm border-t border-white/10 pt-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Sensitivity Control -->
+            <div class="flex flex-col gap-1">
+              <label for="sensitivity-slider" class="font-semibold">Sensitivity: {{ sensitivity().toFixed(1) }}</label>
+              <input type="range" id="sensitivity-slider" min="0.5" max="5" step="0.1" [value]="sensitivity()" (input)="onSensitivityChange($event)" [style.--thumb-bg]="selectedTheme().sliderThumb" [style.--track-bg]="selectedTheme().sliderTrack">
+            </div>
+            <!-- Response Curve Control -->
+            <div class="flex flex-col gap-1">
+              <label class="font-semibold">Response Curve</label>
+              <div class="flex items-center rounded-md overflow-hidden h-full" [class]="selectedTheme().button">
+                  <button (click)="setResponseCurve('linear')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="responseCurve() === 'linear' ? selectedTheme().highlight : selectedTheme().buttonHover">
+                    Linear
+                  </button>
+                  <button (click)="setResponseCurve('polynomial')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="responseCurve() === 'polynomial' ? selectedTheme().highlight : selectedTheme().buttonHover">
+                    Punchy
+                  </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- LED Specific Controls -->
+          @if(selectedTheme().type === 'led') {
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-white/10">
+              <div class="flex flex-col items-center gap-1">
+                <label class="font-semibold text-xs">Segment Width: {{ ledSegmentWidth() }}px</label>
+                <div class="flex items-center">
+                  <button (click)="decrementLedWidth()" class="px-3 py-1 rounded-l-md" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover"><i class="fa-solid fa-minus"></i></button>
+                  <button (click)="incrementLedWidth()" class="px-3 py-1 rounded-r-md" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover"><i class="fa-solid fa-plus"></i></button>
+                </div>
+              </div>
+               <div class="flex flex-col items-center gap-1">
+                <label class="font-semibold text-xs">Segment Height: {{ ledSegmentHeight() }}px</label>
+                <div class="flex items-center">
+                  <button (click)="decrementLedHeight()" class="px-3 py-1 rounded-l-md" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover"><i class="fa-solid fa-minus"></i></button>
+                  <button (click)="incrementLedHeight()" class="px-3 py-1 rounded-r-md" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover"><i class="fa-solid fa-plus"></i></button>
+                </div>
+              </div>
+              <div class="flex items-center justify-center">
+                <button (click)="toggleKaleidoscope()" class="px-4 py-2 rounded-md transition-colors w-full h-full" [class]="(isKaleidoscope() ? selectedTheme().highlight : selectedTheme().button) + ' ' + selectedTheme().buttonHover">
+                  <i class="fa-solid fa-palette mr-2"></i> Kaleidoscope
+                </button>
+              </div>
+            </div>
+          }
+        </div>
       </div>
     </div>
   </main>
@@ -143,28 +220,31 @@
   <!-- Player Controls -->
   <footer class="flex-shrink-0 bg-black/20 p-4 rounded-lg mt-6">
     <div class="flex items-center">
-        <div class="w-1/4">
-             @if (currentTrack(); as track) {
+        <div class="w-1/3 flex items-center">
+            @if (currentTrack(); as track) {
+              <div>
                 <p class="font-bold truncate" [title]="track.name">{{ track.name }}</p>
                 <p class="text-sm text-gray-400">Audio Oasis Player</p>
-                
+                 <!-- Ticker -->
+                <div class="w-full h-5 relative overflow-hidden mt-1 text-sm">
+                    <p class="absolute whitespace-nowrap will-change-transform"
+                      [class]="selectedTheme().accent + ' ' + animationClass()">
+                        {{ currentTickerMessage() }}
+                    </p>
+                </div>
+              </div>
             } @else {
+              <div class="h-12">
                 <p class="font-bold">No Track Loaded</p>
+              </div>
             }
-             <!-- Ticker -->
-            <div class="w-full h-5 relative overflow-hidden mt-1 text-sm">
-                <p class="absolute whitespace-nowrap will-change-transform"
-                   [class]="selectedTheme().accent + ' ' + animationClass()">
-                    {{ currentTickerMessage() }}
-                </p>
-            </div>
         </div>
-        <div class="w-1/2 flex flex-col items-center px-4">
+        <div class="w-1/3 flex flex-col items-center px-4">
              <div class="flex items-center gap-6 text-2xl">
                 <button (click)="audioService.previous()" [disabled]="playlist().length < 2" class="disabled:opacity-50 disabled:cursor-not-allowed">
                     <i class="fa-solid fa-backward-step"></i>
                 </button>
-                <button (click)="audioService.togglePlay()" [disabled]="!currentTrack()" class="w-12 h-12 rounded-full flex items-center justify-center text-3xl disabled:opacity-50 disabled:cursor-not-allowed" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover">
+                <button (click)="onPlayPauseClick()" [disabled]="!currentTrack()" class="w-12 h-12 rounded-full flex items-center justify-center text-3xl disabled:opacity-50 disabled:cursor-not-allowed" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover">
                     <i class="fa-solid" [class]="isPlaying() ? 'fa-pause' : 'fa-play'"></i>
                 </button>
                 <button (click)="audioService.next()" [disabled]="playlist().length < 2" class="disabled:opacity-50 disabled:cursor-not-allowed">
@@ -179,52 +259,44 @@
                        [style.--thumb-bg]="selectedTheme().sliderThumb" [style.--track-bg]="selectedTheme().sliderTrack">
                 <span>{{ formatTime(duration()) }}</span>
              </div>
-                <input 
-                    type="range"
-                    min="0"
-                    [max]="duration()"
-                    [value]="currentTime()"
-                    (input)="onSeek($event)"
-                    class="w-full"
-                    [disabled]="!currentTrack()"
-                >
-                <span class="text-xs font-mono">{{ formatTime(duration()) }}</span>
+        </div>
+        <div class="w-1/3 flex items-center justify-end gap-3 pr-2">
+          <!-- Auto-Switch Controls -->
+          <div class="flex items-center gap-4 text-sm">
+            <div class="flex items-center gap-2">
+              <label class="relative inline-flex items-center cursor-pointer" title="Toggle Auto-Switching">
+                <input type="checkbox" [checked]="isAutoSwitching()" (change)="toggleAutoSwitch()" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+              </label>
+              <i class="fa-solid fa-wand-magic-sparkles" [class]="isAutoSwitching() ? selectedTheme().accent : ''"></i>
             </div>
+
+            @if (isAutoSwitching()) {
+              <div class="flex items-center gap-4">
+                <div class="relative">
+                   <select (change)="setSwitchInterval($event)" [value]="switchInterval()" [class]="'appearance-none rounded-md py-1 pl-2 pr-7 text-xs ' + selectedTheme().button + ' ' + selectedTheme().text">
+                    <option value="10000">10s</option>
+                    <option value="15000">15s</option>
+                    <option value="30000">30s</option>
+                    <option value="60000">60s</option>
+                  </select>
+                  <i class="fa-solid fa-chevron-down absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-xs"></i>
+                </div>
+                <div class="flex gap-3 text-xs">
+                  <label class="flex items-center gap-1 cursor-pointer">
+                    <input type="radio" name="switch-mode" [checked]="switchMode() === 'sequential'" (change)="setSwitchMode('sequential')" class="h-3 w-3">
+                    Seq
+                  </label>
+                   <label class="flex items-center gap-1 cursor-pointer">
+                    <input type="radio" name="switch-mode" [checked]="switchMode() === 'random'" (change)="setSwitchMode('random')" class="h-3 w-3">
+                    Rand
+                  </label>
+                </div>
+              </div>
+            }
+          </div>
         </div>
-        <div class="w-1/4 flex items-center justify-end gap-3 pr-2">
-           <i class="fa-solid fa-bolt text-lg" title="Sensitivity" [class]="selectedTheme().accent"></i>
-           <input 
-              type="range" 
-              class="w-full max-w-40"
-              min="0.5" 
-              max="2.5" 
-              step="0.1" 
-              [value]="sensitivity()" 
-              (input)="onSensitivityChange($event)"
-              [style.--thumb-bg]="selectedTheme().sliderThumb" 
-              [style.--track-bg]="selectedTheme().sliderTrack"
-          >
-        </div>
-    <!-- </div> -->
+    </div>
   </footer>
+
 </div>
-
-<!-- Dynamic styles for theme -->
-<style>
-  .playing {
-    /* Ensure highlight color is applied */
-  }
-
-  input[type=range]::-webkit-slider-runnable-track {
-    background-color: var(--slider-track);
-  }
-  input[type=range]::-moz-range-track {
-    background-color: var(--slider-track);
-  }
-  input[type=range]::-webkit-slider-thumb {
-    background-color: var(--slider-thumb);
-  }
-  input[type=range]::-moz-range-thumb {
-    background-color: var(--slider-thumb);
-  }
-</style>

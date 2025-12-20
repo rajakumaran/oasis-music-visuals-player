@@ -98,16 +98,16 @@ export class AudioService {
   loadDefaultPlaylist() {
     const defaultTracks: Track[] = [
     
-      { name: 'AI Music Track1', url: 'assets/music/sample-ai-track1.mp3', duration: '...' },
+      { name: 'AI Music Track1', url: 'src/assets/music/sample-ai-track1.mp3', duration: '...' },
       { name: 'AI Music Track2', url: 'assets/music/sample-ai-track2.mp3', duration: '...' },
-      { name: 'AI Music Track3', url: 'assets/music/sample-ai-track3.mp3', duration: '...' },
-      { name: 'AI Music Track4', url: 'assets/music/sample-ai-track4.mp3', duration: '...' },
-      { name: 'AI Music Track5', url: 'assets/music/sample-ai-track5.mp3', duration: '...' },
-      { name: 'AI Music Track6', url: 'assets/music/sample-ai-track6.mp3', duration: '...' },
-      { name: 'AI Music Track7', url: 'assets/music/sample-ai-track7.mp3', duration: '...' },
-      { name: 'AI Music Track8', url: 'assets/music/sample-ai-track8.mp3', duration: '...' },
-      { name: 'AI Music Track9', url: 'assets/music/sample-ai-track9.mp3', duration: '...' },
-      { name: 'AI Music Track10', url: 'assets/music/sample-ai-track10.mp3', duration: '...' },
+      { name: 'AI Music Track3', url: './assets/music/sample-ai-track3.mp3', duration: '...' },
+      { name: 'AI Music Track4', url: 'src/assets/music/sample-ai-track4.mp3', duration: '...' },
+      { name: 'AI Music Track5', url: 'src/assets/music/sample-ai-track5.mp3', duration: '...' },
+      { name: 'AI Music Track6', url: 'src/assets/music/sample-ai-track6.mp3', duration: '...' },
+      { name: 'AI Music Track7', url: 'src/assets/music/sample-ai-track7.mp3', duration: '...' },
+      { name: 'AI Music Track8', url: 'src/assets/music/sample-ai-track8.mp3', duration: '...' },
+      { name: 'AI Music Track9', url: 'src/assets/music/sample-ai-track9.mp3', duration: '...' },
+      { name: 'AI Music Track10', url: 'src/assets/music/sample-ai-track10.mp3', duration: '...' },
 
     ];
     this.playlist.set(defaultTracks);
@@ -118,7 +118,9 @@ export class AudioService {
   }
 
   async loadFiles(files: FileList) {
-    await this.initAudioContext();
+    if (!this.audioContext) {
+      await this.initAudioContext();
+    }
     
     // Revoke old object URLs, checking if they are from uploaded files
     this.playlist().forEach(track => {
@@ -146,13 +148,23 @@ export class AudioService {
     if(index >= 0 && index < this.playlist().length) {
       const shouldPlay = this.isPlaying() || this.currentTrackIndex() !== index;
       this.currentTrackIndex.set(index);
-      this.isPlaying.set(shouldPlay);
+      if (!this.audioContext) {
+        this.togglePlay();
+      } else {
+        this.isPlaying.set(shouldPlay);
+      }
     }
   }
 
   togglePlay() {
       if (!this.audioContext) {
         this.initAudioContext();
+        // Manually load the current track since the effect wouldn't have run correctly on init
+        const track = this.currentTrack();
+        if (track && this.audioElement) {
+          this.audioElement.src = track.url;
+          this.audioElement.load();
+        }
       }
       if (this.audioContext && this.audioContext.state === 'suspended') {
           this.audioContext.resume();

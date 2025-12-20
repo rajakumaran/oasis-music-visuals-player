@@ -36,10 +36,12 @@
     input[type=range]::-webkit-slider-runnable-track {
         height: 4px;
         border-radius: 2px;
+        background: var(--track-bg, #4b5563);
     }
     input[type=range]::-moz-range-track {
         height: 4px;
         border-radius: 2px;
+        background: var(--track-bg, #4b5563);
     }
     /* Thumb */
     input[type=range]::-webkit-slider-thumb {
@@ -50,12 +52,14 @@
         width: 16px;
         border-radius: 2px;
         border: 1px solid rgba(0,0,0,0.5);
+        background: var(--thumb-bg, #6b7280);
     }
     input[type=range]::-moz-range-thumb {
         height: 16px;
         width: 16px;
         border-radius: 2px;
         border: 1px solid rgba(0,0,0,0.5);
+        background: var(--thumb-bg, #6b7280);
     }
   </style>
 <script type="importmap">
@@ -70,7 +74,8 @@
     "@angular/compiler": "https://next.esm.sh/@angular/compiler@^21.0.1?external=rxjs",
     "@angular/core": "https://next.esm.sh/@angular/core@^21.0.1?external=rxjs",
     "@angular/platform-browser": "https://next.esm.sh/@angular/platform-browser@^21.0.1?external=rxjs",
-    "@angular/common": "https://next.esm.sh/@angular/common@^21.0.1?external=rxjs"
+    "@angular/common": "https://next.esm.sh/@angular/common@^21.0.1?external=rxjs",
+    "@google/genai": "https://esm.sh/@google/genai"
   }
 }
 </script>
