@@ -161,3 +161,41 @@ input[type=range].vertical {
               0 0 10px #22d3ee;
   transition: height 75ms ease-out, box-shadow 75ms ease-out;
 }
+
+/* --- Convex Bar Style --- */
+.bar-convex {
+  position: relative;
+  transition: height 75ms ease-out;
+}
+.bar-convex::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 25%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+  border-radius: inherit;
+}
+
+/* --- Concave Bar Style --- */
+.bar-concave {
+  position: relative;
+  transition: height 75ms ease-out;
+}
+.bar-concave::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to right, rgba(0,0,0,0.5), transparent 40%, transparent 60%, rgba(0,0,0,0.5));
+  border-radius: inherit;
+}
+
+/* --- Kaleidoscope transition for non-LED themes --- */
+.visualizer-content {
+  transition: filter 100ms linear;
+  will-change: filter;
+}

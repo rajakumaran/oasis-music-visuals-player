@@ -77,7 +77,9 @@
           [class]="'absolute inset-0 transition-opacity ' + selectedTheme().display"
           [style.opacity]="backgroundImageUrl() ? 0.6 : 1"
         ></div>
-        <div class="visualizer-content relative w-full h-full p-2 flex items-end justify-center" style="gap: 2px;">
+        <div class="visualizer-content relative w-full h-full p-2 flex items-end justify-center" 
+             style="gap: 2px;"
+             [style.filter]="isKaleidoscope() && selectedTheme().type !== 'led' ? 'hue-rotate(' + kaleidoscopeHueShift() + 'deg)' : 'none'">
             @switch (selectedTheme().type) {
               @case ('led') {
                 @for (litSegments of ledBars(); track $index) {
@@ -132,6 +134,24 @@
                   ></div>
                 }
               }
+              @case ('convex') {
+                @for (barHeight of visualizerBars(); track $index) {
+                  <div
+                    class="flex-1 self-end bar-convex"
+                    [class]="selectedTheme().bar"
+                    [style.height.%]="barHeight * 100"
+                  ></div>
+                }
+              }
+              @case ('concave') {
+                @for (barHeight of visualizerBars(); track $index) {
+                  <div
+                    class="flex-1 self-end bar-concave"
+                    [class]="selectedTheme().bar"
+                    [style.height.%]="barHeight * 100"
+                  ></div>
+                }
+			}
               @case ('fractal') {
                 <svg class="w-full h-full" viewBox="0 0 640 160" preserveAspectRatio="none">
                   <defs>
@@ -163,7 +183,7 @@
             }
         </div>
          @if (showOpportunisticTicker()) {
-          <div class="opportunistic-ticker absolute top-1/2 -translate-y-1/2 w-full h-10 backdrop-blur-sm flex items-center overflow-hidden">
+          <div class="opportunistic-ticker absolute top-1/2 -translate-y-1/2 w-full h-10 bg-black/60 backdrop-blur-sm flex items-center overflow-hidden">
             <p class="whitespace-nowrap text-lg font-semibold text-white/90 animate-left">
               {{ opportunisticTickerMessage() }}
             </p>
@@ -196,7 +216,7 @@
         
         <!-- Advanced Controls -->
         <div class="mt-4 text-sm border-t border-white/10 pt-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Sensitivity Control -->
             <div class="flex flex-col gap-1">
               <label for="sensitivity-slider" class="font-semibold">Sensitivity: {{ sensitivity().toFixed(1) }}</label>
@@ -217,11 +237,17 @@
                   </button>
               </div>
             </div>
+             <!-- Kaleidoscope Control -->
+            <div class="flex flex-col gap-1 justify-end">
+               <button (click)="toggleKaleidoscope()" class="px-4 py-2 rounded-md transition-colors w-full h-full text-xs" [class]="(isKaleidoscope() ? selectedTheme().highlight : selectedTheme().button) + ' ' + selectedTheme().buttonHover">
+                  <i class="fa-solid fa-palette mr-2"></i> Kaleidoscope
+                </button>
+            </div>
           </div>
           
           <!-- LED Specific Controls -->
           @if(selectedTheme().type === 'led') {
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-white/10">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-white/10">
               <div class="flex flex-col items-center gap-1">
                 <label class="font-semibold text-xs">Segment Width: {{ ledSegmentWidth() }}px</label>
                 <div class="flex items-center">
@@ -235,11 +261,7 @@
                   <button (click)="decrementLedHeight()" class="px-3 py-1 rounded-l-md" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover"><i class="fa-solid fa-minus"></i></button>
                   <button (click)="incrementLedHeight()" class="px-3 py-1 rounded-r-md" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover"><i class="fa-solid fa-plus"></i></button>
                 </div>
-              </div>
-              <div class="flex items-center justify-center">
-                <button (click)="toggleKaleidoscope()" class="px-4 py-2 rounded-md transition-colors w-full h-full" [class]="(isKaleidoscope() ? selectedTheme().highlight : selectedTheme().button) + ' ' + selectedTheme().buttonHover">
-                  <i class="fa-solid fa-palette mr-2"></i> Kaleidoscope
-                </button>
+        <!-- here -->     
               </div>
             </div>
           }
