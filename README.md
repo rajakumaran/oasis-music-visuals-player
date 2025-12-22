@@ -1,5 +1,8 @@
 # oasis-music-visuals-player
-December/22nd/2025: Added more features.  
+December/22nd/2025 #2: Created a new branch: " this one "  for adding US holiday themes to the website player automatically.
+
+December/22nd/2025 #1: Added more features.  
+
 December/20th/2025 Latest changes, new styles/effects, more controls, and more refined. Added Polynomials as well.
 oasis-music-visuals-player is another cool but latest player that has hypnotizing visuals and graphic equalizer for listening audio and enjoying visuals at the same time.
 These graphic visualization styles were one of my dreams. And I've realized my dream building this and now pushing to production.
