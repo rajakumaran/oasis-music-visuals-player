@@ -25,7 +25,7 @@ export class AppComponent implements OnInit, OnDestroy {
   currentTrack = this.audioService.currentTrack;
 
   sensitivity = signal(1.2);
-  responseCurve = signal<'linear' | 'polynomial'>('polynomial');
+  responseCurve = signal<'linear' | 'polynomial' | 'fractal'>('polynomial');
   backgroundImageUrl = signal<string | null>(null);
   private smoothedBars = new Array(64).fill(0);
   
@@ -53,8 +53,10 @@ export class AppComponent implements OnInit, OnDestroy {
   private themeSwitchIntervalId: any = null;
 
   // --- LED Theme Controls ---
-  ledSegmentWidth = signal(8); // in px
-  ledSegmentHeight = signal(4); // in px
+  ledBarSpacing = signal(0.5); // in px
+  ledSegmentSpacing = signal(0.5); // in px
+  ledSegmentWidth = signal(8); // in px was 8
+  ledSegmentHeight = signal(4); // in px was 4
   isKaleidoscope = signal(false);
   kaleidoscopeHueShift = signal(0);
   private kaleidoscopeAnimFrameId: number | null = null;
@@ -165,7 +167,11 @@ export class AppComponent implements OnInit, OnDestroy {
 
         // Apply the response curve
         if (responseCurveType === 'polynomial') {
-            normalizedValue = Math.pow(normalizedValue, 4); // Using x^2 for a punchy feel
+            normalizedValue = Math.pow(normalizedValue, 2); // Using x^2 for a punchy feel
+        } else if (responseCurveType === 'fractal') {
+            // Creates a wavy, organic-like modulation on the bars
+            const modulation = 0.7 + 0.3 * Math.abs(Math.sin((i / bars) * Math.PI * 4));
+            normalizedValue = Math.pow(normalizedValue, 1.2) * modulation;
         }
         
         const currentValue = this.smoothedBars[i];
@@ -186,6 +192,26 @@ export class AppComponent implements OnInit, OnDestroy {
     return output;
   });
 
+  fractalCircles = computed(() => {
+    const bars = this.visualizerBars();
+    const count = bars.length;
+    const viewboxWidth = 640;
+    const viewboxHeight = 160;
+
+    const barWidth = viewboxWidth / count;
+    const maxRadius = barWidth / 2 * 1.8; // Allow overlap
+
+    return bars.map((height, i) => {
+      const radius = Math.max(0.5, height * maxRadius);
+      return {
+        id: `circle-${i}`,
+        cx: i * barWidth + barWidth / 2,
+        cy: viewboxHeight - radius, // Position circle's bottom edge near the baseline
+        r: radius,
+      };
+    });
+  });
+
   ledBars = computed(() => {
     const bars = this.visualizerBars();
     const segments = 16;
@@ -200,10 +226,12 @@ export class AppComponent implements OnInit, OnDestroy {
     { name: 'Pioneer', type: 'shadow', base: 'bg-slate-200', display: 'bg-blue-900/80', bar: 'bg-gradient-to-t from-sky-600 to-sky-400 shadow-[-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-blue-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
     { name: 'Marantz', type: 'shadow', base: 'bg-amber-100', display: 'bg-black/80', bar: 'bg-gradient-to-t from-blue-700 to-blue-500 shadow-[-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-blue-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },
     { name: 'McIntosh', type: '3d', base: 'bg-gray-900', display: 'bg-black/90', bar: 'bg-gradient-to-t from-sky-600 to-sky-300 shadow-[0_0_5px_#38bdf8]', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-green-500', text: 'text-green-400', accent: 'text-sky-400', button: 'bg-gray-800 border border-gray-600', buttonHover: 'hover:bg-gray-700', highlight: 'bg-gray-700/50' },
+    { name: 'Cyberpunk', type: 'shadow', base: 'bg-black', display: 'bg-black/80', bar: 'bar-neon-glow bg-cyan-400', sliderTrack: 'bg-gray-800', sliderThumb: 'bg-fuchsia-500', text: 'text-fuchsia-400 font-mono', accent: 'text-cyan-300', button: 'bg-gray-900 border border-fuchsia-700', buttonHover: 'hover:bg-gray-800', highlight: 'bg-fuchsia-600/50' },
     { name: 'Aqua Gloss', type: 'glossy', base: 'bg-gray-800', display: 'bg-black/50', bar: 'bg-gradient-to-t from-teal-500 to-cyan-400', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-cyan-300', text: 'text-gray-200', accent: 'text-cyan-300', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-cyan-600/50' },
     { name: 'Liquid Sky', type: 'glass', base: 'bg-gradient-to-b from-slate-900 to-sky-900', display: 'bg-black/20', bar: 'rounded-t-md', sliderTrack: 'bg-sky-800/50', sliderThumb: 'bg-slate-300', text: 'text-slate-200', accent: 'text-sky-300', button: 'bg-sky-900/50', buttonHover: 'hover:bg-sky-800/50', highlight: 'bg-sky-700/50' },
     { name: 'Matrix', type: 'shadow', base: 'bg-black', display: 'bg-black/80', bar: 'bg-gradient-to-t from-emerald-700 to-green-400 shadow-[-1px_0_4px_rgba(0,0,0,0.7)]', sliderTrack: 'bg-gray-800', sliderThumb: 'bg-green-500', text: 'text-green-400 font-mono', accent: 'text-green-300', button: 'bg-gray-900 border border-green-700', buttonHover: 'hover:bg-gray-800', highlight: 'bg-green-600/50' },
     { name: 'Cosmic Rift', type: '3d', base: 'bg-gradient-to-br from-indigo-900 via-purple-900 to-black', display: 'bg-black/40', bar: 'bg-gradient-to-t from-fuchsia-600 to-cyan-400 shadow-[0_0_6px_#a855f7]', sliderTrack: 'bg-purple-800/50', sliderThumb: 'bg-fuchsia-500', text: 'text-purple-300', accent: 'text-cyan-300', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-fuchsia-500/50' },
+    { name: 'Celestial Sphere', type: 'fractal', base: 'bg-gradient-to-br from-gray-900 via-blue-900 to-black', display: 'bg-black/40', bar: '', sliderTrack: 'bg-blue-800/50', sliderThumb: 'bg-sky-500', text: 'text-sky-300', accent: 'text-cyan-300', button: 'bg-blue-900/70', buttonHover: 'hover:bg-blue-800/70', highlight: 'bg-sky-500/50' },
     { name: 'Molten Core', type: 'glossy', base: 'bg-stone-900', display: 'bg-black/60', bar: 'bg-gradient-to-t from-red-700 via-orange-500 to-yellow-400', sliderTrack: 'bg-red-900/50', sliderThumb: 'bg-amber-400', text: 'text-amber-300', accent: 'text-orange-400', button: 'bg-orange-800/50', buttonHover: 'hover:bg-orange-700/50', highlight: 'bg-yellow-500/50' },
     { name: 'Ocean Floor', type: 'glass', base: 'bg-gradient-to-t from-blue-900 to-teal-900', display: 'bg-black/30', bar: 'rounded-t-md', sliderTrack: 'bg-cyan-800/50', sliderThumb: 'bg-teal-300', text: 'text-cyan-200', accent: 'text-teal-300', button: 'bg-cyan-900/60', buttonHover: 'hover:bg-cyan-800/60', highlight: 'bg-teal-600/50' },
     { name: 'Classic LED', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-gray-700', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-gray-400', text: 'text-gray-300', accent: 'text-green-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-green-600/50' },
@@ -258,7 +286,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.sensitivity.set(value);
   }
 
-  setResponseCurve(curve: 'linear' | 'polynomial') {
+  setResponseCurve(curve: 'linear' | 'polynomial' | 'fractal') {
     this.responseCurve.set(curve);
   }
 

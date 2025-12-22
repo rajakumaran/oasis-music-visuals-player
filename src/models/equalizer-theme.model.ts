@@ -1,6 +1,6 @@
 export interface EqualizerTheme {
   name: string;
-  type: '3d' | 'led' | 'shadow' | 'glossy' | 'glass';
+  type: '3d' | 'led' | 'shadow' | 'glossy' | 'glass' | 'fractal';
   base: string;
   display: string;
   bar: string;

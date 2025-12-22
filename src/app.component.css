@@ -57,7 +57,11 @@ input[type=range].vertical {
 
 .led-off {
   background-color: #374151; /* gray-700 */
-  opacity: 0.3;
+  opacity: 0.25;
+}
+
+.led-on {
+  opacity: 0.95; /* Add slight translucency to on segments */
 }
 
 /* Add a pseudo-element to create the "glow" effect on lit LEDs */
@@ -138,10 +142,22 @@ input[type=range].vertical {
 
 /* --- Glass Bar Visualizer Styles --- */
 .bar-glass {
-  transition: height 75ms ease-out;
+  transition: height 75ms ease-out, box-shadow 300ms ease-out;
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-bottom: none;
+  /* Subtle backlight glow */
+  box-shadow: 0 0 12px 1px rgba(200, 220, 255, 0.35);
+}
+
+/* --- Neon Glow Bar for Cyberpunk Theme --- */
+.bar-neon-glow {
+  border-radius: 2px;
+  /* Multiple shadows create a soft, layered glow */
+  box-shadow: 0 0 2px #fff, 
+              0 0 5px #22d3ee, 
+              0 0 10px #22d3ee;
+  transition: height 75ms ease-out, box-shadow 75ms ease-out;
 }

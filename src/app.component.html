@@ -28,6 +28,11 @@
     <!-- Playlist Section -->
     <div class="lg-col-span-1 bg-black/20 p-4 rounded-lg flex flex-col min-h-[300px] lg:min-h-0">
       <h2 class="text-xl font-semibold mb-3 border-b border-white/10 pb-2">Playlist</h2>
+       <label class="mt-4 w-full text-center px-4 py-3 rounded-md cursor-pointer transition-colors" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover">
+          <i class="fa-solid fa-upload mr-2"></i>
+          <span>Upload Music Files</span>
+          <input type="file" (change)="onFileChange($event)" multiple accept="audio/*,video/mp4" class="hidden">
+      </label>
       <div class="flex-grow overflow-y-auto pr-2">
         @if (playlist().length === 0) {
           <div class="text-center text-gray-400 h-full flex flex-col items-center justify-center">
@@ -52,12 +57,7 @@
             }
           </ul>
         }
-      </div>
-       <label class="mt-4 w-full text-center px-4 py-3 rounded-md cursor-pointer transition-colors" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover">
-          <i class="fa-solid fa-upload mr-2"></i>
-          <span>Upload Music Files</span>
-          <input type="file" (change)="onFileChange($event)" multiple accept="audio/*,video/mp4" class="hidden">
-      </label>
+      </div>      
     </div>
 
     <!-- Equalizer Section -->
@@ -132,6 +132,34 @@
                   ></div>
                 }
               }
+              @case ('fractal') {
+                <svg class="w-full h-full" viewBox="0 0 640 160" preserveAspectRatio="none">
+                  <defs>
+                    <radialGradient id="fractalGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                      <stop offset="0%" stop-color="#67e8f9" stop-opacity="1"/>
+                      <stop offset="60%" stop-color="#22d3ee" stop-opacity="0.8"/>
+                      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.2"/>
+                    </radialGradient>
+                    <filter id="fractalGlow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="2.5" result="coloredBlur"></feGaussianBlur>
+                      <feMerge>
+                        <feMergeNode in="coloredBlur"></feMergeNode>
+                        <feMergeNode in="SourceGraphic"></feMergeNode>
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  @for (circle of fractalCircles(); track circle.id) {
+                    <circle 
+                      [attr.cx]="circle.cx" 
+                      [attr.cy]="circle.cy" 
+                      [attr.r]="circle.r" 
+                      fill="url(#fractalGradient)"
+                      filter="url(#fractalGlow)"
+                      style="transition: all 75ms ease-out; will-change: cy, r;"
+                    ></circle>
+                  }
+                </svg>
+              }
             }
         </div>
          @if (showOpportunisticTicker()) {
@@ -183,6 +211,9 @@
                   </button>
                   <button (click)="setResponseCurve('polynomial')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="responseCurve() === 'polynomial' ? selectedTheme().highlight : selectedTheme().buttonHover">
                     Punchy
+                  </button>
+                  <button (click)="setResponseCurve('fractal')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="responseCurve() === 'fractal' ? selectedTheme().highlight : selectedTheme().buttonHover">
+                    Celestial
                   </button>
               </div>
             </div>
