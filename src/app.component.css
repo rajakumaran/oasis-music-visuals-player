@@ -199,3 +199,39 @@ input[type=range].vertical {
   transition: filter 100ms linear;
   will-change: filter;
 }
+
+/* --- Holiday Decorations --- */
+.holiday-christmas::before{
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 60px; /* Height of the garland image */
+  /* background-image: url('https://i.imgur.com/gA335dC.png'); */
+  background-image: url('/assets/images/Christmas-decoration-top.png');
+  background-size: auto 100%; /* Scale image to fit height, maintain aspect ratio */
+  background-repeat: repeat-x;
+  z-index: 10;
+  pointer-events: none;
+}
+.holiday-christmas::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 60px; /* Height of the garland image */
+  background-image: url('/assets/images/Christmas-decoration-bottom.png');
+  background-size: auto 100%; /* Scale image to fit height, maintain aspect ratio */
+  background-repeat: repeat-x;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.holiday-christmas::before {
+  top: 0;
+}
+
+.holiday-christmas::after {
+  bottom: 0;
+  transform: scaleY(-1); /* Flip the image for the bottom edge */
+}

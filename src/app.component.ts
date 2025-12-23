@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed, WritableSignal, OnInit, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AudioService } from './services/audio.service';
+import { HolidayService } from './services/holiday.service';
 import { EqualizerTheme } from './models/equalizer-theme.model';
 import { FullscreenToggleComponent } from './fullscreen-toggle/fullscreen-toggle.component';
 
@@ -14,6 +15,7 @@ import { FullscreenToggleComponent } from './fullscreen-toggle/fullscreen-toggle
 })
 export class AppComponent implements OnInit, OnDestroy {
   audioService = inject(AudioService);
+  holidayService = inject(HolidayService);
   
   // Expose signals from service for template binding
   playlist = this.audioService.playlist;
@@ -63,9 +65,13 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // --- Opportunistic Ticker ---
   showOpportunisticTicker = signal(false);
-  opportunisticTickerMessage = signal('Audio Oasis :: Built by Muthukumaran Azhagesan (Kumar). check his Linktree for his many AI apps and projects');
+  opportunisticTickerMessage = signal('Audio Oasis :: Built by Muthukumaran Azhagesan (Kumar). Feel free to check his Linktree for his many AI apps and projects');
   private showTickerTimeout: any;
   private hideTickerTimeout: any;
+
+  // --- Holiday Theming ---
+  activeHoliday = this.holidayService.activeHoliday;
+  holidayDecorationClass = computed(() => this.activeHoliday()?.decorations ?? '');
 
   constructor() {
     // Effect for Auto-Switching Themes
@@ -239,6 +245,7 @@ export class AppComponent implements OnInit, OnDestroy {
     { name: 'Classic LED', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-gray-700', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-gray-400', text: 'text-gray-300', accent: 'text-green-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-green-600/50' },
   ];
   selectedTheme: WritableSignal<EqualizerTheme> = signal(this.themes[0]);
+ 
   
   onFileChange(event: Event) {
     const input = event.target as HTMLInputElement;
