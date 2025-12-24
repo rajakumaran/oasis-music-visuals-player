@@ -103,11 +103,11 @@ export class AudioService {
       { name: 'AI Music Track3', url: 'src/assets/music/sample-ai-track3.mp3', duration: '...' },
       { name: 'AI Music Track4', url: 'src/assets/music/sample-ai-track4.mp3', duration: '...' },
       { name: 'AI Music Track5', url: 'src/assets/music/sample-ai-track5.mp3', duration: '...' },
-      { name: 'AI Music Track6', url: 'src/assets/music/sample-ai-track6.mp3', duration: '...' },
-      { name: 'AI Music Track7', url: 'src/assets/music/sample-ai-track7.mp3', duration: '...' },
-      { name: 'AI Music Track8', url: 'src/assets/music/sample-ai-track8.mp3', duration: '...' },
-      { name: 'AI Music Track9', url: 'src/assets/music/sample-ai-track9.mp3', duration: '...' },
-      { name: 'AI Music Track10', url: 'src/assets/music/sample-ai-track10.mp3', duration: '...' },
+      // { name: 'AI Music Track6', url: 'src/assets/music/sample-ai-track6.mp3', duration: '...' },
+      // { name: 'AI Music Track7', url: 'src/assets/music/sample-ai-track7.mp3', duration: '...' },
+      // { name: 'AI Music Track8', url: 'src/assets/music/sample-ai-track8.mp3', duration: '...' },
+      // { name: 'AI Music Track9', url: 'src/assets/music/sample-ai-track9.mp3', duration: '...' },
+      // { name: 'AI Music Track10', url: 'src/assets/music/sample-ai-track10.mp3', duration: '...' },
 
     ];
     this.playlist.set(defaultTracks);

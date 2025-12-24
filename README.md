@@ -1,7 +1,10 @@
 # oasis-music-visuals-player
+December/23rd/2025 : DONE: Today I changed my mind to apply bg to the whole vis. area. Fixed it and completed. Auto Bg among other features is available in this check-in.
+Also I've added Analytics to gauge user experience basically.
+
 December/23rd/2025: This check in I have made a unique blend that is without the holiday themes. It is really awesome. It has production level quality. Hence this is a cooler check in and I am looking to push this to production.
 
-December/22nd/2025 #3: TODO: apply the top and bottom images and ensure they work well.
+
 
 December/22nd/2025 #2: Created a new branch: " this one "  for adding US holiday themes to the website player automatically.
 

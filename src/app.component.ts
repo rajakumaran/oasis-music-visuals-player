@@ -71,6 +71,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // --- Holiday Theming ---
   activeHoliday = this.holidayService.activeHoliday;
+  isHolidayAvailable = this.holidayService.isHolidayAvailable;
+  isHolidayThemeOn = this.holidayService.holidayThemeEnabled;
+  detectedHoliday = this.holidayService.detectedHoliday;
   holidayDecorationClass = computed(() => this.activeHoliday()?.decorations ?? '');
 
   constructor() {
@@ -245,7 +248,9 @@ export class AppComponent implements OnInit, OnDestroy {
     { name: 'Classic LED', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-gray-700', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-gray-400', text: 'text-gray-300', accent: 'text-green-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-green-600/50' },
   ];
   selectedTheme: WritableSignal<EqualizerTheme> = signal(this.themes[0]);
- 
+
+  // If a holiday theme is active, it overrides the user's selection.
+  effectiveTheme = computed(() => this.activeHoliday()?.theme ?? this.selectedTheme());
   
   onFileChange(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -258,7 +263,7 @@ export class AppComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const oldUrl = this.backgroundImageUrl();
-      if (oldUrl) {
+      if (oldUrl && oldUrl.startsWith('blob:')) {
         URL.revokeObjectURL(oldUrl);
       }
       const newUrl = URL.createObjectURL(input.files[0]);
@@ -317,6 +322,11 @@ export class AppComponent implements OnInit, OnDestroy {
 
   setSwitchMode(mode: 'sequential' | 'random') {
     this.switchMode.set(mode);
+  }
+
+  toggleHolidayTheme(event: Event) {
+    const enabled = (event.target as HTMLInputElement).checked;
+    this.holidayService.setHolidayThemeEnabled(enabled);
   }
 
   private startAutoSwitching(): void {

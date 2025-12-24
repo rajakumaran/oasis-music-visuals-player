@@ -11,19 +11,11 @@
         <i class="fa-solid fa-image"></i>
         <input type="file" (change)="onBgImageChange($event)" class="hidden" accept="image/*">
       </label>
-      <div class="relative">
-        <select (change)="selectTheme($any($event.target).value)" [value]="themes.indexOf(selectedTheme())" [class]="'appearance-none rounded-md py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 ' + selectedTheme().button + ' ' + selectedTheme().text">
-          @for (theme of themes; track theme.name; let i = $index) {
-            <option [value]="i">{{ theme.name }}</option>
-          }
-        </select>
-        <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-      </div>
-      <!-- <div class="flex flex-col items-end">
+      <div class="flex flex-col items-end">
         <div class="relative">
-          <select (change)="selectTheme($any($event.target).value)" 
+        <select (change)="selectTheme($any($event.target).value)" 
                   [value]="themes.indexOf(selectedTheme())" 
-                  [disabled]="activeHoliday() !== null"
+                  [disabled]="isHolidayThemeOn()"
                   [class]="'appearance-none rounded-md py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 ' + selectedTheme().button + ' ' + selectedTheme().text">
             @for (theme of themes; track theme.name; let i = $index) {
               <option [value]="i">{{ theme.name }}</option>
@@ -31,12 +23,18 @@
           </select>
           <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
         </div>
-         @if (activeHoliday(); as holiday) {
-          <div class="text-xs mt-1 p-1 rounded-sm" [class]="selectedTheme().highlight">
-            Happy {{ holiday.name }}! Theme is active.
+        @if (isHolidayAvailable()) {
+          <div class="flex items-center gap-2 mt-2 text-xs">
+            <span [class]="isHolidayThemeOn() ? selectedTheme().accent : ''">
+              <i class="fa-solid fa-gifts mr-1"></i> Holiday Mode
+            </span>
+            <label class="relative inline-flex items-center cursor-pointer" [title]="'Toggle ' + detectedHoliday()?.name + ' Theme'">
+              <input type="checkbox" [checked]="isHolidayThemeOn()" (change)="toggleHolidayTheme($event)" class="sr-only peer">
+              <div class="w-9 h-5 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+            </label>
           </div>
         }
-      </div> -->
+      </div>
     </div>
   </header>
 
@@ -48,7 +46,7 @@
       <h2 class="text-xl font-semibold mb-3 border-b border-white/10 pb-2">Playlist</h2>
        <label class="mt-4 w-full text-center px-4 py-3 rounded-md cursor-pointer transition-colors" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover">
           <i class="fa-solid fa-upload mr-2"></i>
-          <span>Upload Music Files</span>
+          <span>Upload Your Music Files(Max 10)</span>
           <input type="file" (change)="onFileChange($event)" multiple accept="audio/*,video/mp4" class="hidden">
       </label>
       <div class="flex-grow overflow-y-auto pr-2">
@@ -89,7 +87,8 @@
         id="visualizer-display-wrapper"
         class="w-full h-48 sm:h-64 rounded-lg relative overflow-hidden bg-cover bg-center transition-all duration-500"
         [class]="holidayDecorationClass()"
-        [style.background-image]="backgroundImageUrl() ? 'url(' + backgroundImageUrl()! + ')' : 'none'"
+        [class.bg-christmas-default]="!backgroundImageUrl()"
+        [style.background-image]="backgroundImageUrl() ? 'url(' + backgroundImageUrl()! + ')' : null"
       >
         <app-fullscreen-toggle targetElementId="visualizer-display-wrapper"></app-fullscreen-toggle>
         <div 
@@ -368,7 +367,7 @@
             }
           </div>
         </div>
-    </div>
+    </div>    
   </footer>
 
 </div>
