@@ -5,6 +5,8 @@ import { HolidayService } from './services/holiday.service';
 import { EqualizerTheme } from './models/equalizer-theme.model';
 import { FullscreenToggleComponent } from './fullscreen-toggle/fullscreen-toggle.component';
 
+type LightSourcePosition = 'none' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center-stage';
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -75,6 +77,34 @@ export class AppComponent implements OnInit, OnDestroy {
   isHolidayThemeOn = this.holidayService.holidayThemeEnabled;
   detectedHoliday = this.holidayService.detectedHoliday;
   holidayDecorationClass = computed(() => this.activeHoliday()?.decorations ?? '');
+
+  // --- Lighting Effect ---
+  lightSourcePosition = signal<LightSourcePosition>('none');
+  isLightingControlVisible = computed(() => this.effectiveTheme().type !== 'led');
+  lightingOverlayStyle = computed(() => {
+    const position = this.lightSourcePosition();
+    if (position === 'none' || !this.isLightingControlVisible()) {
+      return 'transparent';
+    }
+
+    const lightColor = 'rgba(255, 255, 255, 0.25)';
+    const endColor = 'rgba(255, 255, 255, 0)';
+
+    let positionCss = '';
+    switch (position) {
+      case 'top-left':    positionCss = '0% 0%'; break;
+      case 'top-right':   positionCss = '100% 0%'; break;
+      case 'bottom-left': positionCss = '0% 100%'; break;
+      case 'bottom-right':positionCss = '100% 100%'; break;
+      case 'center-stage':positionCss = '50% 50%'; break;
+      //case 'center-stage': positionCss = `radial-gradient(ellipse at 50% 50%, ${lightColor} 0%, ${endColor} 70%)`; break;
+    }
+    
+    return `radial-gradient(circle at ${positionCss}, ${lightColor} 0%, ${endColor} 60%)`;
+  });
+
+  // --- Fullscreen Controls ---
+  fullscreenControlsActive = signal(false);
 
   constructor() {
     // Effect for Auto-Switching Themes
@@ -245,6 +275,9 @@ export class AppComponent implements OnInit, OnDestroy {
     { name: 'Celestial Sphere', type: 'fractal', base: 'bg-gradient-to-br from-gray-900 via-blue-900 to-black', display: 'bg-black/40', bar: '', sliderTrack: 'bg-blue-800/50', sliderThumb: 'bg-sky-500', text: 'text-sky-300', accent: 'text-cyan-300', button: 'bg-blue-900/70', buttonHover: 'hover:bg-blue-800/70', highlight: 'bg-sky-500/50' },
     { name: 'Molten Core', type: 'glossy', base: 'bg-stone-900', display: 'bg-black/60', bar: 'bg-gradient-to-t from-red-700 via-orange-500 to-yellow-400', sliderTrack: 'bg-red-900/50', sliderThumb: 'bg-amber-400', text: 'text-amber-300', accent: 'text-orange-400', button: 'bg-orange-800/50', buttonHover: 'hover:bg-orange-700/50', highlight: 'bg-yellow-500/50' },
     { name: 'Ocean Floor', type: 'glass', base: 'bg-gradient-to-t from-blue-900 to-teal-900', display: 'bg-black/30', bar: 'rounded-t-md', sliderTrack: 'bg-cyan-800/50', sliderThumb: 'bg-teal-300', text: 'text-cyan-200', accent: 'text-teal-300', button: 'bg-cyan-900/60', buttonHover: 'hover:bg-cyan-800/60', highlight: 'bg-teal-600/50' },
+    { name: 'Gold Standard', type: 'convex', base: 'bg-gray-900', display: 'bg-black/60', bar: 'bg-gradient-to-t from-yellow-700 via-amber-400 to-yellow-100 rounded-t-sm', sliderTrack: 'bg-yellow-800/50', sliderThumb: 'bg-amber-300', text: 'text-amber-200', accent: 'text-yellow-400', button: 'bg-yellow-900/60', buttonHover: 'hover:bg-yellow-800/60', highlight: 'bg-amber-500/50' },
+    { name: 'Platinum Sheen', type: 'convex', base: 'bg-slate-800', display: 'bg-black/50', bar: 'bg-gradient-to-t from-slate-400 via-gray-200 to-white rounded-t-sm', sliderTrack: 'bg-slate-600', sliderThumb: 'bg-white', text: 'text-slate-200', accent: 'text-cyan-300', button: 'bg-slate-700', buttonHover: 'hover:bg-slate-600', highlight: 'bg-cyan-500/50' },
+    { name: 'Polished Silver', type: 'glossy', base: 'bg-gray-700', display: 'bg-black/50', bar: 'bg-gradient-to-t from-gray-600 via-slate-300 to-gray-400', sliderTrack: 'bg-gray-500', sliderThumb: 'bg-slate-200', text: 'text-gray-200', accent: 'text-sky-300', button: 'bg-gray-600', buttonHover: 'hover:bg-gray-500', highlight: 'bg-sky-600/50' },
     { name: 'Classic LED', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-gray-700', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-gray-400', text: 'text-gray-300', accent: 'text-green-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-green-600/50' },
   ];
   selectedTheme: WritableSignal<EqualizerTheme> = signal(this.themes[0]);
@@ -302,6 +335,14 @@ export class AppComponent implements OnInit, OnDestroy {
 
   setResponseCurve(curve: 'linear' | 'polynomial' | 'fractal') {
     this.responseCurve.set(curve);
+  }
+
+  setLightSource(position: LightSourcePosition) {
+    this.lightSourcePosition.set(position);
+  }
+
+  toggleFullscreenControls() {
+    this.fullscreenControlsActive.update(v => !v);
   }
 
   selectTheme(index: string) {

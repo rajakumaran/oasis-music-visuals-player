@@ -12,8 +12,8 @@
         <input type="file" (change)="onBgImageChange($event)" class="hidden" accept="image/*">
       </label>
       <div class="flex flex-col items-end">
-        <div class="relative">
-        <select (change)="selectTheme($any($event.target).value)" 
+        <div class="relative" title="Select a visual theme">
+          <select (change)="selectTheme($any($event.target).value)" 
                   [value]="themes.indexOf(selectedTheme())" 
                   [disabled]="isHolidayThemeOn()"
                   [class]="'appearance-none rounded-md py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 ' + selectedTheme().button + ' ' + selectedTheme().text">
@@ -44,7 +44,7 @@
     <!-- Playlist Section -->
     <div class="lg-col-span-1 bg-black/20 p-4 rounded-lg flex flex-col min-h-[300px] lg:min-h-0">
       <h2 class="text-xl font-semibold mb-3 border-b border-white/10 pb-2">Playlist</h2>
-       <label class="mt-4 w-full text-center px-4 py-3 rounded-md cursor-pointer transition-colors" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover">
+       <label class="mt-4 w-full text-center px-4 py-3 rounded-md cursor-pointer transition-colors" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover" title="Upload one or more audio files">
           <i class="fa-solid fa-upload mr-2"></i>
           <span>Upload Your Music Files(Max 10)</span>
           <input type="file" (change)="onFileChange($event)" multiple accept="audio/*,video/mp4" class="hidden">
@@ -62,6 +62,7 @@
                 (click)="audioService.selectTrack(i)"
                 class="flex items-center p-2 rounded-md cursor-pointer transition-colors"
                 [class]="currentTrackIndex() === i ? selectedTheme().highlight : selectedTheme().buttonHover"
+                [title]="'Play ' + track.name"
               >
                 @if (currentTrackIndex() === i && isPlaying()) {
                   <i class="fa-solid fa-volume-high w-6 text-sm" [class]="selectedTheme().accent"></i>
@@ -90,11 +91,11 @@
         [class.bg-christmas-default]="!backgroundImageUrl()"
         [style.background-image]="backgroundImageUrl() ? 'url(' + backgroundImageUrl()! + ')' : null"
       >
-        <app-fullscreen-toggle targetElementId="visualizer-display-wrapper"></app-fullscreen-toggle>
-        <div 
-          [class]="'absolute inset-0 transition-opacity ' + selectedTheme().display"
-          [style.opacity]="backgroundImageUrl() ? 0.6 : 1"
-        ></div>
+        <app-fullscreen-toggle targetElementId="visualizer-section"></app-fullscreen-toggle>
+        <div [class]="'absolute inset-0 transition-opacity ' + selectedTheme().display"></div>
+        <div class="absolute inset-0 pointer-events-none transition-all duration-500"
+             [style.background]="lightingOverlayStyle()">
+        </div>
         <div class="visualizer-content relative w-full h-full p-2 flex items-end justify-center" 
              style="gap: 2px;"
              [style.filter]="isKaleidoscope() && selectedTheme().type !== 'led' ? 'hue-rotate(' + kaleidoscopeHueShift() + 'deg)' : 'none'">
@@ -210,11 +211,11 @@
       </div>
 
       <!-- Faders & Controls -->
-      <div class="pt-4">
+      <div id="controls-container" [class.active]="fullscreenControlsActive()">
         <div class="grid grid-cols-7 gap-x-2 sm:gap-x-4">
           @for(gain of gainValues(); track $index) {
             <div class="flex flex-col items-center gap-2">
-               <div class="h-24 flex items-center justify-center">
+               <div class="h-24 flex items-center justify-center" [title]="bandFrequencies[$index] + ' Hz Band'">
                   <input 
                     type="range" 
                     orient="vertical"
@@ -238,12 +239,12 @@
             <!-- Sensitivity Control -->
             <div class="flex flex-col gap-1">
               <label for="sensitivity-slider" class="font-semibold">Sensitivity: {{ sensitivity().toFixed(1) }}</label>
-              <input type="range" id="sensitivity-slider" min="0.5" max="5" step="0.1" [value]="sensitivity()" (input)="onSensitivityChange($event)" [style.--thumb-bg]="selectedTheme().sliderThumb" [style.--track-bg]="selectedTheme().sliderTrack">
+              <input type="range" id="sensitivity-slider" min="0.5" max="5" step="0.1" [value]="sensitivity()" (input)="onSensitivityChange($event)" [style.--thumb-bg]="selectedTheme().sliderThumb" [style.--track-bg]="selectedTheme().sliderTrack" title="Adjust visualizer sensitivity to the audio">
             </div>
             <!-- Response Curve Control -->
             <div class="flex flex-col gap-1">
               <label class="font-semibold">Response Curve</label>
-              <div class="flex items-center rounded-md overflow-hidden h-full" [class]="selectedTheme().button">
+              <div class="flex items-center rounded-md overflow-hidden h-full" [class]="selectedTheme().button" title="Change the visualizer's response algorithm">
                   <button (click)="setResponseCurve('linear')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="responseCurve() === 'linear' ? selectedTheme().highlight : selectedTheme().buttonHover">
                     Linear
                   </button>
@@ -257,25 +258,64 @@
             </div>
              <!-- Kaleidoscope Control -->
             <div class="flex flex-col gap-1 justify-end">
-               <button (click)="toggleKaleidoscope()" class="px-4 py-2 rounded-md transition-colors w-full h-full text-xs" [class]="(isKaleidoscope() ? selectedTheme().highlight : selectedTheme().button) + ' ' + selectedTheme().buttonHover">
+               <button (click)="toggleKaleidoscope()" class="px-4 py-2 rounded-md transition-colors w-full h-full text-xs" [class]="(isKaleidoscope() ? selectedTheme().highlight : selectedTheme().button) + ' ' + selectedTheme().buttonHover" title="Toggle a psychedelic color cycling effect">
                   <i class="fa-solid fa-palette mr-2"></i> Kaleidoscope
                 </button>
             </div>
           </div>
+
+          <!-- Light Source Controls -->
+          @if (isLightingControlVisible()) {
+            <div class="flex flex-col gap-2 mt-4">
+                <label class="font-semibold">Light Source</label>
+                <div class="grid grid-cols-6 rounded-md overflow-hidden text-xs text-center" [class]="selectedTheme().button">
+                  
+                  <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'none' ? selectedTheme().highlight : selectedTheme().buttonHover)" title="Turn off lighting effect">
+                    <input type="radio" name="light-source" [checked]="lightSourcePosition() === 'none'" (change)="setLightSource('none')" class="sr-only">
+                    Off
+                  </label>
+
+                  <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'top-left' ? selectedTheme().highlight : selectedTheme().buttonHover)" title="Light from Top-Left">
+                    <input type="radio" name="light-source" [checked]="lightSourcePosition() === 'top-left'" (change)="setLightSource('top-left')" class="sr-only">
+                    TL
+                  </label>
+
+                  <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'top-right' ? selectedTheme().highlight : selectedTheme().buttonHover)" title="Light from Top-Right">
+                    <input type="radio" name="light-source" [checked]="lightSourcePosition() === 'top-right'" (change)="setLightSource('top-right')" class="sr-only">
+                    TR
+                  </label>
+
+                  <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'bottom-left' ? selectedTheme().highlight : selectedTheme().buttonHover)" title="Light from Bottom-Left">
+                    <input type="radio" name="light-source" [checked]="lightSourcePosition() === 'bottom-left'" (change)="setLightSource('bottom-left')" class="sr-only">
+                    BL
+                  </label>
+                  
+                   <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'bottom-right' ? selectedTheme().highlight : selectedTheme().buttonHover)" title="Light from Bottom-Right">
+                    <input type="radio" name="light-source" [checked]="lightSourcePosition() === 'bottom-right'" (change)="setLightSource('bottom-right')" class="sr-only">
+                    BR
+                  </label>
+
+                  <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'center-stage' ? selectedTheme().highlight : selectedTheme().buttonHover)" title="Spotlight from the center">
+                    <input type="radio" name="light-source" [checked]="lightSourcePosition() === 'center-stage'" (change)="setLightSource('center-stage')" class="sr-only">
+                    CS
+                  </label>
+                </div>
+              </div>
+          }
           
           <!-- LED Specific Controls -->
           @if(selectedTheme().type === 'led') {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-white/10">
               <div class="flex flex-col items-center gap-1">
                 <label class="font-semibold text-xs">Segment Width: {{ ledSegmentWidth() }}px</label>
-                <div class="flex items-center">
+                <div class="flex items-center" title="Adjust the width of LED segments">
                   <button (click)="decrementLedWidth()" class="px-3 py-1 rounded-l-md" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover"><i class="fa-solid fa-minus"></i></button>
                   <button (click)="incrementLedWidth()" class="px-3 py-1 rounded-r-md" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover"><i class="fa-solid fa-plus"></i></button>
                 </div>
               </div>
                <div class="flex flex-col items-center gap-1">
                 <label class="font-semibold text-xs">Segment Height: {{ ledSegmentHeight() }}px</label>
-                <div class="flex items-center">
+                <div class="flex items-center" title="Adjust the height of LED segments">
                   <button (click)="decrementLedHeight()" class="px-3 py-1 rounded-l-md" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover"><i class="fa-solid fa-minus"></i></button>
                   <button (click)="incrementLedHeight()" class="px-3 py-1 rounded-r-md" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover"><i class="fa-solid fa-plus"></i></button>
                 </div>
@@ -284,7 +324,13 @@
             </div>
           }
         </div>
+        <button id="fullscreen-controls-close-btn" (click)="toggleFullscreenControls()">
+          <i class="fa-solid fa-xmark mr-2"></i> Close
+        </button>
       </div>
+      <button id="fullscreen-controls-toggle-btn" (click)="toggleFullscreenControls()" title="Show Fullscreen Controls">
+        <i class="fa-solid fa-sliders"></i>
+      </button>
     </div>
   </main>
   
@@ -312,13 +358,13 @@
         </div>
         <div class="w-1/3 flex flex-col items-center px-4">
              <div class="flex items-center gap-6 text-2xl">
-                <button (click)="audioService.previous()" [disabled]="playlist().length < 2" class="disabled:opacity-50 disabled:cursor-not-allowed">
+                <button (click)="audioService.previous()" [disabled]="playlist().length < 2" class="disabled:opacity-50 disabled:cursor-not-allowed" title="Previous Track">
                     <i class="fa-solid fa-backward-step"></i>
                 </button>
-                <button (click)="onPlayPauseClick()" [disabled]="!currentTrack()" class="w-12 h-12 rounded-full flex items-center justify-center text-3xl disabled:opacity-50 disabled:cursor-not-allowed" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover">
+                <button (click)="onPlayPauseClick()" [disabled]="!currentTrack()" class="w-12 h-12 rounded-full flex items-center justify-center text-3xl disabled:opacity-50 disabled:cursor-not-allowed" [class]="selectedTheme().button + ' ' + selectedTheme().buttonHover" [title]="isPlaying() ? 'Pause' : 'Play'">
                     <i class="fa-solid" [class]="isPlaying() ? 'fa-pause' : 'fa-play'"></i>
                 </button>
-                <button (click)="audioService.next()" [disabled]="playlist().length < 2" class="disabled:opacity-50 disabled:cursor-not-allowed">
+                <button (click)="audioService.next()" [disabled]="playlist().length < 2" class="disabled:opacity-50 disabled:cursor-not-allowed" title="Next Track">
                     <i class="fa-solid fa-forward-step"></i>
                 </button>
              </div>
@@ -327,7 +373,8 @@
                 <input type="range" class="w-full"
                        [value]="currentTime()" (input)="onSeek($event)"
                        min="0" [max]="duration() || 0" step="0.1"
-                       [style.--thumb-bg]="selectedTheme().sliderThumb" [style.--track-bg]="selectedTheme().sliderTrack">
+                       [style.--thumb-bg]="selectedTheme().sliderThumb" [style.--track-bg]="selectedTheme().sliderTrack"
+                       title="Seek through track">
                 <span>{{ formatTime(duration()) }}</span>
              </div>
         </div>
@@ -335,7 +382,7 @@
           <!-- Auto-Switch Controls -->
           <div class="flex items-center gap-4 text-sm">
             <div class="flex items-center gap-2">
-              <label class="relative inline-flex items-center cursor-pointer" title="Toggle Auto-Switching">
+              <label class="relative inline-flex items-center cursor-pointer" title="Automatically switch themes at a set interval">
                 <input type="checkbox" [checked]="isAutoSwitching()" (change)="toggleAutoSwitch()" class="sr-only peer">
                 <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
               </label>
@@ -344,7 +391,7 @@
 
             @if (isAutoSwitching()) {
               <div class="flex items-center gap-4">
-                <div class="relative">
+                <div class="relative" title="Set auto-switch interval">
                    <select (change)="setSwitchInterval($event)" [value]="switchInterval()" [class]="'appearance-none rounded-md py-1 pl-2 pr-7 text-xs ' + selectedTheme().button + ' ' + selectedTheme().text">
                     <option value="10000">10s</option>
                     <option value="15000">15s</option>
@@ -353,7 +400,7 @@
                   </select>
                   <i class="fa-solid fa-chevron-down absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-xs"></i>
                 </div>
-                <div class="flex gap-3 text-xs">
+                <div class="flex gap-3 text-xs" title="Set auto-switch mode">
                   <label class="flex items-center gap-1 cursor-pointer">
                     <input type="radio" name="switch-mode" [checked]="switchMode() === 'sequential'" (change)="setSwitchMode('sequential')" class="h-3 w-3">
                     Seq
@@ -367,7 +414,7 @@
             }
           </div>
         </div>
-    </div>    
+    </div>
   </footer>
 
 </div>

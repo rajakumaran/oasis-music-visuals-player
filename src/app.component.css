@@ -213,3 +213,99 @@ input[type=range].vertical {
   background-position: center;
   background-repeat: no-repeat;
 }
+
+/* --- Fullscreen Styles --- */
+
+/* Hide header and fullscreen toggle button in the normal view */
+#fullscreen-controls-toggle-btn,
+#fullscreen-controls-close-btn {
+  display: none;
+}
+
+#visualizer-section:fullscreen {
+  display: block;
+  position: relative;
+  background: black !important; /* Force black background for immersion */
+  padding: 0 !important;
+}
+
+#visualizer-section:fullscreen > .flex.justify-between {
+  display: none; /* Hide the "7-Band Graphic Equalizer" header */
+}
+
+#visualizer-section:fullscreen #visualizer-display-wrapper {
+  position: absolute;
+  inset: 0;
+  height: 100% !important;
+  width: 100% !important;
+  border-radius: 0;
+}
+
+/* Show the settings toggle button only in fullscreen */
+#visualizer-section:fullscreen #fullscreen-controls-toggle-btn {
+  display: flex;
+  position: absolute;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 20;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+  color: white;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  transition: all 0.2s ease-in-out;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#visualizer-section:fullscreen #fullscreen-controls-toggle-btn:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+  transform: scale(1.1);
+}
+
+/* --- Floating Controls Panel --- */
+#visualizer-section:fullscreen #controls-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  
+  background: rgba(17, 24, 39, 0.7); /* gray-900 with opacity */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.5rem 2rem 2rem 2rem;
+  
+  transform: translateY(100%);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease;
+  will-change: transform, opacity;
+}
+
+#visualizer-section:fullscreen #controls-container.active {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Show and style the close button inside the active panel */
+#visualizer-section:fullscreen #controls-container.active #fullscreen-controls-close-btn {
+    display: flex;
+    position: absolute;
+    top: -2.5rem;
+    right: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem 0.5rem 0 0;
+    background: rgba(17, 24, 39, 0.7);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+}
