@@ -1,5 +1,5 @@
 # oasis-music-visuals-player
-December/26th/2025 : December/23rd/2025 :  Simply nav to E:\dev\2025-December-25 merge in these files INTO my existing version. That's it!
+December/26th/2025 : More features such as 3 brand new metallic styles/effects, lighting effects all 4 directions+center stage, and tool-tips. etc.
 December/25th/2025 : Today I enhanced it a little further with more features.
 
 December/23rd/2025 : DONE: Today I changed my mind to apply bg to the whole vis. area. Fixed it and completed. Auto Bg among other features is available in this check-in.
