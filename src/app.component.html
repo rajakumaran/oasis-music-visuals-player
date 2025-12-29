@@ -201,15 +201,17 @@
               }
             }
         </div>
+        
+      </div>
+      <div>
          @if (showOpportunisticTicker()) {
           <div class="opportunistic-ticker absolute top-1/2 -translate-y-1/2 w-full h-10 bg-black/60 backdrop-blur-sm flex items-center overflow-hidden">
-            <p class="whitespace-nowrap text-lg font-semibold text-white/90 animate-left">
+            <p class="whitespace-nowrap text-md font-semibold text-white/90 animate-left">
               {{ opportunisticTickerMessage() }}
             </p>
           </div>
         }
       </div>
-
       <!-- Faders & Controls -->
       <div id="controls-container" [class.active]="fullscreenControlsActive()">
         <div class="grid grid-cols-7 gap-x-2 sm:gap-x-4">
@@ -259,7 +261,7 @@
              <!-- Kaleidoscope Control -->
             <div class="flex flex-col gap-1 justify-end">
                <button (click)="toggleKaleidoscope()" class="px-4 py-2 rounded-md transition-colors w-full h-full text-xs" [class]="(isKaleidoscope() ? selectedTheme().highlight : selectedTheme().button) + ' ' + selectedTheme().buttonHover" title="Toggle a psychedelic color cycling effect">
-                  <i class="fa-solid fa-palette mr-2"></i> Kaleidoscope
+                  <i class="fa-solid fa-palette mr-2"></i> Kaleidoscope {{ isKaleidoscope() ? "ON" : "OFF" }}
                 </button>
             </div>
           </div>
