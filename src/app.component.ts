@@ -6,7 +6,7 @@ import { PresetService, Preset } from './services/preset.service';
 import { EqualizerTheme } from './models/equalizer-theme.model';
 import { FullscreenToggleComponent } from './fullscreen-toggle/fullscreen-toggle.component';
 
-type LightSourcePosition = 'none' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center-stage';
+type LightSourcePosition = 'none' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center-stage' | 'top-center';
 
 @Component({
   selector: 'app-root',
@@ -84,8 +84,15 @@ export class AppComponent implements OnInit, OnDestroy {
   lightingOverlayStyle = computed(() => {
     const position = this.lightSourcePosition();
     if (position === 'none' || !this.isLightingControlVisible()) return 'transparent';
-    const lightColor = 'rgba(255, 255, 255, 0.25)';
+
+    const isKaleido = this.isKaleidoscope();
+    const hue = this.kaleidoscopeHueShift();
+    
+    const whiteLightColor = 'rgba(255, 255, 255, 0.25)';
+    const kaleidoLightColor = `hsla(${hue}, 100%, 70%, 0.35)`;
+    const lightColor = isKaleido ? kaleidoLightColor : whiteLightColor;
     const endColor = 'rgba(255, 255, 255, 0)';
+
     let positionCss = '';
     switch (position) {
       case 'top-left':     positionCss = `radial-gradient(circle at 0% 0%, ${lightColor} 0%, ${endColor} 60%)`; break;
@@ -93,6 +100,7 @@ export class AppComponent implements OnInit, OnDestroy {
       case 'bottom-left':  positionCss = `radial-gradient(circle at 0% 100%, ${lightColor} 0%, ${endColor} 60%)`; break;
       case 'bottom-right': positionCss = `radial-gradient(circle at 100% 100%, ${lightColor} 0%, ${endColor} 60%)`; break;
       case 'center-stage': positionCss = `radial-gradient(ellipse at 50% 50%, ${lightColor} 0%, ${endColor} 70%)`; break;
+      case 'top-center':   positionCss = `radial-gradient(ellipse at 50% -40%, ${lightColor} 0%, ${endColor} 65%)`; break;
     }
     return positionCss;
   });

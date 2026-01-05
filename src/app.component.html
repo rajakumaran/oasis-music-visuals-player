@@ -110,6 +110,12 @@
       <div id="visualizer-display-wrapper" class="w-full h-48 sm:h-64 rounded-lg relative overflow-hidden bg-cover bg-center transition-all duration-500" [class]="holidayDecorationClass()" [class.bg-christmas-default]="!backgroundImageUrl()" [style.background-image]="backgroundImageUrl() ? 'url(' + backgroundImageUrl()! + ')' : null">
         <app-fullscreen-toggle targetElementId="visualizer-section"></app-fullscreen-toggle>
         <div [class]="'absolute inset-0 transition-opacity ' + effectiveTheme().display"></div>
+        
+        <!-- NEW: Crystal case overlay for enhanced glass-box theme -->
+        @if (effectiveTheme().type === 'glass-box') {
+          <div class="crystal-case-overlay"></div>
+        }
+
         <div class="absolute inset-0 pointer-events-none transition-all duration-500" [style.background]="lightingOverlayStyle()"></div>
         <div class="visualizer-content-host relative w-full h-full" [style.filter]="isKaleidoscope() && effectiveTheme().type !== 'led' ? 'hue-rotate(' + kaleidoscopeHueShift() + 'deg)' : 'none'">
             @switch (effectiveTheme().type) {
@@ -227,13 +233,14 @@
           @if (isLightingControlVisible()) {
             <div class="flex flex-col gap-2 mt-4">
                 <label class="font-semibold">Light Source</label>
-                <div class="grid grid-cols-6 rounded-md overflow-hidden text-xs text-center" [class]="effectiveTheme().button">
+                <div class="grid grid-cols-7 rounded-md overflow-hidden text-xs text-center" [class]="effectiveTheme().button">
                   <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'none' ? effectiveTheme().highlight : effectiveTheme().buttonHover)" title="Turn off lighting effect"><input type="radio" name="light-source" [checked]="lightSourcePosition() === 'none'" (change)="setLightSource('none')" class="sr-only">Off</label>
                   <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'top-left' ? effectiveTheme().highlight : effectiveTheme().buttonHover)" title="Light from Top-Left"><input type="radio" name="light-source" [checked]="lightSourcePosition() === 'top-left'" (change)="setLightSource('top-left')" class="sr-only">TL</label>
                   <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'top-right' ? effectiveTheme().highlight : effectiveTheme().buttonHover)" title="Light from Top-Right"><input type="radio" name="light-source" [checked]="lightSourcePosition() === 'top-right'" (change)="setLightSource('top-right')" class="sr-only">TR</label>
                   <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'bottom-left' ? effectiveTheme().highlight : effectiveTheme().buttonHover)" title="Light from Bottom-Left"><input type="radio" name="light-source" [checked]="lightSourcePosition() === 'bottom-left'" (change)="setLightSource('bottom-left')" class="sr-only">BL</label>
                   <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'bottom-right' ? effectiveTheme().highlight : effectiveTheme().buttonHover)" title="Light from Bottom-Right"><input type="radio" name="light-source" [checked]="lightSourcePosition() === 'bottom-right'" (change)="setLightSource('bottom-right')" class="sr-only">BR</label>
                   <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'center-stage' ? effectiveTheme().highlight : effectiveTheme().buttonHover)" title="Spotlight from the center"><input type="radio" name="light-source" [checked]="lightSourcePosition() === 'center-stage'" (change)="setLightSource('center-stage')" class="sr-only">CS</label>
+                  <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'top-center' ? effectiveTheme().highlight : effectiveTheme().buttonHover)" title="Spotlight from Top-Center"><input type="radio" name="light-source" [checked]="lightSourcePosition() === 'top-center'" (change)="setLightSource('top-center')" class="sr-only">TC</label>
                 </div>
               </div>
           }
@@ -321,7 +328,7 @@
                 <div class="flex items-center gap-4">
                   <div class="relative" title="Set auto-switch interval">
                     <select (change)="setSwitchInterval($event)" [value]="switchInterval()" [class]="'appearance-none rounded-md py-1 pl-2 pr-7 text-xs ' + effectiveTheme().button + ' ' + effectiveTheme().text">
-                      <option value="10000">10s</option><option value="15000">15s</option><option value="30000">30s</option><option value="60000">60s</option>
+                      <option value="10000">10s</option><option value="15000">15s</option><option value="30000">30s</option><option value="60000">60s</option><option value="300000">5 minutes</option>
                     </select>
                     <i class="fa-solid fa-chevron-down absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-xs"></i>
                   </div>
