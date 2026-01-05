@@ -19,7 +19,7 @@
       <div class="flex flex-col items-end">
         <div class="relative" title="Select a visual theme">
           <select (change)="selectTheme($any($event.target).value)" 
-                  [value]="themes.indexOf(selectedTheme())" 
+                  [value]="selectedThemeIndex()" 
                   [disabled]="isHolidayThemeOn()"
                   [class]="'appearance-none rounded-md py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 ' + effectiveTheme().button + ' ' + effectiveTheme().text">
             @for (theme of themes; track theme.name; let i = $index) {
@@ -150,6 +150,45 @@
                   }
                 </svg>
               }
+              @case ('neural') {
+                <svg class="w-full h-full" viewBox="0 0 640 160" preserveAspectRatio="none">
+                  <defs>
+                    <filter id="neuralGlow"><feGaussianBlur stdDeviation="1.5" result="coloredBlur"></feGaussianBlur><feMerge><feMergeNode in="coloredBlur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter>
+                  </defs>
+                  <g class="neural-connections" filter="url(#neuralGlow)">
+                    @for(conn of neuralNetwork().connections; track conn.id) {
+                      <line [attr.x1]="conn.x1" [attr.y1]="conn.y1" [attr.x2]="conn.x2" [attr.y2]="conn.y2" [style.opacity]="conn.opacity"></line>
+                    }
+                  </g>
+                  <g class="neural-nodes" filter="url(#neuralGlow)">
+                    @for(node of neuralNetwork().nodes; track node.id) {
+                      <circle [attr.cx]="node.cx" [attr.cy]="node.cy" [attr.r]="node.r" [style.opacity]="node.opacity"></circle>
+                    }
+                  </g>
+                </svg>
+              }
+              @case ('plasma') {
+                <svg class="w-full h-full" viewBox="0 0 320 160" preserveAspectRatio="none">
+                  <defs>
+                    <filter id="plasmaGlow"><feGaussianBlur stdDeviation="3" result="blur"></feGaussianBlur><feBlend in="SourceGraphic" in2="blur" mode="screen"></feBlend></filter>
+                  </defs>
+                  <g class="plasma-field" filter="url(#plasmaGlow)">
+                    @for(path of plasmaPaths(); track path.id) {
+                      <path [attr.d]="path.d" [style.opacity]="path.opacity"></path>
+                    }
+                  </g>
+                </svg>
+              }
+              @case ('hyperlane') {
+                <svg class="w-full h-full" viewBox="0 0 320 160" preserveAspectRatio="none">
+                  <defs><filter id="hyperlaneGlow"><feGaussianBlur stdDeviation="1"></feGaussianBlur></filter></defs>
+                  <g filter="url(#hyperlaneGlow)">
+                    @for(layer of hyperlaneLayers(); track layer.id) {
+                      <rect [attr.x]="layer.x" [attr.y]="layer.y" [attr.width]="layer.width" [attr.height]="layer.height" fill="none" [attr.stroke]="layer.stroke" stroke-width="2" [style.opacity]="layer.opacity"></rect>
+                    }
+                  </g>
+                </svg>
+              }
               @default {
                 <div class="visualizer-content-default p-2 flex items-end justify-center h-full w-full" style="gap: 2px;">
                   @switch (effectiveTheme().type) {
@@ -166,7 +205,7 @@
             }
         </div>
         @if (showOpportunisticTicker()) {
-          <div class="opportunistic-ticker absolute top-5/6 -translate-y-5/6 w-full h-10 bg-black/60 backdrop-blur-sm flex items-center overflow-hidden">
+          <div class="opportunistic-ticker absolute top-3/4 -translate-y-3/4 w-full h-10 bg-black/60 backdrop-blur-sm flex items-center overflow-hidden">
             <p class="whitespace-nowrap text-md font-semibold text-white/90 animate-left">
               {{ opportunisticTickerMessage() }}
             </p>

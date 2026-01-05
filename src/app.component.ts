@@ -231,17 +231,129 @@ export class AppComponent implements OnInit, OnDestroy {
     return bars.map(barHeight => Math.floor(barHeight * segments));
   });
 
+  neuralNetwork = computed(() => {
+    const bars = this.visualizerBars();
+    const rows = 5;
+    const cols = 13;
+    const nodeCount = rows * cols;
+    const viewboxWidth = 640;
+    const viewboxHeight = 160;
+    const xSpacing = viewboxWidth / (cols - 1);
+    const ySpacing = viewboxHeight / (rows - 1);
+
+    const nodes = [];
+    for (let i = 0; i < nodeCount; i++) {
+      const row = Math.floor(i / cols);
+      const col = i % cols;
+      const barIndex = Math.min(bars.length - 1, Math.floor((i / nodeCount) * bars.length));
+      const barHeight = bars[barIndex] || 0;
+      
+      nodes.push({
+        id: `node-${i}`,
+        cx: col * xSpacing,
+        cy: row * ySpacing,
+        r: 2 + barHeight * 8,
+        opacity: 0.4 + barHeight * 0.6
+      });
+    }
+
+    const connections = [];
+    for (let i = 0; i < nodeCount; i++) {
+      const row = Math.floor(i / cols);
+      const col = i % cols;
+      const barIndex = Math.min(bars.length - 1, Math.floor((i / nodeCount) * bars.length));
+      const barHeight = bars[barIndex] || 0;
+
+      if (col < cols - 1) { // Connect to right neighbor
+        connections.push({ id: `conn-h-${i}`, x1: nodes[i].cx, y1: nodes[i].cy, x2: nodes[i + 1].cx, y2: nodes[i + 1].cy, opacity: 0.1 + barHeight * 0.4 });
+      }
+      if (row < rows - 1) { // Connect to bottom neighbor
+        connections.push({ id: `conn-v-${i}`, x1: nodes[i].cx, y1: nodes[i].cy, x2: nodes[i + cols].cx, y2: nodes[i + cols].cy, opacity: 0.1 + barHeight * 0.4 });
+      }
+    }
+    return { nodes, connections };
+  });
+
+  plasmaPaths = computed(() => {
+    const bars = this.visualizerBars();
+    const layers = 5;
+    const segments = 32;
+    const viewboxWidth = 320;
+    const viewboxHeight = 160;
+    const centerX = viewboxWidth / 2;
+    const centerY = viewboxHeight / 2;
+    const maxRadius = Math.min(centerX, centerY) * 0.9;
+    
+    const bassEnergy = (bars.slice(0, 4).reduce((a, b) => a + b, 0) / 4);
+    const trebleEnergy = (bars.slice(bars.length - 16).reduce((a, b) => a + b, 0) / 16);
+
+    const paths = [];
+    for (let i = 0; i < layers; i++) {
+      const baseRadius = (maxRadius / layers) * (i + 1);
+      const points = [];
+      const layerEnergy = bars[Math.floor(i / layers * bars.length)] || 0;
+      
+      for (let j = 0; j < segments; j++) {
+        const angle = (j / segments) * 2 * Math.PI;
+        const distortion1 = Math.sin(angle * 8 + performance.now() / 500) * 5 * trebleEnergy;
+        const distortion2 = Math.sin(angle * 2 + performance.now() / 1000) * 15 * bassEnergy;
+        const radius = baseRadius + (layerEnergy * 20) + distortion1 + distortion2;
+
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        points.push(`${x},${y}`);
+      }
+      paths.push({ id: `plasma-${i}`, d: `M ${points.join(' L ')} Z`, opacity: 0.1 + layerEnergy * 0.6 });
+    }
+    return paths;
+  });
+
+  private hyperlaneLayersState = Array(20).fill(0).map((_, i) => ({ z: i / 20, hue: Math.random() * 360 }));
+  hyperlaneLayers = computed(() => {
+    const bars = this.visualizerBars();
+    const bass = bars.slice(0, 8).reduce((sum, val) => sum + val, 0) / 8;
+    const speed = 0.005 + bass * 0.02;
+
+    const viewboxWidth = 320;
+    const viewboxHeight = 160;
+    const centerX = viewboxWidth / 2;
+    const centerY = viewboxHeight / 2;
+
+    this.hyperlaneLayersState.forEach(layer => {
+        layer.z += speed;
+        if (layer.z > 1) {
+            layer.z = 0;
+            layer.hue = Math.random() * 360;
+        }
+    });
+    
+    return this.hyperlaneLayersState.map((layer, i) => {
+        const perspective = layer.z * layer.z;
+        const width = perspective * viewboxWidth * 1.5;
+        const height = perspective * viewboxHeight * 1.5;
+        const barIndex = Math.floor((i / this.hyperlaneLayersState.length) * bars.length);
+        const brightness = 50 + (bars[barIndex] || 0) * 50;
+
+        return {
+            id: `lane-${i}`, x: centerX - width / 2, y: centerY - height / 2,
+            width: width, height: height,
+            stroke: `hsl(${layer.hue}, 100%, ${brightness}%)`,
+            opacity: perspective * 0.8
+        };
+    }).sort((a, b) => a.opacity - b.opacity);
+  });
+
   bandFrequencies = ['60', '170', '310', '600', '1k', '3k', '6k'];
 
   themes: EqualizerTheme[] = [
-    { name: 'Onkyo', type: '3d', base: 'bg-black', display: 'bg-gray-900/70', bar: 'bg-gradient-to-t from-cyan-600 to-cyan-300 shadow-[0_0_4px_#22d3ee]', sliderTrack: 'bg-gray-700', sliderThumb: 'bg-gray-300', text: 'text-gray-300', accent: 'text-cyan-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-gray-800' },
-    { name: 'Technics', type: '3d', base: 'bg-gray-800', display: 'bg-black/50', bar: 'bg-gradient-to-t from-amber-600 to-amber-400 shadow-[0_0_4px_#f59e0b]', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-amber-500', text: 'text-amber-100', accent: 'text-amber-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-gray-700/50' },
+    { name: 'Mukyo', type: '3d', base: 'bg-black', display: 'bg-gray-900/70', bar: 'bg-gradient-to-t from-cyan-600 to-cyan-300 shadow-[0_0_4px_#22d3ee]', sliderTrack: 'bg-gray-700', sliderThumb: 'bg-gray-300', text: 'text-gray-300', accent: 'text-cyan-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-gray-800' },
+    { name: 'Muknics', type: '3d', base: 'bg-gray-800', display: 'bg-black/50', bar: 'bg-gradient-to-t from-amber-600 to-amber-400 shadow-[0_0_4px_#f59e0b]', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-amber-500', text: 'text-amber-100', accent: 'text-amber-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-gray-700/50' },
     { name: 'Pioneer', type: 'shadow', base: 'bg-slate-200', display: 'bg-blue-900/80', bar: 'bg-gradient-to-t from-sky-600 to-sky-400 shadow-[-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-blue-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
     { name: 'Glass Box', type: 'glass-box', base: 'bg-gray-900', display: 'bg-black/50', bar: 'bg-gradient-to-t from-purple-500 to-cyan-300', sliderTrack: 'bg-purple-800/60', sliderThumb: 'bg-cyan-300', text: 'text-purple-200', accent: 'text-cyan-300', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-cyan-500/50' },
     { name: 'Pioneer Convex', type: 'convex', base: 'bg-slate-200', display: 'bg-blue-900/80', bar: 'bg-gradient-to-t from-sky-600 to-sky-400 rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-blue-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
-    { name: 'Marantz', type: 'shadow', base: 'bg-amber-100', display: 'bg-black/80', bar: 'bg-gradient-to-t from-blue-700 to-blue-500 shadow-[-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-blue-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },
+    { name: 'Marantz', type: 'shadow', base: 'bg-amber-100', display: 'bg-black/80', bar: 'bg-gradient-to-t from-blue-700 to-blue-500 shadow-[-3px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-blue-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },
     { name: 'Marantz Concave', type: 'concave', base: 'bg-amber-100', display: 'bg-black/80', bar: 'bg-gradient-to-t from-blue-700 to-blue-500 rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-blue-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },
-    { name: 'McIntosh', type: '3d', base: 'bg-gray-900', display: 'bg-black/90', bar: 'bg-gradient-to-t from-sky-600 to-sky-300 shadow-[0_0_5px_#38bdf8]', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-green-500', text: 'text-green-400', accent: 'text-sky-400', button: 'bg-gray-800 border border-gray-600', buttonHover: 'hover:bg-gray-700', highlight: 'bg-gray-700/50' },
+    { name: 'Muntosh', type: '3d', base: 'bg-gray-900', display: 'bg-black/90', bar: 'bg-gradient-to-t from-sky-600 to-sky-300 shadow-[0_0_5px_#38bdf8]', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-green-500', text: 'text-green-400', accent: 'text-sky-400', button: 'bg-gray-800 border border-gray-600', buttonHover: 'hover:bg-gray-700', highlight: 'bg-gray-700/50' },
     { name: 'Cyberpunk', type: 'shadow', base: 'bg-black', display: 'bg-black/80', bar: 'bar-neon-glow bg-cyan-400', sliderTrack: 'bg-gray-800', sliderThumb: 'bg-fuchsia-500', text: 'text-fuchsia-400 font-mono', accent: 'text-cyan-300', button: 'bg-gray-900 border border-fuchsia-700', buttonHover: 'hover:bg-gray-800', highlight: 'bg-fuchsia-600/50' },
     { name: 'Aqua Gloss', type: 'glossy', base: 'bg-gray-800', display: 'bg-black/50', bar: 'bg-gradient-to-t from-teal-500 to-cyan-400', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-cyan-300', text: 'text-gray-200', accent: 'text-cyan-300', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-cyan-600/50' },
     { name: 'Liquid Sky', type: 'glass', base: 'bg-gradient-to-b from-slate-900 to-sky-900', display: 'bg-black/20', bar: 'rounded-t-md', sliderTrack: 'bg-sky-800/50', sliderThumb: 'bg-slate-300', text: 'text-slate-200', accent: 'text-sky-300', button: 'bg-sky-900/50', buttonHover: 'hover:bg-sky-800/50', highlight: 'bg-sky-700/50' },
@@ -254,9 +366,13 @@ export class AppComponent implements OnInit, OnDestroy {
     { name: 'Platinum Sheen', type: 'convex', base: 'bg-slate-800', display: 'bg-black/50', bar: 'bg-gradient-to-t from-slate-400 via-gray-200 to-white rounded-t-sm', sliderTrack: 'bg-slate-600', sliderThumb: 'bg-white', text: 'text-slate-200', accent: 'text-cyan-300', button: 'bg-slate-700', buttonHover: 'hover:bg-slate-600', highlight: 'bg-cyan-500/50' },
     { name: 'Polished Silver', type: 'glossy', base: 'bg-gray-700', display: 'bg-black/50', bar: 'bg-gradient-to-t from-gray-600 via-slate-300 to-gray-400', sliderTrack: 'bg-gray-500', sliderThumb: 'bg-slate-200', text: 'text-gray-200', accent: 'text-sky-300', button: 'bg-gray-600', buttonHover: 'hover:bg-gray-500', highlight: 'bg-sky-600/50' },
     { name: 'Classic LED', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-gray-700', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-gray-400', text: 'text-gray-300', accent: 'text-green-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-green-600/50' },
+    { name: '2030: Neural Network', type: 'neural', base: 'bg-black', display: 'bg-black/80', bar: '', sliderTrack: 'bg-gray-800', sliderThumb: 'bg-cyan-400', text: 'text-cyan-300 font-mono', accent: 'text-lime-300', button: 'bg-gray-900 border border-cyan-700', buttonHover: 'hover:bg-gray-800', highlight: 'bg-cyan-600/50' },
+    { name: '2040: Energy Field', type: 'plasma', base: 'bg-gradient-to-br from-indigo-900 to-black', display: 'bg-black/50', bar: '', sliderTrack: 'bg-purple-800/50', sliderThumb: 'bg-fuchsia-500', text: 'text-purple-300', accent: 'text-fuchsia-400', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-fuchsia-500/50' },
+    { name: '2050: Hyperlane', type: 'hyperlane', base: 'bg-black', display: 'bg-black/90', bar: '', sliderTrack: 'bg-blue-800/50', sliderThumb: 'bg-white', text: 'text-blue-200', accent: 'text-white', button: 'bg-blue-900/70', buttonHover: 'hover:bg-blue-800/70', highlight: 'bg-blue-500/50' },
   ];
   selectedTheme: WritableSignal<EqualizerTheme> = signal(this.themes[0]);
   effectiveTheme = computed(() => this.activeHoliday()?.theme ?? this.selectedTheme());
+  selectedThemeIndex = computed(() => this.themes.findIndex(t => t.name === this.selectedTheme().name));
   
   onFileChange(event: Event) {
     const input = event.target as HTMLInputElement;

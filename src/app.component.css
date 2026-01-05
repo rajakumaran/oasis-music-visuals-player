@@ -19,7 +19,7 @@ input[type=range].vertical {
   border-radius: 1px;
 }
 
-/* Top face of the 3D bar */
+/* Top face of the 3D bar - REVISED for a cleaner look */
 .bar-3d::before {
   content: '';
   position: absolute;
@@ -27,7 +27,8 @@ input[type=range].vertical {
   left: 0;
   width: 100%;
   height: 4px; /* Determines the "depth" of the top face */
-  background: inherit; /* Inherits gradient/color from the parent */
+  /* This pseudo-element now acts as a highlight layer on top of the bar'   s inherited background */
+  background: linear-gradient(to bottom, rgba(255,255,255,0.35), rgba(255   ,255,255,0.1));
   filter: brightness(1.5); /* Make it appear lighter, as if lit from above */
   transform: translateY(-100%);
   border-radius: 1px 1px 0 0;
@@ -57,7 +58,7 @@ input[type=range].vertical {
 
 .led-off {
   background-color: #374151; /* gray-700 */
-  opacity: 0.95;
+  opacity: 0.25;
 }
 
 .led-on {
@@ -149,11 +150,8 @@ input[type=range].vertical {
   transition: height 75ms ease-out, box-shadow 75ms ease-out;
 }
 
-/* --- Convex Bar Style --- */
-.bar-convex {
-  position: relative;
-  transition: height 75ms ease-out;
-}
+/* --- Convex/Concave Bar Styles --- */
+.bar-convex, .bar-concave { position: relative; transition: height 75ms ease-out; }
 .bar-convex::before {
   content: '';
   position: absolute;
@@ -254,6 +252,22 @@ input[type=range].vertical {
   border-radius: inherit;
 }
 
+/* --- Futuristic Theme Styles --- */
+.neural-nodes circle {
+  fill: #06b6d4; /* cyan-500 */
+  transition: r 75ms ease-out, opacity 75ms ease-out;
+}
+.neural-connections line {
+  stroke: #22d3ee; /* cyan-400 */
+  stroke-width: 0.5px;
+  transition: opacity 150ms ease-out;
+}
+.plasma-field path {
+  fill: none;
+  stroke: #d946ef; /* fuchsia-500 */
+  stroke-width: 1.5;
+  transition: opacity 150ms ease-out;
+}
 
 /* --- Fullscreen Styles --- */
 #fullscreen-controls-toggle-btn, #fullscreen-controls-close-btn { display: none; }
