@@ -1,4 +1,6 @@
 # oasis-music-visuals-player
+January/5th/2026 : more features were checked in my prior code push. Those were production ready totally, and bug free. Read my prior checkin notes for the contents of my previous code push.
+
 December/26th/2025 : More features such as 3 brand new metallic styles/effects, lighting effects all 4 directions+center stage, and tool-tips. etc.
 December/25th/2025 : Today I enhanced it a little further with more features.
 
