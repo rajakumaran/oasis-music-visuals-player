@@ -3,14 +3,20 @@ import { Track } from '../models/track.model';
 
 const BANDS = [60, 170, 310, 600, 1000, 3000, 6000];
 const FFT_SIZE = 512;
+const CROSSFADE_DURATION = 0.75; // seconds
 
 @Injectable({ providedIn: 'root' })
 export class AudioService {
   private audioContext: AudioContext | null = null;
   private audioElement: HTMLAudioElement | null = null;
-  private sourceNode: MediaElementAudioSourceNode | null = null;
+  
+  private mediaElementSourceNode: MediaElementAudioSourceNode | null = null;
+  private micSourceNode: MediaStreamAudioSourceNode | null = null;
+  private micStream: MediaStream | null = null;
+  
   private analyserNode: AnalyserNode | null = null;
   private gainNodes: BiquadFilterNode[] = [];
+  private masterGainNode: GainNode | null = null;
   private animationFrameId: number | null = null;
 
   // State Signals
@@ -20,6 +26,10 @@ export class AudioService {
   currentTime = signal(0);
   duration = signal(0);
   
+  audioSource = signal<'file' | 'microphone'>('file');
+  isMicrophonePermissionGranted = signal<boolean | null>(null);
+  isCrossfadeEnabled = signal(true);
+
   gainValues = signal<number[]>(BANDS.map(() => 0));
   frequencyData: WritableSignal<Uint8Array> = signal(new Uint8Array(FFT_SIZE / 2));
   
@@ -34,27 +44,45 @@ export class AudioService {
 
     effect(() => {
       const track = this.currentTrack();
-      if (track && this.audioElement) {
-        this.audioElement.src = track.url;
-        this.audioElement.load();
-        if(this.isPlaying()) {
-            this.audioElement.play();
+      const audioEl = this.audioElement;
+      if (track && audioEl) {
+        // Stop current playback before changing source
+        if (!audioEl.paused) {
+          audioEl.pause();
+        }
+        audioEl.src = track.url;
+        audioEl.load();
+        if (this.isPlaying()) {
+          this.playCurrentTrackWithFadeIn();
         }
       }
     });
 
     effect(() => {
-        const playing = this.isPlaying();
-        if (this.audioElement) {
-            if (playing) {
-                this.audioElement.play().catch(e => console.error("Play failed:", e));
-                this.startVisualization();
-            } else {
-                this.audioElement.pause();
-                this.stopVisualization();
-            }
-        }
+      if (this.audioSource() === 'microphone') {
+        this.activateMicrophone();
+      } else {
+        this.deactivateMicrophone();
+      }
     });
+  }
+  
+  private async playCurrentTrackWithFadeIn() {
+    try {
+      if (this.audioContext?.state === 'suspended') {
+        await this.audioContext.resume();
+      }
+      await this.audioElement?.play();
+      if (this.isCrossfadeEnabled() && this.masterGainNode && this.audioContext) {
+        this.masterGainNode.gain.cancelScheduledValues(this.audioContext.currentTime);
+        this.masterGainNode.gain.linearRampToValueAtTime(1, this.audioContext.currentTime + CROSSFADE_DURATION);
+      } else if (this.masterGainNode) {
+        this.masterGainNode.gain.value = 1;
+      }
+    } catch (e) {
+      console.error("Play failed:", e);
+      this.isPlaying.set(false);
+    }
   }
 
   private async initAudioContext() {
@@ -64,12 +92,12 @@ export class AudioService {
     this.audioElement = new Audio();
     this.audioElement.crossOrigin = 'anonymous';
 
-    this.sourceNode = this.audioContext.createMediaElementSource(this.audioElement);
+    this.mediaElementSourceNode = this.audioContext.createMediaElementSource(this.audioElement);
     this.analyserNode = this.audioContext.createAnalyser();
     this.analyserNode.fftSize = FFT_SIZE;
+    this.masterGainNode = this.audioContext.createGain();
     
-    // Create gain nodes for each band
-    let lastNode: AudioNode = this.sourceNode;
+    let lastNode: AudioNode = this.mediaElementSourceNode;
     this.gainNodes = BANDS.map(frequency => {
       const filter = this.audioContext!.createBiquadFilter();
       filter.type = 'peaking';
@@ -81,96 +109,110 @@ export class AudioService {
       return filter;
     });
 
-    lastNode.connect(this.analyserNode);
+    lastNode.connect(this.masterGainNode);
+    this.masterGainNode.connect(this.analyserNode);
     this.analyserNode.connect(this.audioContext.destination);
 
-    this.audioElement.addEventListener('timeupdate', () => {
-      this.currentTime.set(this.audioElement?.currentTime || 0);
-    });
-    this.audioElement.addEventListener('durationchange', () => {
-      this.duration.set(this.audioElement?.duration || 0);
-    });
-    this.audioElement.addEventListener('ended', () => {
-        this.next();
-    });
+    this.audioElement.addEventListener('timeupdate', () => this.currentTime.set(this.audioElement?.currentTime || 0));
+    this.audioElement.addEventListener('durationchange', () => this.duration.set(this.audioElement?.duration || 0));
+    this.audioElement.addEventListener('ended', () => this.next());
   }
 
-  loadDefaultPlaylist() {
-    const defaultTracks: Track[] = [
-    
-      { name: 'AI Music Track1', url: 'src/assets/music/sample-ai-track1.mp3', duration: '...' },
-      { name: 'AI Music Track2', url: 'src/assets/music/sample-ai-track2.mp3', duration: '...' },
-      { name: 'AI Music Track3', url: 'src/assets/music/sample-ai-track3.mp3', duration: '...' },
-      { name: 'AI Music Track4', url: 'src/assets/music/sample-ai-track4.mp3', duration: '...' },
-      { name: 'AI Music Track5', url: 'src/assets/music/sample-ai-track5.mp3', duration: '...' },
-      // { name: 'AI Music Track6', url: 'src/assets/music/sample-ai-track6.mp3', duration: '...' },
-      // { name: 'AI Music Track7', url: 'src/assets/music/sample-ai-track7.mp3', duration: '...' },
-      // { name: 'AI Music Track8', url: 'src/assets/music/sample-ai-track8.mp3', duration: '...' },
-      // { name: 'AI Music Track9', url: 'src/assets/music/sample-ai-track9.mp3', duration: '...' },
-      // { name: 'AI Music Track10', url: 'src/assets/music/sample-ai-track10.mp3', duration: '...' },
-
-    ];
-    this.playlist.set(defaultTracks);
-    if (defaultTracks.length > 0) {
-      this.currentTrackIndex.set(0);
-      this.isPlaying.set(false);
-    }
+  private loadDefaultPlaylist() {
+    this.playlist.set([
+      { name: 'Ambient Classical Guitar', url: 'https://cdn.pixabay.com/audio/2022/08/04/audio_2dde6b9975.mp3', duration: '...' },
+      { name: 'The Cradle of Your Soul', url: 'https://cdn.pixabay.com/audio/2022/01/20/audio_20a45d31a2.mp3', duration: '...' },
+      { name: 'Smoke', url: 'https://cdn.pixabay.com/audio/2023/04/24/audio_b722a84376.mp3', duration: '...' }
+    ]);
   }
 
   async loadFiles(files: FileList) {
-    if (!this.audioContext) {
-      await this.initAudioContext();
-    }
+    if (!this.audioContext) await this.initAudioContext();
+    // Limit to 10 files
+    const limitedFiles = Array.from(files).slice(0, 10);
     
-    // Revoke old object URLs, checking if they are from uploaded files
-    this.playlist().forEach(track => {
-      if (track.file) {
-        URL.revokeObjectURL(track.url)
-      }
-    });
-    
-    const newTracks: Track[] = Array.from(files)
+    this.playlist().forEach(track => track.file && URL.revokeObjectURL(track.url));
+    const newTracks: Track[] = limitedFiles
       .filter(file => file.type.startsWith('audio/') || file.type === 'video/mp4')
-      .map(file => {
-          const url = URL.createObjectURL(file);
-          // Duration is tricky to get without loading, so we'll estimate or update later
-          return { file, name: file.name, url, duration: '...' };
-      });
-
+      .map(file => ({ file, name: file.name, url: URL.createObjectURL(file), duration: '...' }));
+      
     this.playlist.set(newTracks);
     if (newTracks.length > 0) {
       this.currentTrackIndex.set(0);
-      this.isPlaying.set(true); // Auto-play uploaded tracks
+      if (!this.isPlaying()) {
+        this.togglePlay();
+      }
     }
   }
 
   selectTrack(index: number) {
-    if(index >= 0 && index < this.playlist().length) {
-      const shouldPlay = this.isPlaying() || this.currentTrackIndex() !== index;
-      this.currentTrackIndex.set(index);
-      if (!this.audioContext) {
+    if (index >= 0 && index < this.playlist().length) {
+      if (this.currentTrackIndex() === index) {
         this.togglePlay();
       } else {
-        this.isPlaying.set(shouldPlay);
+        const wasPlaying = this.isPlaying();
+        const changeTrack = () => {
+          this.currentTrackIndex.set(index);
+          this.isPlaying.set(wasPlaying || true);
+        };
+
+        if (wasPlaying && this.isCrossfadeEnabled() && this.masterGainNode && this.audioContext) {
+          this.masterGainNode.gain.cancelScheduledValues(this.audioContext.currentTime);
+          this.masterGainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + CROSSFADE_DURATION);
+          setTimeout(changeTrack, CROSSFADE_DURATION * 1000);
+        } else {
+          changeTrack();
+        }
       }
     }
   }
+  
+  async togglePlay() {
+    if (!this.currentTrack() && this.playlist().length > 0) {
+        this.currentTrackIndex.set(0);
+    }
+    if (!this.currentTrack()) return;
 
-  togglePlay() {
-      if (!this.audioContext) {
-        this.initAudioContext();
-        // Manually load the current track since the effect wouldn't have run correctly on init
-        const track = this.currentTrack();
-        if (track && this.audioElement) {
-          this.audioElement.src = track.url;
-          this.audioElement.load();
-        }
+    if (!this.audioContext) {
+      await this.initAudioContext();
+    }
+    
+    if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+    }
+
+    this.isPlaying.update(p => !p);
+    
+    if (this.isPlaying()) {
+      if (this.audioElement && this.audioElement.src !== this.currentTrack()!.url) {
+        this.audioElement.src = this.currentTrack()!.url;
+        await this.audioElement.load();
       }
-      if (this.audioContext && this.audioContext.state === 'suspended') {
-          this.audioContext.resume();
+      this.playCurrentTrackWithFadeIn();
+      this.startVisualization();
+    } else {
+      if (this.isCrossfadeEnabled() && this.masterGainNode && this.audioContext) {
+         this.masterGainNode.gain.cancelScheduledValues(this.audioContext.currentTime);
+         this.masterGainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + CROSSFADE_DURATION);
+         setTimeout(() => this.audioElement?.pause(), CROSSFADE_DURATION * 1000);
+      } else {
+         this.audioElement?.pause();
       }
-      if (this.currentTrack() !== null) {
-        this.isPlaying.update(p => !p);
+      this.stopVisualization();
+    }
+  }
+
+  private changeTrack(newIndex: number) {
+      const change = () => {
+          this.currentTrackIndex.set(newIndex);
+          this.isPlaying.set(true);
+      };
+      if (this.isPlaying() && this.isCrossfadeEnabled() && this.audioContext && this.masterGainNode) {
+          this.masterGainNode.gain.cancelScheduledValues(this.audioContext.currentTime);
+          this.masterGainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + CROSSFADE_DURATION);
+          setTimeout(change, CROSSFADE_DURATION * 1000);
+      } else {
+          change();
       }
   }
 
@@ -178,8 +220,7 @@ export class AudioService {
     const idx = this.currentTrackIndex();
     if (idx !== null && this.playlist().length > 1) {
       const newIndex = (idx + 1) % this.playlist().length;
-      this.currentTrackIndex.set(newIndex);
-      this.isPlaying.set(true);
+      this.changeTrack(newIndex);
     }
   }
 
@@ -187,16 +228,11 @@ export class AudioService {
     const idx = this.currentTrackIndex();
     if (idx !== null && this.playlist().length > 1) {
       const newIndex = (idx - 1 + this.playlist().length) % this.playlist().length;
-      this.currentTrackIndex.set(newIndex);
-      this.isPlaying.set(true);
+      this.changeTrack(newIndex);
     }
   }
 
-  seek(time: number) {
-      if (this.audioElement) {
-          this.audioElement.currentTime = time;
-      }
-  }
+  seek(time: number) { if (this.audioElement) this.audioElement.currentTime = time; }
 
   changeGain(bandIndex: number, gain: number) {
     if (this.gainNodes[bandIndex]) {
@@ -209,28 +245,86 @@ export class AudioService {
     }
   }
 
-  private visualize() {
-    if (!this.analyserNode || !this.isPlaying()) {
-      return;
+  setAudioSource(source: 'file' | 'microphone') {
+    this.audioSource.set(source);
+  }
+
+  private async activateMicrophone() {
+    if (!this.audioContext) await this.initAudioContext();
+    if (this.audioContext!.state === 'suspended') this.audioContext!.resume();
+
+    try {
+      this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      this.isMicrophonePermissionGranted.set(true);
+      
+      if (this.isPlaying()) {
+        this.togglePlay(); // Pause file playback gracefully
+      }
+
+      this.micSourceNode = this.audioContext!.createMediaStreamSource(this.micStream);
+      this.mediaElementSourceNode?.disconnect(); // Disconnect file source
+      this.micSourceNode.connect(this.gainNodes[0]); // Connect mic to filter chain
+      
+      // *** BUG FIX: Set master gain to 1 for microphone input ***
+      if (this.masterGainNode) {
+        this.masterGainNode.gain.cancelScheduledValues(this.audioContext.currentTime);
+        this.masterGainNode.gain.value = 1;
+      }
+      
+      this.startVisualization();
+
+    } catch (err) {
+      console.error('Microphone access denied:', err);
+      this.isMicrophonePermissionGranted.set(false);
+      this.audioSource.set('file'); // Revert to file source
     }
+  }
+
+  private deactivateMicrophone() {
+    if (this.micStream) {
+      this.micStream.getTracks().forEach(track => track.stop());
+      this.micStream = null;
+    }
+    if (this.micSourceNode) {
+      this.micSourceNode.disconnect();
+      this.micSourceNode = null;
+    }
+    // Reconnect file source if it exists
+    if (this.mediaElementSourceNode && this.gainNodes.length > 0) {
+      this.mediaElementSourceNode.connect(this.gainNodes[0]);
+    }
+
+    if (!this.isPlaying()) {
+        this.stopVisualization();
+    }
+  }
+
+  private visualize() {
+    if (!this.analyserNode) return;
+    // This guard clause correctly stops the loop only for file mode when paused.
+    if (this.audioSource() === 'file' && !this.isPlaying()) {
+        this.stopVisualization();
+        return;
+    };
+
     const dataArray = new Uint8Array(this.analyserNode.frequencyBinCount);
     this.analyserNode.getByteFrequencyData(dataArray);
     this.frequencyData.set(dataArray);
     this.animationFrameId = requestAnimationFrame(() => this.visualize());
   }
 
-  private startVisualization() {
+  private startVisualization() { 
+      if (!this.analyserNode) return;
       if (this.animationFrameId === null) {
-          this.visualize();
+        this.visualize(); 
       }
   }
-
   private stopVisualization() {
-      if (this.animationFrameId !== null) {
-          cancelAnimationFrame(this.animationFrameId);
-          this.animationFrameId = null;
-          // Set to zero when stopped
-          this.frequencyData.set(new Uint8Array(FFT_SIZE / 2));
-      }
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+      // Clear the bars when visualization stops
+      this.frequencyData.set(new Uint8Array(FFT_SIZE / 2));
+    }
   }
 }

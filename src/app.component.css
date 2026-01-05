@@ -57,7 +57,7 @@ input[type=range].vertical {
 
 .led-off {
   background-color: #374151; /* gray-700 */
-  opacity: 0.25;
+  opacity: 0.95;
 }
 
 .led-on {
@@ -108,19 +108,6 @@ input[type=range].vertical {
 
 .animate-right {
   animation: scroll-right 20s linear infinite;
-}
-
-/* --- Fullscreen Styles --- */
-#visualizer-display-wrapper:fullscreen {
-  display: flex;
-  flex-direction: column;
-  padding: 2rem;
-  background: black !important; /* Force black background for immersion */
-}
-
-#visualizer-display-wrapper:fullscreen .visualizer-content {
-  width: 100%;
-  flex-grow: 1;
 }
 
 /* --- Glossy Bar Visualizer Styles --- */
@@ -195,7 +182,7 @@ input[type=range].vertical {
 }
 
 /* --- Kaleidoscope transition for non-LED themes --- */
-.visualizer-content {
+.visualizer-content-host {
   transition: filter 100ms linear;
   will-change: filter;
 }
@@ -214,34 +201,51 @@ input[type=range].vertical {
   background-repeat: no-repeat;
 }
 
-/* --- Fullscreen Styles --- */
-
-/* Hide header and fullscreen toggle button in the normal view */
-#fullscreen-controls-toggle-btn,
-#fullscreen-controls-close-btn {
-  display: none;
+/* --- Glass Box Theme Styles --- */
+.visualizer-box-3d {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 500px;
+  overflow: hidden;
 }
-
-#visualizer-section:fullscreen {
-  display: block;
+.visualizer-stage {
   position: relative;
-  background: black !important; /* Force black background for immersion */
-  padding: 0 !important;
+  width: 90%;
+  height: 80%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  transform: translateZ(-100px);
+  transform-style: preserve-3d;
+  -webkit-box-reflect: below 1px linear-gradient(to bottom, transparent, rgba(0,0,0,0.4));
 }
-
-#visualizer-section:fullscreen > .flex.justify-between {
-  display: none; /* Hide the "7-Band Graphic Equalizer" header */
+.bar-glass-box {
+  transition: height 75ms ease-out;
+  border-radius: 1px;
 }
-
-#visualizer-section:fullscreen #visualizer-display-wrapper {
+.glass-pane-overlay {
   position: absolute;
   inset: 0;
-  height: 100% !important;
-  width: 100% !important;
-  border-radius: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.05), transparent 30%, transparent 70%, rgba(0,0,0,0.05));
+  box-shadow: inset 0 0 20px rgba(255,255,255,0.05);
 }
 
-/* Show the settings toggle button only in fullscreen */
+/* --- Fullscreen Styles --- */
+#fullscreen-controls-toggle-btn, #fullscreen-controls-close-btn { display: none; }
+#visualizer-section:fullscreen { 
+  display: block;
+  position: relative;
+  background: black !important;
+  padding: 0 !important;
+}
+#visualizer-section:fullscreen > .flex.justify-between { display: none; }
+#visualizer-section:fullscreen #visualizer-display-wrapper { position: absolute; inset: 0; height: 100% !important; width: 100% !important; border-radius: 0; }
 #visualizer-section:fullscreen #fullscreen-controls-toggle-btn {
   display: flex;
   position: absolute;
@@ -260,38 +264,27 @@ input[type=range].vertical {
   transition: all 0.2s ease-in-out;
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
-
 #visualizer-section:fullscreen #fullscreen-controls-toggle-btn:hover {
   background-color: rgba(0, 0, 0, 0.7);
   transform: scale(1.1);
 }
-
-/* --- Floating Controls Panel --- */
 #visualizer-section:fullscreen #controls-container {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 10;
-  
   background: rgba(17, 24, 39, 0.7); /* gray-900 with opacity */
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding: 1.5rem 2rem 2rem 2rem;
-  
   transform: translateY(100%);
   opacity: 0;
   transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease;
   will-change: transform, opacity;
 }
-
-#visualizer-section:fullscreen #controls-container.active {
-  transform: translateY(0);
-  opacity: 1;
-}
-
-/* Show and style the close button inside the active panel */
+#visualizer-section:fullscreen #controls-container.active { transform: translateY(0); opacity: 1; }
 #visualizer-section:fullscreen #controls-container.active #fullscreen-controls-close-btn {
     display: flex;
     position: absolute;
