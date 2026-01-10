@@ -5,9 +5,10 @@ import { HolidayService } from './services/holiday.service';
 import { PresetService, Preset } from './services/preset.service';
 import { EqualizerTheme } from './models/equalizer-theme.model';
 import { FullscreenToggleComponent } from './fullscreen-toggle/fullscreen-toggle.component';
+import { inject as vercelAnalytics } from '@vercel/analytics'; // 1. Import the helper
+import { track } from '@vercel/analytics'; // 1. Import track
 
 type LightSourcePosition = 'none' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center-stage' | 'top-center';
-
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -16,7 +17,7 @@ type LightSourcePosition = 'none' | 'top-left' | 'top-right' | 'bottom-left' | '
   styleUrl: './app.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent implements OnInit, OnDestroy {  
   audioService = inject(AudioService);
   holidayService = inject(HolidayService);
   presetService = inject(PresetService);
@@ -122,6 +123,8 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    //Call it using the new name
+    vercelAnalytics();
     this.updateDecayFactor();
     window.addEventListener('resize', this.resizeListener);
     this.setupTicker();
@@ -403,7 +406,16 @@ export class AppComponent implements OnInit, OnDestroy {
   setResponseCurve(curve: 'linear' | 'polynomial' | 'fractal') { this.responseCurve.set(curve); }
   setLightSource(position: LightSourcePosition) { this.lightSourcePosition.set(position); }
   toggleFullscreenControls() { this.fullscreenControlsActive.update(v => !v); }
-  selectTheme(index: string) { const i = parseInt(index, 10); if (!isNaN(i) && i < this.themes.length) this.selectedTheme.set(this.themes[i]); }
+  
+  selectTheme(index: string) {
+     const i = parseInt(index, 10); 
+     const selectedThemeName = this.themes[i].name;
+     if (!isNaN(i) && i < this.themes.length) this.selectedTheme.set(this.themes[i]); 
+     // 3. Plug the tracking code here!
+    track('StyleSelected', { style: selectedThemeName });
+    // console.log('Tracking style change to:', selectedThemeName);
+  }
+  
   toggleAutoSwitch() { this.isAutoSwitching.update(v => !v); }
   setSwitchInterval(event: Event) { this.switchInterval.set(parseInt((event.target as HTMLSelectElement).value, 10)); }
   setSwitchMode(mode: 'sequential' | 'random') { this.switchMode.set(mode); }
@@ -516,5 +528,5 @@ export class AppComponent implements OnInit, OnDestroy {
     }
     this.draggedTrackIndex.set(null);
   }
-  onDragEnd() { this.draggedTrackIndex.set(null); }
+  onDragEnd() { this.draggedTrackIndex.set(null); }  
 }
