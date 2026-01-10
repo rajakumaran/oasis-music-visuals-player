@@ -50,9 +50,9 @@
     <div class="lg-col-span-1 bg-black/20 p-4 rounded-lg flex flex-col min-h-[300px] lg:min-h-0">
       <h2 class="text-xl font-semibold mb-3 border-b border-white/10 pb-2">Playlist</h2>
       @if (audioSource() === 'file') {
-        <label class="mb-4 w-full text-center px-4 py-3 rounded-md cursor-pointer transition-colors" [class]="effectiveTheme().button + ' ' + effectiveTheme().buttonHover" title="Upload one or more audio files">
+        <label class="mb-4 w-full text-center px-4 py-3 rounded-md cursor-pointer transition-colors" [class]="effectiveTheme().button + ' ' + effectiveTheme().buttonHover" title="Choose one or more audio files, (your music files are not uploaded to any server and are only processed locally in your browser).">
             <i class="fa-solid fa-upload mr-2"></i>
-            <span>Upload Music (Max 10)</span>
+            <span>Choose Music files to play(Max 10)</span>
             <input type="file" (change)="onFileChange($event)" multiple accept="audio/*,video/mp4" class="hidden">
         </label>
       }
