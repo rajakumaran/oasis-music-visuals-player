@@ -66,6 +66,18 @@ export class AppComponent implements OnInit, OnDestroy {
   kaleidoscopeHueShift = signal(0);
   private kaleidoscopeAnimFrameId: number | null = null;
 
+  // --- Style Fusion ---
+  isStyleFusionOn = signal(false);
+  private fusionIntervalId: any = null;
+  fusionCounter = signal(0);
+  isFusionApplicable = computed(() => !['led', 'fractal', 'neural', 'plasma', 'hyperlane', 'glass-box'].includes(this.effectiveTheme().type));
+  fusionEffect = computed(() => {
+    if (!this.isStyleFusionOn() || !this.isFusionApplicable()) return 'none';
+    const effects = ['concave', 'convex', 'glossy', 'none'];
+    return effects[Math.floor(this.fusionCounter() / 2) % effects.length];
+  });
+
+
   // --- Opportunistic Ticker ---
   showOpportunisticTicker = signal(false);
   opportunisticTickerMessage = signal('Audio Oasis :: Built by Muthukumaran Azhagesan (Kumar). Feel free to check his Linktree for his many AI apps and projects');
@@ -120,6 +132,7 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor() {
     effect(() => this.isAutoSwitching() ? this.startAutoSwitching() : this.stopAutoSwitching());
     effect(() => (this.isKaleidoscope() && (this.isPlaying() || this.audioSource() === 'microphone')) ? this.startKaleidoscope() : this.stopKaleidoscope());
+    effect(() => this.isStyleFusionOn() ? this.startStyleFusion() : this.stopStyleFusion());
   }
 
   ngOnInit(): void {
@@ -136,6 +149,7 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.tickerInterval) clearInterval(this.tickerInterval);
     this.stopAutoSwitching();
     this.stopKaleidoscope();
+    this.stopStyleFusion();
     clearTimeout(this.showTickerTimeout);
     clearTimeout(this.hideTickerTimeout);
   }
@@ -349,12 +363,57 @@ export class AppComponent implements OnInit, OnDestroy {
   bandFrequencies = ['60', '170', '310', '600', '1k', '3k', '6k'];
 
   themes: EqualizerTheme[] = [
-    { name: 'Mukyo', type: '3d', base: 'bg-black', display: 'bg-gray-900/70', bar: 'bg-gradient-to-t from-cyan-600 to-cyan-300 shadow-[0_0_4px_#22d3ee]', sliderTrack: 'bg-gray-700', sliderThumb: 'bg-gray-300', text: 'text-gray-300', accent: 'text-cyan-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-gray-800' },
-    { name: 'Muknics', type: '3d', base: 'bg-gray-800', display: 'bg-black/50', bar: 'bg-gradient-to-t from-amber-600 to-amber-400 shadow-[0_0_4px_#f59e0b]', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-amber-500', text: 'text-amber-100', accent: 'text-amber-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-gray-700/50' },
+    { 
+    name: 'Mukyo', 
+    type: 'shadow', // Switched to shadow for depth
+    base: 'bg-zinc-950', 
+    display: 'bg-zinc-900/80 backdrop-blur-sm border border-zinc-800', 
+    // Effect: Cyberpunk Neon. Starts dark cyan, goes to white hot at top, with a heavy cyan glow.
+    bar: 'bg-gradient-to-t from-cyan-900 via-cyan-500 to-white shadow-[0_0_15px_rgba(34,211,238,0.6)] rounded-t-[2px]', 
+    sliderTrack: 'bg-zinc-800', 
+    sliderThumb: 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]', 
+    text: 'text-zinc-300', 
+    accent: 'text-cyan-400', 
+    button: 'bg-zinc-800 border border-zinc-700', 
+    buttonHover: 'hover:bg-zinc-700 hover:shadow-[0_0_10px_rgba(34,211,238,0.2)]', 
+    highlight: 'bg-zinc-800' 
+  },
+
+  { 
+    name: 'Muknics', 
+    type: 'shadow', 
+    base: 'bg-[#1c1917]', // Very dark warm grey
+    display: 'bg-black/60 border-t border-orange-900/30', 
+    // Effect: Molten Gold. Inner shadow gives it volume (like a glass tube), outer shadow is a warm haze.
+    bar: 'bg-gradient-to-t from-orange-900 via-amber-500 to-yellow-100 shadow-[inset_2px_0_4px_rgba(0,0,0,0.6),0_0_12px_rgba(245,158,11,0.4)] rounded-t-sm', 
+    sliderTrack: 'bg-stone-800', 
+    sliderThumb: 'bg-amber-500 border-2 border-orange-900', 
+    text: 'text-stone-300', 
+    accent: 'text-amber-400', 
+    button: 'bg-stone-800', 
+    buttonHover: 'hover:bg-stone-700 hover:text-amber-300', 
+    highlight: 'bg-stone-700/50' 
+  },
+
+  { 
+    name: 'Cosmic Rift 2.0', 
+    type: 'shadow', 
+    base: 'bg-[#0f0720]', // Deepest violet
+    display: 'bg-indigo-950/40 backdrop-blur-md', 
+    // Effect: Laser Beam. Intense purple glow with a white core.
+    bar: 'bg-gradient-to-t from-indigo-900 via-fuchsia-500 to-white shadow-[0_0_20px_rgba(192,38,211,0.7),inset_0_0_2px_rgba(255,255,255,0.5)] rounded-t-md', 
+    sliderTrack: 'bg-indigo-900/50', 
+    sliderThumb: 'bg-fuchsia-400 shadow-[0_0_10px_#e879f9]', 
+    text: 'text-indigo-200', 
+    accent: 'text-fuchsia-300', 
+    button: 'bg-indigo-900/80 border border-indigo-700', 
+    buttonHover: 'hover:bg-fuchsia-900/50 hover:border-fuchsia-500', 
+    highlight: 'bg-fuchsia-500/20' 
+  },  
     { name: 'Pioneer', type: 'shadow', base: 'bg-slate-200', display: 'bg-blue-900/80', bar: 'bg-gradient-to-t from-sky-600 to-sky-400 shadow-[-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-blue-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
     { name: 'Glass Box', type: 'glass-box', base: 'bg-gray-900', display: 'bg-black/50', bar: 'bg-gradient-to-t from-purple-500 to-cyan-300', sliderTrack: 'bg-purple-800/60', sliderThumb: 'bg-cyan-300', text: 'text-purple-200', accent: 'text-cyan-300', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-cyan-500/50' },
     { name: 'Pioneer Convex', type: 'convex', base: 'bg-slate-200', display: 'bg-blue-900/80', bar: 'bg-gradient-to-t from-sky-600 to-sky-400 rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-blue-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
-    { name: 'Marantz', type: 'shadow', base: 'bg-amber-100', display: 'bg-black/80', bar: 'bg-gradient-to-t from-blue-700 to-blue-500 shadow-[-3px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-blue-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },
+    { name: 'Marantz', type: 'shadow', base: 'bg-amber-100', display: 'bg-black/80', bar: 'bg-gradient-to-t from-blue-700 to-blue-500 shadow-[-3px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-blue-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },    
     { name: 'Marantz-variant1', type: 'shadow', base: 'bg-amber-100', display: 'bg-black/90', bar: 'bg-gradient-to-t from-blue-700 to-blue-500 shadow-[-2px_0_2px_rgba(0,0,0,0.6),-8px_0_20px_rgba(0,0,0,0.3)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-blue-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },
     { name: 'Marantz-variant2', type: 'shadow', base: 'bg-amber-100', display: 'bg-black/3k', bar: 'bg-gradient-to-t from-blue-700 to-blue-500 shadow-[-4px_0_1px_rgba(0,0,0,0.5),-6px_0_10px_rgba(0,0,0,0.3)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-blue-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },
     { name: 'Marantz Concave', type: 'concave', base: 'bg-amber-100', display: 'bg-black/80', bar: 'bg-gradient-to-t from-blue-700 to-blue-500 rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-blue-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },
@@ -363,16 +422,17 @@ export class AppComponent implements OnInit, OnDestroy {
     { name: 'Marantz-concave-variant3', type: 'concave', base: 'bg-amber-400', display: 'bg-black/70', bar: 'bg-gradient-to-t from-rose-300 to-gray-300 shadow-[inset_-1px_0_2px_rgba(255,255,255,0.4),-5px_0_10px_rgba(0,0,0,0.5)], rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-blue-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-300' },
     { name: 'Muntosh', type: '3d', base: 'bg-gray-900', display: 'bg-black/90', bar: 'bg-gradient-to-t from-sky-600 to-sky-300 shadow-[0_0_5px_#38bdf8]', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-green-500', text: 'text-green-400', accent: 'text-sky-400', button: 'bg-gray-800 border border-gray-600', buttonHover: 'hover:bg-gray-700', highlight: 'bg-gray-700/50' },
     { name: 'Cyberpunk', type: 'shadow', base: 'bg-black', display: 'bg-black/80', bar: 'bar-neon-glow bg-cyan-400', sliderTrack: 'bg-gray-800', sliderThumb: 'bg-fuchsia-500', text: 'text-fuchsia-400 font-mono', accent: 'text-cyan-300', button: 'bg-gray-900 border border-fuchsia-700', buttonHover: 'hover:bg-gray-800', highlight: 'bg-fuchsia-600/50' },
-    { name: 'Aqua Gloss', type: 'glossy', base: 'bg-gray-800', display: 'bg-black/50', bar: 'bg-gradient-to-t from-teal-500 to-cyan-400', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-cyan-300', text: 'text-gray-200', accent: 'text-cyan-300', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-cyan-600/50' },
+    { name: 'Aqua Gloss', type: 'glossy', base: 'bg-gray-800', display: 'bg-black/50', bar: 'bg-gradient-to-t from-teal-500 to-cyan-400 shadow-[0_0_8px_#67e8f9]', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-cyan-300', text: 'text-gray-200', accent: 'text-cyan-300', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-cyan-600/50' },
     { name: 'Liquid Sky', type: 'glass', base: 'bg-gradient-to-b from-slate-900 to-sky-900', display: 'bg-black/20', bar: 'rounded-t-md', sliderTrack: 'bg-sky-800/50', sliderThumb: 'bg-slate-300', text: 'text-slate-200', accent: 'text-sky-300', button: 'bg-sky-900/50', buttonHover: 'hover:bg-sky-800/50', highlight: 'bg-sky-700/50' },
-    { name: 'Matrix', type: 'shadow', base: 'bg-black', display: 'bg-black/80', bar: 'bg-gradient-to-t from-emerald-700 to-green-400 shadow-[-1px_0_4px_rgba(0,0,0,0.7)]', sliderTrack: 'bg-gray-800', sliderThumb: 'bg-green-500', text: 'text-green-400 font-mono', accent: 'text-green-300', button: 'bg-gray-900 border border-green-700', buttonHover: 'hover:bg-gray-800', highlight: 'bg-green-600/50' },
-    { name: 'Cosmic Rift', type: '3d', base: 'bg-gradient-to-br from-indigo-900 via-purple-900 to-black', display: 'bg-black/40', bar: 'bg-gradient-to-t from-fuchsia-600 to-cyan-400 shadow-[0_0_6px_#a855f7]', sliderTrack: 'bg-purple-800/50', sliderThumb: 'bg-fuchsia-500', text: 'text-purple-300', accent: 'text-cyan-300', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-fuchsia-500/50' },
-    { name: 'Celestial Sphere', type: 'fractal', base: 'bg-gradient-to-br from-gray-900 via-blue-900 to-black', display: 'bg-black/40', bar: '', sliderTrack: 'bg-blue-800/50', sliderThumb: 'bg-sky-500', text: 'text-sky-300', accent: 'text-cyan-300', button: 'bg-blue-900/70', buttonHover: 'hover:bg-blue-800/70', highlight: 'bg-sky-500/50' },
-    { name: 'Molten Core', type: 'glossy', base: 'bg-stone-900', display: 'bg-black/60', bar: 'bg-gradient-to-t from-red-700 via-orange-500 to-yellow-400', sliderTrack: 'bg-red-900/50', sliderThumb: 'bg-amber-400', text: 'text-amber-300', accent: 'text-orange-400', button: 'bg-orange-800/50', buttonHover: 'hover:bg-orange-700/50', highlight: 'bg-yellow-500/50' },
+    { name: 'Matrix', type: 'shadow', base: 'bg-black', display: 'bg-black/80', bar: 'bg-gradient-to-t from-emerald-700 to-green-400 shadow-[0_0_10px_#4ade80,-1px_0_4px_rgba(0,0,0,0.7)]', sliderTrack: 'bg-gray-800', sliderThumb: 'bg-green-500', text: 'text-green-400 font-mono', accent: 'text-green-300', button: 'bg-gray-900 border border-green-700', buttonHover: 'hover:bg-gray-800', highlight: 'bg-green-600/50' },
+    { name: 'Molten Core', type: 'glossy', base: 'bg-stone-900', display: 'bg-black/60', bar: 'bg-gradient-to-t from-red-700 via-orange-500 to-yellow-400 shadow-[0_0_8px_#fb923c]', sliderTrack: 'bg-red-900/50', sliderThumb: 'bg-amber-400', text: 'text-amber-300', accent: 'text-orange-400', button: 'bg-orange-800/50', buttonHover: 'hover:bg-orange-700/50', highlight: 'bg-yellow-500/50' },
     { name: 'Ocean Floor', type: 'glass', base: 'bg-gradient-to-t from-blue-900 to-teal-900', display: 'bg-black/30', bar: 'rounded-t-md', sliderTrack: 'bg-cyan-800/50', sliderThumb: 'bg-teal-300', text: 'text-cyan-200', accent: 'text-teal-300', button: 'bg-cyan-900/60', buttonHover: 'hover:bg-cyan-800/60', highlight: 'bg-teal-600/50' },
-    { name: 'Gold Standard', type: 'convex', base: 'bg-gray-900', display: 'bg-black/60', bar: 'bg-gradient-to-t from-yellow-700 via-amber-400 to-yellow-100 rounded-t-sm', sliderTrack: 'bg-yellow-800/50', sliderThumb: 'bg-amber-300', text: 'text-amber-200', accent: 'text-yellow-400', button: 'bg-yellow-900/60', buttonHover: 'hover:bg-yellow-800/60', highlight: 'bg-amber-500/50' },
-    { name: 'Platinum Sheen', type: 'convex', base: 'bg-slate-800', display: 'bg-black/50', bar: 'bg-gradient-to-t from-slate-400 via-gray-200 to-white rounded-t-sm', sliderTrack: 'bg-slate-600', sliderThumb: 'bg-white', text: 'text-slate-200', accent: 'text-cyan-300', button: 'bg-slate-700', buttonHover: 'hover:bg-slate-600', highlight: 'bg-cyan-500/50' },
-    { name: 'Polished Silver', type: 'glossy', base: 'bg-gray-700', display: 'bg-black/50', bar: 'bg-gradient-to-t from-gray-600 via-slate-300 to-gray-400', sliderTrack: 'bg-gray-500', sliderThumb: 'bg-slate-200', text: 'text-gray-200', accent: 'text-sky-300', button: 'bg-gray-600', buttonHover: 'hover:bg-gray-500', highlight: 'bg-sky-600/50' },
+    { name: 'Aquamarine Dream', type: 'glossy', base: 'bg-gradient-to-br from-green-900 via-cyan-800 to-teal-900', display: 'bg-black/30', bar: 'bg-gradient-to-t from-emerald-400 to-cyan-200 shadow-[0_0_8px_#67e8f9]', sliderTrack: 'bg-teal-800/60', sliderThumb: 'bg-emerald-300', text: 'text-cyan-200', accent: 'text-emerald-300', button: 'bg-cyan-900/60', buttonHover: 'hover:bg-cyan-800/60', highlight: 'bg-emerald-600/50' },
+    { name: 'Gold Standard', type: 'convex', base: 'bg-gray-900', display: 'bg-black/60', bar: 'bg-gradient-to-t from-yellow-700 via-amber-400 to-yellow-100 shadow-[0_0_8px_#facc15] rounded-t-sm', sliderTrack: 'bg-yellow-800/50', sliderThumb: 'bg-amber-300', text: 'text-amber-200', accent: 'text-yellow-400', button: 'bg-yellow-900/60', buttonHover: 'hover:bg-yellow-800/60', highlight: 'bg-amber-500/50' },
+    { name: 'Art Deco', type: '3d', base: 'bg-black', display: 'bg-gray-900/50', bar: 'art-deco-bar', sliderTrack: 'bg-gray-700', sliderThumb: 'bg-amber-400', text: 'text-amber-200', accent: 'text-amber-400', button: 'bg-neutral-800', buttonHover: 'hover:bg-neutral-700', highlight: 'bg-amber-500/50' },
+    { name: 'Woodgrain', type: 'convex', base: 'woodgrain-bg', display: 'bg-black/40', bar: 'bg-gradient-to-t from-amber-800 to-amber-600 rounded-t-sm', sliderTrack: 'bg-amber-900/70', sliderThumb: 'bg-amber-300', text: 'text-amber-200', accent: 'text-amber-300', button: 'bg-amber-950/50', buttonHover: 'hover:bg-amber-950/70', highlight: 'bg-amber-800/50' },
+    { name: 'Platinum Sheen', type: 'convex', base: 'bg-slate-800', display: 'bg-black/50', bar: 'bg-gradient-to-t from-slate-400 via-gray-200 to-white shadow-[0_0_8px_#e2e8f0] rounded-t-sm', sliderTrack: 'bg-slate-600', sliderThumb: 'bg-white', text: 'text-slate-200', accent: 'text-cyan-300', button: 'bg-slate-700', buttonHover: 'hover:bg-slate-600', highlight: 'bg-cyan-500/50' },
+    { name: 'Polished Silver', type: 'glossy', base: 'bg-gray-700', display: 'bg-black/50', bar: 'bg-gradient-to-t from-gray-600 via-slate-300 to-gray-400 shadow-[0_0_8px_#cbd5e1]', sliderTrack: 'bg-gray-500', sliderThumb: 'bg-slate-200', text: 'text-gray-200', accent: 'text-sky-300', button: 'bg-gray-600', buttonHover: 'hover:bg-gray-500', highlight: 'bg-sky-600/50' },
     { name: 'Classic LED', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-gray-700', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-gray-400', text: 'text-gray-300', accent: 'text-green-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-green-600/50' },
     { name: '2030: Neural Network', type: 'neural', base: 'bg-black', display: 'bg-black/80', bar: '', sliderTrack: 'bg-gray-800', sliderThumb: 'bg-cyan-400', text: 'text-cyan-300 font-mono', accent: 'text-lime-300', button: 'bg-gray-900 border border-cyan-700', buttonHover: 'hover:bg-gray-800', highlight: 'bg-cyan-600/50' },
     { name: '2040: Energy Field', type: 'plasma', base: 'bg-gradient-to-br from-indigo-900 to-black', display: 'bg-black/50', bar: '', sliderTrack: 'bg-purple-800/50', sliderThumb: 'bg-fuchsia-500', text: 'text-purple-300', accent: 'text-fuchsia-400', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-fuchsia-500/50' },
@@ -411,16 +471,7 @@ export class AppComponent implements OnInit, OnDestroy {
   setResponseCurve(curve: 'linear' | 'polynomial' | 'fractal') { this.responseCurve.set(curve); }
   setLightSource(position: LightSourcePosition) { this.lightSourcePosition.set(position); }
   toggleFullscreenControls() { this.fullscreenControlsActive.update(v => !v); }
-  
-  selectTheme(index: string) {
-     const i = parseInt(index, 10); 
-     const selectedThemeName = this.themes[i].name;
-     if (!isNaN(i) && i < this.themes.length) this.selectedTheme.set(this.themes[i]); 
-     // 3. Plug the tracking code here!
-    track('StyleSelected', { style: selectedThemeName });
-    // console.log('Tracking style change to:', selectedThemeName);
-  }
-  
+  selectTheme(index: string) { const i = parseInt(index, 10); if (!isNaN(i) && i < this.themes.length) this.selectedTheme.set(this.themes[i]); }
   toggleAutoSwitch() { this.isAutoSwitching.update(v => !v); }
   setSwitchInterval(event: Event) { this.switchInterval.set(parseInt((event.target as HTMLSelectElement).value, 10)); }
   setSwitchMode(mode: 'sequential' | 'random') { this.switchMode.set(mode); }
@@ -461,6 +512,7 @@ export class AppComponent implements OnInit, OnDestroy {
   incrementLedHeight() { this.ledSegmentHeight.update(h => Math.min(16, h + 1)); }
   decrementLedHeight() { this.ledSegmentHeight.update(h => Math.max(1, h - 1)); }
   toggleKaleidoscope() { this.isKaleidoscope.update(k => !k); }
+  toggleStyleFusion() { this.isStyleFusionOn.update(f => !f); }
 
   private startKaleidoscope() {
     this.stopKaleidoscope();
@@ -475,6 +527,20 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.kaleidoscopeAnimFrameId !== null) {
       cancelAnimationFrame(this.kaleidoscopeAnimFrameId);
       this.kaleidoscopeAnimFrameId = null;
+    }
+  }
+
+  private startStyleFusion() {
+    this.stopStyleFusion();
+    this.fusionIntervalId = setInterval(() => {
+        this.fusionCounter.update(c => c + 1);
+    }, 500);
+  }
+
+  private stopStyleFusion() {
+    if (this.fusionIntervalId) {
+        clearInterval(this.fusionIntervalId);
+        this.fusionIntervalId = null;
     }
   }
 
@@ -533,5 +599,5 @@ export class AppComponent implements OnInit, OnDestroy {
     }
     this.draggedTrackIndex.set(null);
   }
-  onDragEnd() { this.draggedTrackIndex.set(null); }  
+  onDragEnd() { this.draggedTrackIndex.set(null); }
 }

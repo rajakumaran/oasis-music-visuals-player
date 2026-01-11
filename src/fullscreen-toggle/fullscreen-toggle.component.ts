@@ -35,14 +35,29 @@ export class FullscreenToggleComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!document.fullscreenElement) {
-      elem.requestFullscreen().catch(err => {
-        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-      });
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
+    const isIos = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isNativeFullscreen = !!document.fullscreenElement;
+    const isIosFullscreen = elem.classList.contains('fullscreen-ios');
+
+    if (isNativeFullscreen || isIosFullscreen) { // EXIT
+        if (isIosFullscreen) {
+            elem.classList.remove('fullscreen-ios');
+            document.body.classList.remove('fullscreen-ios-body');
+            this.isFullscreen.set(false); // Manually update for iOS
+        }
+        if (isNativeFullscreen && document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    } else { // ENTER
+        if (isIos) {
+            elem.classList.add('fullscreen-ios');
+            document.body.classList.add('fullscreen-ios-body');
+            this.isFullscreen.set(true); // Manually update for iOS
+        } else if (elem.requestFullscreen) {
+            elem.requestFullscreen().catch(err => {
+              console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            });
+        }
     }
   }
 }
