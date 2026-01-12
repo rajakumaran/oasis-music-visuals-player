@@ -190,16 +190,15 @@
                 </svg>
               }
               @default {
-                <div class="visualizer-content-default p-2 flex items-end justify-center h-full w-full" 
-                     [style.gap.px]="isStyleFusionOn() && isFusionApplicable() ? ((fusionCounter() % 2) * 0.5) + 0.5 : 2">
+                <div class="visualizer-content-default p-2 flex items-end justify-center h-full w-full gap-[2px]">
                   @switch (effectiveTheme().type) {
                     @case ('led') { @for (litSegments of ledBars(); track $index) { <div class="flex-1 h-full flex flex-col-reverse justify-start items-center" style="gap: 2px;"> @for (segment of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]; track segment) { <div class="led-segment" [class]="segment < litSegments ? (isKaleidoscope() ? 'led-on' : (segment > 12 ? 'led-on led-red' : (segment > 8 ? 'led-on led-yellow' : 'led-on led-green'))) : 'led-off'" [style.width.px]="ledSegmentWidth()" [style.height.px]="ledSegmentHeight()" [style.background-color]="isKaleidoscope() && segment < litSegments ? 'hsl(' + (($index * 5 + segment * 15 + kaleidoscopeHueShift()) % 360) + ', 100%, 50%)' : null" [style.color]="isKaleidoscope() && segment < litSegments ? 'hsl(' + (($index * 5 + segment * 15 + kaleidoscopeHueShift()) % 360) + ', 100%, 50%)' : null"> </div> } </div> } }
-                    @case ('3d') { @for (barHeight of visualizerBars(); track $index) { <div class="flex-1 h-full relative"> <div class="bar-3d" [class]="effectiveTheme().bar" [class.bar-concave]="fusionEffect() === 'concave'" [class.bar-convex]="fusionEffect() === 'convex'" [class.bar-glossy]="fusionEffect() === 'glossy'" [style.height.%]="barHeight * 100"></div> </div> } }
-                    @case ('shadow') { @for (barHeight of visualizerBars(); track $index) { <div class="flex-1 self-end transition-[height] duration-75 ease-out" [class]="effectiveTheme().bar" [class.bar-concave]="fusionEffect() === 'concave'" [class.bar-convex]="fusionEffect() === 'convex'" [class.bar-glossy]="fusionEffect() === 'glossy'" [style.height.%]="barHeight * 100"></div> } }
-                    @case ('glossy') { @for (barHeight of visualizerBars(); track $index) { <div class="flex-1 self-end bar-glossy" [class]="effectiveTheme().bar" [class.bar-concave]="fusionEffect() === 'concave'" [class.bar-convex]="fusionEffect() === 'convex'" [style.height.%]="barHeight * 100"></div> } }
+                    @case ('3d') { @for (barHeight of visualizerBars(); track $index) { <div class="flex-1 h-full relative"> <div class="bar-3d" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div> </div> } }
+                    @case ('shadow') { @for (barHeight of visualizerBars(); track $index) { <div class="flex-1 self-end transition-[height] duration-75 ease-out" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div> } }
+                    @case ('glossy') { @for (barHeight of visualizerBars(); track $index) { <div class="flex-1 self-end bar-glossy" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div> } }
                     @case ('glass') { @for (barHeight of visualizerBars(); track $index) { <div class="flex-1 self-end bar-glass" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div> } }
-                    @case ('convex') { @for (barHeight of visualizerBars(); track $index) { <div class="flex-1 self-end bar-convex" [class]="effectiveTheme().bar" [class.bar-glossy]="fusionEffect() === 'glossy'" [style.height.%]="barHeight * 100"></div> } }
-                    @case ('concave') { @for (barHeight of visualizerBars(); track $index) { <div class="flex-1 self-end bar-concave" [class]="effectiveTheme().bar" [class.bar-glossy]="fusionEffect() === 'glossy'" [style.height.%]="barHeight * 100"></div> } }
+                    @case ('convex') { @for (barHeight of visualizerBars(); track $index) { <div class="flex-1 self-end bar-convex" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div> } }
+                    @case ('concave') { @for (barHeight of visualizerBars(); track $index) { <div class="flex-1 self-end bar-concave" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div> } }
                   }
                 </div>
               }
@@ -262,16 +261,25 @@
               </div>
             </div>
              <!-- Kaleidoscope Control -->
-            <div class="flex flex-col gap-1 justify-end">
-              <div class="grid grid-cols-2 gap-2 h-full">
-                <button (click)="toggleKaleidoscope()" class="px-2 py-2 rounded-md transition-colors w-full h-full text-xs" [class]="(isKaleidoscope() ? effectiveTheme().highlight : effectiveTheme().button) + ' ' + effectiveTheme().buttonHover" title="Toggle a psychedelic color cycling effect">
-                    <i class="fa-solid fa-palette mr-1"></i> Kaleidoscope {{ isKaleidoscope() ? "ON" : "OFF" }}
-                </button>
-                <!-- @if(isFusionApplicable()) {
-                  <button (click)="toggleStyleFusion()" class="px-2 py-2 rounded-md transition-colors w-full h-full text-xs" [class]="(isStyleFusionOn() ? effectiveTheme().highlight : effectiveTheme().button) + ' ' + effectiveTheme().buttonHover" title="Toggle dynamic visual style variations">
-                    <i class="fa-solid fa-blender mr-1"></i> Style Fusion {{ isStyleFusionOn() ? "ON" : "OFF" }}
+            <div class="flex flex-col gap-2 justify-end">
+              <button (click)="toggleKaleidoscope()" class="px-2 py-2 rounded-md transition-colors w-full h-full text-xs" [class]="(isKaleidoscope() ? effectiveTheme().highlight : effectiveTheme().button) + ' ' + effectiveTheme().buttonHover" title="Toggle a psychedelic color cycling effect">
+                  <i class="fa-solid fa-palette mr-1"></i> Kaleidoscope {{ isKaleidoscope() ? "ON" : "OFF" }}
+              </button>
+              <div class="flex items-center gap-2">
+                  <button (click)="toggleStyleFusion()" class="flex-grow px-2 py-2 rounded-md transition-colors w-full h-full text-xs" [class]="(isStyleFusionOn() ? effectiveTheme().highlight : effectiveTheme().button) + ' ' + effectiveTheme().buttonHover" title="Automatically rotate through themes">
+                      <i class="fa-solid fa-blender mr-1"></i> Style Fusion {{ isStyleFusionOn() ? "ON" : "OFF" }}
                   </button>
-                } -->
+                  @if (isStyleFusionOn()) {
+                      <div class="relative" title="Set Style Fusion interval">
+                          <select (change)="setFusionInterval($event)" [value]="fusionInterval()" [class]="'appearance-none rounded-md py-2 pl-2 pr-7 text-xs h-full ' + effectiveTheme().button + ' ' + effectiveTheme().text">
+                              <option value="10000">10s</option>
+                              <option value="15000">15s</option>
+                              <option value="30000">30s</option>
+                              <option value="60000">60s</option>
+                          </select>
+                          <i class="fa-solid fa-chevron-down absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-xs"></i>
+                      </div>
+                  }
               </div>
             </div>
           </div>
@@ -365,8 +373,8 @@
           <div class="w-full md:w-1/3 flex items-center justify-center md:justify-end gap-3 pr-2">
             <div class="flex flex-wrap justify-center items-center gap-4 text-sm">
               <div class="flex items-center gap-2">
-                <label class="relative inline-flex items-center cursor-pointer" title="Automatically switch themes at a set interval">
-                  <input type="checkbox" [checked]="isAutoSwitching()" (change)="toggleAutoSwitch()" class="sr-only peer">
+                <label class="relative inline-flex items-center cursor-pointer" [class.opacity-50]="isStyleFusionOn()" [class.cursor-not-allowed]="isStyleFusionOn()" title="Automatically switch themes at a set interval">
+                  <input type="checkbox" [checked]="isAutoSwitching()" (change)="toggleAutoSwitch()" [disabled]="isStyleFusionOn()" class="sr-only peer">
                   <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
                 </label>
                 <i class="fa-solid fa-wand-magic-sparkles" [class]="isAutoSwitching() ? effectiveTheme().accent : ''"></i>

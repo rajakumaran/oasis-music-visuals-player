@@ -32,7 +32,7 @@ export class AppComponent implements OnInit, OnDestroy {
   currentTrack = this.audioService.currentTrack;
   audioSource = this.audioService.audioSource;
 
-  sensitivity = signal(1.2);
+  sensitivity = signal(1.0); //was 1.2
   responseCurve = signal<'linear' | 'polynomial' | 'fractal'>('polynomial');
   backgroundImageUrl = signal<string | null>(null);
   private smoothedBars = new Array(64).fill(0);
@@ -70,6 +70,7 @@ export class AppComponent implements OnInit, OnDestroy {
   isStyleFusionOn = signal(false);
   private fusionIntervalId: any = null;
   fusionCounter = signal(0);
+  fusionInterval = signal(10000); // New signal for fusion interval
   isFusionApplicable = computed(() => !['led', 'fractal', 'neural', 'plasma', 'hyperlane', 'glass-box'].includes(this.effectiveTheme().type));
   fusionEffect = computed(() => {
     if (!this.isStyleFusionOn() || !this.isFusionApplicable()) return 'none';
@@ -364,12 +365,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
   themes: EqualizerTheme[] = [
     { 
-    name: 'Mukyo', 
+    name: 'Mekyo', 
     type: 'shadow', // Switched to shadow for depth
     base: 'bg-zinc-950', 
     display: 'bg-zinc-900/80 backdrop-blur-sm border border-zinc-800', 
     // Effect: Cyberpunk Neon. Starts dark cyan, goes to white hot at top, with a heavy cyan glow.
-    bar: 'bg-gradient-to-t from-cyan-900 via-cyan-500 to-white shadow-[0_0_15px_rgba(34,211,238,0.6)] rounded-t-[2px]', 
+    bar: 'bg-gradient-to-t from-cyan-900 via-cyan-500 to-white shadow-[0_0_15px_rgba(34,211,238,0.6)] rounded-t-sm', 
     sliderTrack: 'bg-zinc-800', 
     sliderThumb: 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]', 
     text: 'text-zinc-300', 
@@ -380,7 +381,7 @@ export class AppComponent implements OnInit, OnDestroy {
   },
 
   { 
-    name: 'Muknics', 
+    name: 'Meknics', 
     type: 'shadow', 
     base: 'bg-[#1c1917]', // Very dark warm grey
     display: 'bg-black/60 border-t border-orange-900/30', 
@@ -401,7 +402,7 @@ export class AppComponent implements OnInit, OnDestroy {
     base: 'bg-[#0f0720]', // Deepest violet
     display: 'bg-indigo-950/40 backdrop-blur-md', 
     // Effect: Laser Beam. Intense purple glow with a white core.
-    bar: 'bg-gradient-to-t from-indigo-900 via-fuchsia-500 to-white shadow-[0_0_20px_rgba(192,38,211,0.7),inset_0_0_2px_rgba(255,255,255,0.5)] rounded-t-md', 
+    bar: 'bg-gradient-to-t from-indigo-900 via-fuchsia-500 to-white shadow-[0_0_20px_rgba(192,38,211,0.7),inset_0_0_2px_rgba(255,255,255,0.5)] rounded-t-sm', 
     sliderTrack: 'bg-indigo-900/50', 
     sliderThumb: 'bg-fuchsia-400 shadow-[0_0_10px_#e879f9]', 
     text: 'text-indigo-200', 
@@ -420,7 +421,7 @@ export class AppComponent implements OnInit, OnDestroy {
     { name: 'Marantz-concave-variant1', type: 'shadow', base: 'bg-amber-300', display: 'bg-black/3d', bar: 'bg-gradient-to-t from-blue-700 to-blue-500 shadow-[-2px_0_2px_rgba(0,0,0,0.6),-8px_0_20px_rgba(0,0,0,0.3)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-blue-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },
     { name: 'Marantz-concave-variant2', type: 'shadow', base: 'bg-amber-400', display: 'bg-black/3d', bar: 'bg-gradient-to-t from-lime-300 to-purple-300 shadow-[-4px_0_1px_rgba(0,0,0,0.5),-6px_0_10px_rgba(0,0,0,0.3)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-blue-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-300' },
     { name: 'Marantz-concave-variant3', type: 'concave', base: 'bg-amber-400', display: 'bg-black/70', bar: 'bg-gradient-to-t from-rose-300 to-gray-300 shadow-[inset_-1px_0_2px_rgba(255,255,255,0.4),-5px_0_10px_rgba(0,0,0,0.5)], rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-blue-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-300' },
-    { name: 'Muntosh', type: '3d', base: 'bg-gray-900', display: 'bg-black/90', bar: 'bg-gradient-to-t from-sky-600 to-sky-300 shadow-[0_0_5px_#38bdf8]', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-green-500', text: 'text-green-400', accent: 'text-sky-400', button: 'bg-gray-800 border border-gray-600', buttonHover: 'hover:bg-gray-700', highlight: 'bg-gray-700/50' },
+    { name: 'Mintosh', type: '3d', base: 'bg-gray-900', display: 'bg-black/90', bar: 'bg-gradient-to-t from-sky-600 to-sky-300 shadow-[0_0_5px_#38bdf8]', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-green-500', text: 'text-green-400', accent: 'text-sky-400', button: 'bg-gray-800 border border-gray-600', buttonHover: 'hover:bg-gray-700', highlight: 'bg-gray-700/50' },
     { name: 'Cyberpunk', type: 'shadow', base: 'bg-black', display: 'bg-black/80', bar: 'bar-neon-glow bg-cyan-400', sliderTrack: 'bg-gray-800', sliderThumb: 'bg-fuchsia-500', text: 'text-fuchsia-400 font-mono', accent: 'text-cyan-300', button: 'bg-gray-900 border border-fuchsia-700', buttonHover: 'hover:bg-gray-800', highlight: 'bg-fuchsia-600/50' },
     { name: 'Aqua Gloss', type: 'glossy', base: 'bg-gray-800', display: 'bg-black/50', bar: 'bg-gradient-to-t from-teal-500 to-cyan-400 shadow-[0_0_8px_#67e8f9]', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-cyan-300', text: 'text-gray-200', accent: 'text-cyan-300', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-cyan-600/50' },
     { name: 'Liquid Sky', type: 'glass', base: 'bg-gradient-to-b from-slate-900 to-sky-900', display: 'bg-black/20', bar: 'rounded-t-md', sliderTrack: 'bg-sky-800/50', sliderThumb: 'bg-slate-300', text: 'text-slate-200', accent: 'text-sky-300', button: 'bg-sky-900/50', buttonHover: 'hover:bg-sky-800/50', highlight: 'bg-sky-700/50' },
@@ -512,7 +513,19 @@ export class AppComponent implements OnInit, OnDestroy {
   incrementLedHeight() { this.ledSegmentHeight.update(h => Math.min(16, h + 1)); }
   decrementLedHeight() { this.ledSegmentHeight.update(h => Math.max(1, h - 1)); }
   toggleKaleidoscope() { this.isKaleidoscope.update(k => !k); }
-  toggleStyleFusion() { this.isStyleFusionOn.update(f => !f); }
+  
+  toggleStyleFusion() {
+    this.isStyleFusionOn.update(f => {
+      const isNowOn = !f;
+      if (isNowOn) {
+        // If turning fusion ON, make sure auto-switch is OFF.
+        this.isAutoSwitching.set(false);
+      }
+      return isNowOn;
+    });
+  }
+
+  setFusionInterval(event: Event) { this.fusionInterval.set(parseInt((event.target as HTMLSelectElement).value, 10)); }
 
   private startKaleidoscope() {
     this.stopKaleidoscope();
@@ -533,8 +546,8 @@ export class AppComponent implements OnInit, OnDestroy {
   private startStyleFusion() {
     this.stopStyleFusion();
     this.fusionIntervalId = setInterval(() => {
-        this.fusionCounter.update(c => c + 1);
-    }, 500);
+        this.selectNextTheme();
+    }, this.fusionInterval());
   }
 
   private stopStyleFusion() {
