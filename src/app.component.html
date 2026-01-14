@@ -3,7 +3,7 @@
   <!-- Header -->
   <header class="flex-shrink-0 flex items-center justify-between mb-4">
     <h1 class="text-2xl sm:text-3xl font-bold tracking-wider" [class]="effectiveTheme().accent">
-      <i class="fa-solid fa-wave-square mr-2"></i>AUDIO OASIS
+      <i class="fa-solid fa-music fa-wand-magic-sparkles"></i>AUDIO OASIS Version 2
     </h1>
     <div class="hidden md:block text-xs sm:text-sm font-sans tracking-wider" [class]="effectiveTheme().accent">Built by Muthukumaran Azhagesan (Kumar). Check his <a href="https://linktr.ee/muthukumaran.azhagesan" target="_blank" class="underline">Linktree</a></div>
     <div class="flex items-center gap-4">
@@ -187,6 +187,60 @@
                       <rect [attr.x]="layer.x" [attr.y]="layer.y" [attr.width]="layer.width" [attr.height]="layer.height" fill="none" [attr.stroke]="layer.stroke" stroke-width="2" [style.opacity]="layer.opacity"></rect>
                     }
                   </g>
+                </svg>
+              }
+               @case ('aura') {
+                <svg class="w-full h-full" viewBox="-150 -100 300 200" preserveAspectRatio="xMidYMid meet">
+                  <defs>
+                    <filter id="auraGlow"><feGaussianBlur stdDeviation="3.5" result="coloredBlur"></feGaussianBlur><feMerge><feMergeNode in="coloredBlur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter>
+                    <radialGradient id="auraCoreGradient"><stop offset="0%" stop-color="rgba(255,255,255,0.8)"></stop><stop offset="100%" stop-color="rgba(255,255,255,0)"></stop></radialGradient>
+                  </defs>
+                  <g class="aura-bloom-viz" filter="url(#auraGlow)">
+                    @for (particle of auraBloom().particles; track particle.id) {
+                      <circle [attr.cx]="particle.x" [attr.cy]="particle.y" [attr.r]="particle.size" fill="#a5f3fc" [style.opacity]="particle.opacity" />
+                    }
+                    @for (ring of auraBloom().rings; track ring.id) {
+                      <circle cx="0" cy="0" [attr.r]="ring.radius" fill="none" [attr.stroke]="'hsla(' + ring.hue + ', 90%, 70%, ' + ring.opacity + ')'" [attr.stroke-width]="ring.thickness" />
+                    }
+                    <circle cx="0" cy="0" [attr.r]="auraBloom().coreSize" fill="url(#auraCoreGradient)" [style.opacity]="auraBloom().coreOpacity" />
+                  </g>
+                </svg>
+              }
+              @case ('glyphs') {
+                <svg class="w-full h-full" viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid meet">
+                  <defs>
+                    <filter id="glyphGlow"><feGaussianBlur stdDeviation="2" result="blur"></feGaussianBlur><feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter>
+                    <symbol id="glyph-chevron" viewBox="-10 -10 20 20"><path d="M -5,5 L 0,-5 L 5,5" /></symbol>
+                    <symbol id="glyph-tri" viewBox="-10 -10 20 20"><path d="M 0,-8 L 8,6 L -8,6 Z" /></symbol>
+                  </defs>
+                  <g class="rhythmic-glyphs-viz" filter="url(#glyphGlow)">
+                    @let glyphs = rhythmicGlyphs();
+                    <g [style.opacity]="glyphs.outerRing.opacity" [attr.transform]="'rotate(' + glyphs.outerRing.rotation + ') scale(' + glyphs.outerRing.scale + ')'">
+                      @for (i of [0,1,2,3,4,5,6,7]; track i) {
+                        <use href="#glyph-chevron" width="10" height="10" [attr.transform]="'rotate(' + i * 45 + ') translate(0, -70)'"/>
+                      }
+                    </g>
+                    <g [style.opacity]="glyphs.innerRing.opacity" [attr.transform]="'rotate(' + glyphs.innerRing.rotation + ') scale(' + glyphs.innerRing.scale + ')'">
+                      @for (i of [0,1,2,3,4,5]; track i) {
+                        <use href="#glyph-tri" width="8" height="8" [attr.transform]="'rotate(' + i * 60 + ') translate(0, -45)'"/>
+                      }
+                    </g>
+                    <circle cx="0" cy="0" r="25" [style.opacity]="glyphs.center.opacity" [attr.transform]="'scale(' + glyphs.center.scale + ')'" />
+                    <circle cx="0" cy="0" r="100" class="sparkle-ring" [style.opacity]="glyphs.sparkle.opacity" [attr.transform]="'scale(' + glyphs.sparkle.scale + ')'" />
+                  </g>
+                </svg>
+              }
+              @case ('liquid') {
+                <svg class="w-full h-full">
+                  <defs>
+                    <filter id="liquifyFilter">
+                      <feTurbulence type="fractalNoise" [attr.baseFrequency]="liquifyParams().turbulence" numOctaves="3" result="turbulence" />
+                      <feDisplacementMap in2="turbulence" in="SourceGraphic" [attr.scale]="liquifyParams().scale" xChannelSelector="R" yChannelSelector="G" />
+                      <feGaussianBlur stdDeviation="1.5" />
+                      <feColorMatrix type="matrix" values="1 0 0 0 0, 0 1 0 0 0, 0 0 1 0 0, 0 0 0 18 -7" />
+                    </filter>
+                  </defs>
+                  <rect width="100%" height="100%" class="liquify-surface" filter="url(#liquifyFilter)" />
                 </svg>
               }
               @default {
@@ -373,7 +427,7 @@
           <div class="w-full md:w-1/3 flex items-center justify-center md:justify-end gap-3 pr-2">
             <div class="flex flex-wrap justify-center items-center gap-4 text-sm">
               <div class="flex items-center gap-2">
-                <label class="relative inline-flex items-center cursor-pointer" [class.opacity-50]="isStyleFusionOn()" [class.cursor-not-allowed]="isStyleFusionOn()" title="Automatically switch themes at a set interval">
+                <label class="relative inline-flex items-center cursor-pointer" [class.opacity-50]="isStyleFusionOn()" [class.cursor-not-allowed]="isStyleFusionOn()" title="Automatically switch themes at a set interval. Note that if this feature is enabled, then you cannot use the auto-switch slider">
                   <input type="checkbox" [checked]="isAutoSwitching()" (change)="toggleAutoSwitch()" [disabled]="isStyleFusionOn()" class="sr-only peer">
                   <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
                 </label>

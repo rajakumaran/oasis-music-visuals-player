@@ -305,6 +305,36 @@ input[type=range].vertical {
   border-right: 1px solid #a16207;
 }
 
+/* --- Styles for NEW Advanced Visualizers --- */
+.aura-bloom-viz circle {
+  transition: r 75ms ease-out, opacity 75ms ease-out, stroke-width 75ms ease-out;
+  transform-origin: center;
+  will-change: r, opacity, stroke-width;
+}
+
+.rhythmic-glyphs-viz > g,
+.rhythmic-glyphs-viz > circle {
+  transition: opacity 100ms ease-out, transform 100ms ease-out;
+  transform-origin: center;
+  will-change: opacity, transform;
+}
+.rhythmic-glyphs-viz use,
+.rhythmic-glyphs-viz > circle {
+  stroke: #14b8a6; /* teal-500 */
+  stroke-width: 1.5;
+  fill: rgba(20, 184, 166, 0.2);
+}
+.rhythmic-glyphs-viz .sparkle-ring {
+  fill: none;
+  stroke: #a7f3d0; /* emerald-200 */
+  stroke-width: 2;
+  stroke-dasharray: 2 10;
+}
+
+.liquify-surface {
+  fill: #99f6e4; /* teal-200 */
+}
+
 /* --- Fullscreen Styles & iOS Fallback --- */
 #fullscreen-controls-toggle-btn, #fullscreen-controls-close-btn { display: none; }
 body.fullscreen-ios-body { overflow: hidden; }

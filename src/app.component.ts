@@ -7,8 +7,11 @@ import { EqualizerTheme } from './models/equalizer-theme.model';
 import { FullscreenToggleComponent } from './fullscreen-toggle/fullscreen-toggle.component';
 import { inject as vercelAnalytics } from '@vercel/analytics'; // 1. Import the helper
 import { track } from '@vercel/analytics'; // 1. Import track
-
 type LightSourcePosition = 'none' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center-stage' | 'top-center';
+
+interface AuraRing { id: number; radius: number; opacity: number; thickness: number; hue: number; }
+interface AuraParticle { id: number; x: number; y: number; opacity: number; size: number; }
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -17,7 +20,7 @@ type LightSourcePosition = 'none' | 'top-left' | 'top-right' | 'bottom-left' | '
   styleUrl: './app.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AppComponent implements OnInit, OnDestroy {  
+export class AppComponent implements OnInit, OnDestroy {
   audioService = inject(AudioService);
   holidayService = inject(HolidayService);
   presetService = inject(PresetService);
@@ -360,16 +363,85 @@ export class AppComponent implements OnInit, OnDestroy {
         };
     }).sort((a, b) => a.opacity - b.opacity);
   });
+  
+  // --- New Advanced Visualizers ---
+  private auraRingsState: AuraRing[] = [];
+  private auraParticlesState: AuraParticle[] = [];
+  private nextAuraId = 0;
+  
+  auraBloom = computed(() => {
+    const bars = this.visualizerBars();
+    const bass = bars.slice(0, 4).reduce((s, v) => s + v, 0) / 4;
+    const mids = bars.slice(4, 28).reduce((s, v) => s + v, 0) / 24;
+    const highs = bars.slice(28, 64).reduce((s, v) => s + v, 0) / 36;
+    const maxRadius = 150;
+
+    // Update rings
+    this.auraRingsState = this.auraRingsState.map(r => ({ ...r, radius: r.radius + 1.2, opacity: r.opacity * 0.985 })).filter(r => r.opacity > 0.01);
+    
+    // Create new ring on strong mid hits
+    if (mids > 0.6 && Math.random() > 0.7) {
+        this.auraRingsState.push({ id: this.nextAuraId++, radius: 20 + bass * 20, opacity: 0.5 + mids * 0.5, thickness: 1 + mids * 3, hue: 180 + bass * 60 });
+    }
+    if (this.auraRingsState.length > 15) this.auraRingsState.shift();
+
+    // Update particles
+    this.auraParticlesState = this.auraParticlesState.map(p => ({...p, opacity: p.opacity * 0.96 })).filter(p => p.opacity > 0.01);
+
+    // Create new particles on high frequency hits
+    if (highs > 0.5) {
+      for (let i = 0; i < Math.floor(highs * 5); i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 20 + Math.random() * maxRadius;
+        this.auraParticlesState.push({ id: this.nextAuraId++, x: Math.cos(angle) * dist, y: Math.sin(angle) * dist, opacity: 0.5 + Math.random() * 0.5, size: 0.5 + Math.random() * 1.5 });
+      }
+    }
+    if (this.auraParticlesState.length > 100) this.auraParticlesState.splice(0, this.auraParticlesState.length - 100);
+
+    return {
+      coreSize: 15 + bass * 25,
+      coreOpacity: 0.4 + bass * 0.6,
+      rings: this.auraRingsState,
+      particles: this.auraParticlesState
+    };
+  });
+
+  rhythmicGlyphs = computed(() => {
+    const bars = this.visualizerBars();
+    const bass = bars.slice(0, 3).reduce((s, v) => s + v, 0) / 3;
+    const lowMids = bars.slice(3, 10).reduce((s, v) => s + v, 0) / 7;
+    const highMids = bars.slice(10, 32).reduce((s, v) => s + v, 0) / 22;
+    const highs = bars.slice(32, 64).reduce((s, v) => s + v, 0) / 32;
+
+    const time = performance.now() / 1000;
+
+    return {
+      center: { scale: 1 + bass * 0.5, opacity: 0.5 + bass * 0.5 },
+      innerRing: { rotation: time * 15, scale: 1 + lowMids * 0.2, opacity: 0.4 + lowMids * 0.6 },
+      outerRing: { rotation: -time * 10, scale: 1 + highMids * 0.3, opacity: 0.3 + highMids * 0.7 },
+      sparkle: { opacity: highs > 0.6 ? 1 : 0, scale: 1 + highs * 0.5 }
+    };
+  });
+
+  liquifyParams = computed(() => {
+    const bars = this.visualizerBars();
+    const bass = bars.slice(0, 8).reduce((s, v) => s + v, 0) / 8;
+    const mids = bars.slice(8, 40).reduce((s, v) => s + v, 0) / 32;
+
+    return {
+      turbulence: 0.005 + bass * 0.04,
+      scale: 5 + mids * 25
+    };
+  });
 
   bandFrequencies = ['60', '170', '310', '600', '1k', '3k', '6k'];
 
   themes: EqualizerTheme[] = [
-    { 
-    name: 'Mekyo', 
-    type: 'shadow', // Switched to shadow for depth
-    base: 'bg-zinc-950', 
-    display: 'bg-zinc-900/80 backdrop-blur-sm border border-zinc-800', 
-    // Effect: Cyberpunk Neon. Starts dark cyan, goes to white hot at top, with a heavy cyan glow.
+    { name: 'Aura Bloom', type: 'aura', base: 'bg-black', display: 'bg-black/50', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: 'text-sky-300', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-sky-500/50' },
+    { name: 'Rhythmic Glyphs', type: 'glyphs', base: 'bg-slate-900', display: 'bg-black/60', bar: '', sliderTrack: 'bg-teal-800/50', sliderThumb: 'bg-emerald-400', text: 'text-teal-200', accent: 'text-emerald-300', button: 'bg-teal-900/60', buttonHover: 'hover:bg-teal-800/60', highlight: 'bg-emerald-500/50' },
+    { name: 'Liquify', type: 'liquid', base: 'bg-gray-800', display: 'bg-black/70', bar: '', sliderTrack: 'bg-slate-600', sliderThumb: 'bg-white', text: 'text-slate-200', accent: 'text-cyan-300', button: 'bg-slate-700', buttonHover: 'hover:bg-slate-600', highlight: 'bg-cyan-500/50' },
+    { name: 'Mekyo', type: 'shadow', // Switched to shadow for depth
+    base: 'bg-zinc-950', display: 'bg-zinc-900/80 backdrop-blur-sm border border-zinc-800', // Effect: Cyberpunk Neon. Starts dark cyan, goes to white hot at top, with a heavy cyan glow.
     bar: 'bg-gradient-to-t from-cyan-900 via-cyan-500 to-white shadow-[0_0_15px_rgba(34,211,238,0.6)] rounded-t-sm', 
     sliderTrack: 'bg-zinc-800', 
     sliderThumb: 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]', 
