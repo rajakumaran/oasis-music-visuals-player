@@ -29,6 +29,12 @@ export class AudioService {
   private lastBeatTime = 0;
   private lastFftFrame: Uint8Array | null = null;
 
+  // --- "Smart" Mode Analysis ---
+  private beatTimes: number[] = [];
+  private transientTimes: number[] = [];
+  private lastAnalysisTime = 0;
+  private readonly ANALYSIS_WINDOW = 3000; // ms
+
   // State Signals
   playlist = signal<Track[]>([]);
   currentTrackIndex = signal<number | null>(null);
@@ -43,9 +49,10 @@ export class AudioService {
   gainValues = signal<number[]>(BANDS.map(() => 0));
   frequencyData: WritableSignal<Uint8Array> = signal(new Uint8Array(FFT_SIZE / 2));
   
-  // --- NEW --- Audio Analysis Signals for Synergy Drive
+  // --- Synergy Drive Signals ---
   beat = signal<{ strength: number, timestamp: number }>({ strength: 0, timestamp: 0 });
   transient = signal<{ intensity: number, timestamp: number }>({ intensity: 0, timestamp: 0 });
+  detectedMusicProfile = signal<'atmosphere' | 'rhythm' | 'transient'>('rhythm');
 
   currentTrack = computed(() => {
     const idx = this.currentTrackIndex();
@@ -201,15 +208,8 @@ export class AudioService {
         this.currentTrackIndex.set(0);
     }
     if (!this.currentTrack()) return;
-
-    if (!this.audioContext) {
-      await this.initAudioContext();
-    }
-    
-    if (this.audioContext.state === 'suspended') {
-        await this.audioContext.resume();
-    }
-
+    if (!this.audioContext) await this.initAudioContext();
+    if (this.audioContext.state === 'suspended') await this.audioContext.resume();
     if (this.pauseTimeout) {
       clearTimeout(this.pauseTimeout);
       this.pauseTimeout = null;
@@ -240,22 +240,8 @@ export class AudioService {
     }
   }
 
-  async next() {
-    const idx = this.currentTrackIndex();
-    if (idx !== null && this.playlist().length > 1) {
-      const newIndex = (idx + 1) % this.playlist().length;
-      await this.selectTrack(newIndex);
-    }
-  }
-
-  async previous() {
-    const idx = this.currentTrackIndex();
-    if (idx !== null && this.playlist().length > 1) {
-      const newIndex = (idx - 1 + this.playlist().length) % this.playlist().length;
-      await this.selectTrack(newIndex);
-    }
-  }
-
+  next() { this.currentTrackIndex.update(idx => idx !== null ? (idx + 1) % this.playlist().length : 0); }
+  previous() { this.currentTrackIndex.update(idx => idx !== null ? (idx - 1 + this.playlist().length) % this.playlist().length : 0); }
   seek(time: number) { if (this.audioElement) this.audioElement.currentTime = time; }
 
   changeGain(bandIndex: number, gain: number) {
@@ -286,11 +272,11 @@ export class AudioService {
       }
 
       this.micSourceNode = this.audioContext!.createMediaStreamSource(this.micStream);
-      this.mediaElementSourceNode?.disconnect(); // Disconnect file source
-      this.micSourceNode.connect(this.gainNodes[0]); // Connect mic to filter chain
+      this.mediaElementSourceNode?.disconnect();
+      this.micSourceNode.connect(this.gainNodes[0]);
       
       if (this.masterGainNode) {
-        this.masterGainNode.gain.cancelScheduledValues(this.audioContext.currentTime);
+        this.masterGainNode.gain.cancelScheduledValues(this.audioContext!.currentTime);
         this.masterGainNode.gain.value = 1;
       }
       
@@ -304,29 +290,20 @@ export class AudioService {
   }
 
   private deactivateMicrophone() {
-    if (this.micStream) {
-      this.micStream.getTracks().forEach(track => track.stop());
-      this.micStream = null;
-    }
-    if (this.micSourceNode) {
-      this.micSourceNode.disconnect();
-      this.micSourceNode = null;
-    }
+    if (this.micStream) this.micStream.getTracks().forEach(track => track.stop());
+    this.micStream = null;
+    if (this.micSourceNode) this.micSourceNode.disconnect();
+    this.micSourceNode = null;
     if (this.mediaElementSourceNode && this.gainNodes.length > 0) {
       this.mediaElementSourceNode.connect(this.gainNodes[0]);
     }
-
-    if (!this.isPlaying()) {
-        this.stopVisualization();
-    }
+    if (!this.isPlaying()) this.stopVisualization();
   }
   
   private detectBeat(dataArray: Uint8Array) {
     const now = performance.now();
     // Cooldown to avoid beat "flutter" on things like bass rolls or very fast kicks
-    if (now - this.lastBeatTime < 80) { // 80ms cooldown, allows up to ~187 BPM
-        return;
-    }
+        if (now - this.lastBeatTime < 80) return;
 
     // --- Band Definitions (based on 1024 bins, ~23Hz/bin with 48k sample rate) ---
     const BASS_START = 1, BASS_END = 12;     // ~23Hz - 276Hz (Kick drum fundamental)
@@ -368,6 +345,7 @@ export class AudioService {
     if (beatDetected) {
       this.beat.set({ strength: Math.min(1.0, beatStrength), timestamp: now });
       this.lastBeatTime = now;
+      this.beatTimes.push(now);
     }
     
     // Update history buffers
@@ -383,14 +361,10 @@ export class AudioService {
     }
     
     let flux = 0;
-    // Spectral Flux: sum of positive changes in spectral bins.
-    // We focus on higher frequencies for "sharper" transient detection (cymbals, hi-hats, synth attacks).
-    const startBin = 180; // Start around ~4.1kHz
+    const startBin = 180;
     for (let i = startBin; i < dataArray.length; i++) {
       const diff = dataArray[i] - this.lastFftFrame[i];
-      if (diff > 0) { // Only consider increases in energy
-        flux += diff;
-      }
+      if (diff > 0) flux += diff;
     }
     
     // Normalize the flux value for consistent reactivity
@@ -398,13 +372,45 @@ export class AudioService {
     
     // Adjusted sensitivity for the more volatile high-frequency range.
     if (normalizedFlux > 0.035) {
-      this.transient.set({ 
-        intensity: Math.min(1, normalizedFlux * 20), // Higher multiplier for more "sparkle"
-        timestamp: performance.now() 
-      });
+      const now = performance.now();
+      this.transient.set({ intensity: Math.min(1, normalizedFlux * 20), timestamp: now });
+      this.transientTimes.push(now);
     }
-    
     this.lastFftFrame.set(dataArray);
+  }
+
+  private analyzeMusicProfile() {
+    const now = performance.now();
+    if (now - this.lastAnalysisTime < this.ANALYSIS_WINDOW) return;
+    this.lastAnalysisTime = now;
+
+    this.beatTimes = this.beatTimes.filter(t => now - t < this.ANALYSIS_WINDOW);
+    this.transientTimes = this.transientTimes.filter(t => now - t < this.ANALYSIS_WINDOW);
+
+    const transientDensity = this.transientTimes.length / (this.ANALYSIS_WINDOW / 1000);
+    const beatCount = this.beatTimes.length;
+    
+    let rhythmScore = 0;
+    if (beatCount > 2) {
+      const intervals = [];
+      for (let i = 1; i < this.beatTimes.length; i++) {
+        intervals.push(this.beatTimes[i] - this.beatTimes[i - 1]);
+      }
+      const avgInterval = intervals.reduce((s, v) => s + v, 0) / intervals.length;
+      const stdDev = Math.sqrt(intervals.map(x => Math.pow(x - avgInterval, 2)).reduce((s, v) => s + v, 0) / intervals.length);
+      const consistency = 1 - (stdDev / avgInterval);
+      if (consistency > 0.5) { // Threshold for "consistent" rhythm
+        rhythmScore = (beatCount / (this.ANALYSIS_WINDOW / 1000)) * consistency; // Beats per second, weighted by consistency
+      }
+    }
+
+    if (transientDensity > 8) { // High transient density (e.g., DnB, Metal)
+      this.detectedMusicProfile.set('transient');
+    } else if (rhythmScore > 1.2) { // Consistent, strong beat (e.g., House, Pop)
+      this.detectedMusicProfile.set('rhythm');
+    } else { // Low transients, no clear beat (e.g., Ambient, Classical)
+      this.detectedMusicProfile.set('atmosphere');
+    }
   }
 
   private visualize() {
@@ -424,6 +430,7 @@ export class AudioService {
     // Run our new advanced detectors
     this.detectBeat(dataArray);
     this.detectTransient(dataArray);
+    this.analyzeMusicProfile();
     
     this.animationFrameId = requestAnimationFrame(() => this.visualize());
   }
@@ -443,6 +450,8 @@ export class AudioService {
       this.lastFftFrame = null;
       this.beatHistory.bass.fill(0);
       this.beatHistory.mids.fill(0);
+      this.beatTimes = [];
+      this.transientTimes = [];
     }
   }
 }

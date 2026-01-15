@@ -9,6 +9,7 @@ import { inject as vercelAnalytics } from '@vercel/analytics'; // 1. Import the 
 import { track } from '@vercel/analytics'; // 1. Import track
 type LightSourcePosition = 'none' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center-stage' | 'top-center';
 type SynergyDriveMode = 'atmosphere' | 'rhythm' | 'transient';
+type SynergyDriveSetting = SynergyDriveMode | 'smart';
 
 interface AuraRing { id: number; radius: number; opacity: number; thickness: number; hue: number; }
 interface AuraParticle { id: number; x: number; y: number; opacity: number; size: number; }
@@ -38,13 +39,16 @@ export class AppComponent implements OnInit, OnDestroy {
   beat = this.audioService.beat;
   transient = this.audioService.transient;
 
-  // --- NEW: Synergy Drive ---
-  synergyDriveMode = signal<SynergyDriveMode>('rhythm');
+  // --- Synergy Drive ---
+  synergyDriveMode = signal<SynergyDriveSetting>('smart');
+  effectiveSynergyDriveMode = computed(() => {
+    const mode = this.synergyDriveMode();
+    return mode === 'smart' ? this.audioService.detectedMusicProfile() : mode;
+  });
   private lastBeatTimestamp = 0;
   private lastTransientTimestamp = 0;
 
-  sensitivity = signal(1.0); //was 1.2
-  responseCurve = signal<'linear' | 'polynomial' | 'fractal'>('polynomial');
+  sensitivity = signal(1.2);
   backgroundImageUrl = signal<string | null>(null);
   private smoothedBars = new Array(64).fill(0);
   
@@ -54,6 +58,7 @@ export class AppComponent implements OnInit, OnDestroy {
   // --- Ticker Properties ---
   tickerMessages: string[] = [
     'Welcome to the Audio Oasis Equalizer...',
+    'Tip: Try the new "Smart" Synergy Drive mode for adaptive visuals!',
     'Tip: You can now save and load your favorite EQ settings as presets!',
     'Tip: Try Microphone Mode to visualize any sound in your room.',
     'By Mr. Muthukumaran Azhagesan ( Kumar ), https://linktr.ee/muthukumaran.azhagesan',
@@ -201,9 +206,8 @@ export class AppComponent implements OnInit, OnDestroy {
   visualizerBars = computed(() => {
     const data = this.audioService.frequencyData();
     const sensitivityValue = this.sensitivity();
-    const responseCurveType = this.responseCurve();
     const baseDecay = this.decayFactor();
-    const driveMode = this.synergyDriveMode();
+    const driveMode = this.effectiveSynergyDriveMode();
     const beatInfo = this.beat();
     const transientInfo = this.transient();
 
@@ -213,19 +217,18 @@ export class AppComponent implements OnInit, OnDestroy {
     let lastIndex = 0;
 
     let beatKick = 0;
-    if (driveMode === 'rhythm' || driveMode === 'transient') {
-      if (beatInfo.timestamp > this.lastBeatTimestamp) {
-        this.lastBeatTimestamp = beatInfo.timestamp;
-        beatKick = Math.min(1, beatInfo.strength * 0.5);
-      }
+    const isRhythmic = driveMode === 'rhythm' || driveMode === 'transient';
+    if (isRhythmic && beatInfo.timestamp > this.lastBeatTimestamp) {
+      this.lastBeatTimestamp = beatInfo.timestamp;
+      beatKick = Math.min(1, beatInfo.strength * 0.6);
     }
 
     let transientSpike = 0;
-    if (driveMode === 'transient') {
-       if (transientInfo.timestamp > this.lastTransientTimestamp) {
-        this.lastTransientTimestamp = transientInfo.timestamp;
-        transientSpike = Math.min(1, transientInfo.intensity * 1.5);
-      }
+    let transientJitter = 0;
+    if (driveMode === 'transient' && transientInfo.timestamp > this.lastTransientTimestamp) {
+      this.lastTransientTimestamp = transientInfo.timestamp;
+      transientSpike = Math.min(1, transientInfo.intensity * 1.5);
+      transientJitter = transientInfo.intensity * 0.2;
     }
     
     for (let i = 0; i < bars; i++) {
@@ -236,26 +239,30 @@ export class AppComponent implements OnInit, OnDestroy {
         let normalizedValue = slice.length > 0 ? (Math.max(...slice) / 255) * sensitivityValue : 0;
         normalizedValue = Math.max(0, Math.min(1, normalizedValue));
 
-        if (responseCurveType === 'polynomial') {
-            normalizedValue = Math.pow(normalizedValue, 2);
-        } else if (responseCurveType === 'fractal') {
-            const modulation = 0.7 + 0.3 * Math.abs(Math.sin((i / bars) * Math.PI * 4));
-            normalizedValue = Math.pow(normalizedValue, 1.2) * modulation;
+        // --- Integrated Response Curve Logic ---
+        if (driveMode === 'rhythm' || driveMode === 'transient') {
+            normalizedValue = Math.pow(normalizedValue, 2); // Punchy polynomial curve
         }
 
-        // --- Synergy Drive Logic ---
-        const bassKickFactor = 1 - (i / bars); // Stronger kick for bass bars
-        const transientSpikeFactor = (i / bars); // Stronger spike for high-freq bars
+        // --- Synergy Drive Effects Logic ---
+        const barProgress = i / (bars - 1);
+        const bassKickFactor = 1 - barProgress;
+        const transientSpikeFactor = barProgress;
+        
         normalizedValue += beatKick * bassKickFactor;
         normalizedValue += transientSpike * transientSpikeFactor;
+        if (driveMode === 'transient' && i > bars / 2) {
+          normalizedValue += (Math.random() - 0.5) * transientJitter * transientSpikeFactor;
+        }
         
         const currentValue = this.smoothedBars[i];
         if (normalizedValue >= currentValue) {
             this.smoothedBars[i] = normalizedValue;
         } else {
             let finalDecay = baseDecay;
+            if (driveMode === 'atmosphere') finalDecay = Math.min(0.995, baseDecay + 0.03); // Slower decay for atmosphere
             if (i < bars * 0.15) finalDecay = Math.min(0.99, baseDecay + 0.02);
-            else if (i > bars * 0.7) finalDecay = Math.max(0.85, baseDecay - 0.08);
+            else if (i > bars * 0.7) finalDecay = Math.max(0.85, baseDecay - 0.08); // Faster decay for highs
             this.smoothedBars[i] = currentValue * finalDecay;
         }
         output[i] = Math.min(1, this.smoothedBars[i]); // Clamp final value to 1
@@ -407,7 +414,7 @@ export class AppComponent implements OnInit, OnDestroy {
     const bars = this.visualizerBars();
     const bass = bars.slice(0, 4).reduce((s, v) => s + v, 0) / 4;
     const mids = bars.slice(4, 28).reduce((s, v) => s + v, 0) / 24;
-    const driveMode = this.synergyDriveMode();
+    const driveMode = this.effectiveSynergyDriveMode();
     const transientInfo = this.transient();
     const beatInfo = this.beat();
     const maxRadius = 150;
@@ -463,7 +470,7 @@ export class AppComponent implements OnInit, OnDestroy {
     const lowMids = bars.slice(3, 10).reduce((s, v) => s + v, 0) / 7;
     const highMids = bars.slice(10, 32).reduce((s, v) => s + v, 0) / 22;
     const time = performance.now() / 1000;
-    const driveMode = this.synergyDriveMode();
+    const driveMode = this.effectiveSynergyDriveMode();
     const transientInfo = this.transient();
     const beatInfo = this.beat();
     
@@ -499,6 +506,10 @@ export class AppComponent implements OnInit, OnDestroy {
   bandFrequencies = ['60', '170', '310', '600', '1k', '3k', '6k'];
 
   themes: EqualizerTheme[] = [
+    { name: 'Mukyo', type: '3d', base: 'bg-gradient-to-br from-gray-900 via-black to-blue-900', display: 'bg-gray-900/70', bar: 'bg-gradient-to-t from-sky-500 to-cyan-200 shadow-[0_0_8px_#22d3ee,0_0_12px_#67e8f9]', sliderTrack: 'bg-gray-700', sliderThumb: 'bg-gray-300', text: 'text-gray-300', accent: 'text-cyan-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-gray-800' },
+    { name: 'Muknics', type: '3d', base: 'bg-gradient-to-br from-stone-800 via-neutral-900 to-stone-900', display: 'bg-black/60 backdrop-blur-sm', bar: 'bg-gradient-to-t from-orange-600 via-amber-400 to-yellow-200 shadow-[0_0_7px_#f59e0b]', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-amber-500', text: 'text-amber-100', accent: 'text-amber-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-gray-700/50' },
+    { name: 'Pioneer', type: 'shadow', base: 'bg-slate-200', display: 'bg-blue-900/80', bar: 'bg-gradient-to-t from-sky-600 to-sky-400 shadow-[0_0_8px_#38bdf8,-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-blue-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
+    { name: 'Glass Box', type: 'glass-box', base: 'bg-gray-900', display: 'bg-black/50', bar: 'bg-gradient-to-t from-purple-500 to-cyan-300 text-cyan-300', sliderTrack: 'bg-purple-800/60', sliderThumb: 'bg-cyan-300', text: 'text-purple-200', accent: 'text-cyan-300', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-cyan-500/50' },
     { name: 'Aura Bloom', type: 'aura', base: 'bg-black', display: 'bg-black/50', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: 'text-sky-300', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-sky-500/50' },
     { name: 'Rhythmic Glyphs', type: 'glyphs', base: 'bg-slate-900', display: 'bg-black/60', bar: '', sliderTrack: 'bg-teal-800/50', sliderThumb: 'bg-emerald-400', text: 'text-teal-200', accent: 'text-emerald-300', button: 'bg-teal-900/60', buttonHover: 'hover:bg-teal-800/60', highlight: 'bg-emerald-500/50' },
     { name: 'Liquify', type: 'liquid', base: 'bg-gray-800', display: 'bg-black/70', bar: '', sliderTrack: 'bg-slate-600', sliderThumb: 'bg-white', text: 'text-slate-200', accent: 'text-cyan-300', button: 'bg-slate-700', buttonHover: 'hover:bg-slate-600', highlight: 'bg-cyan-500/50' },
@@ -603,7 +614,6 @@ export class AppComponent implements OnInit, OnDestroy {
   onGainChange(event: Event, index: number) { this.audioService.changeGain(index, parseFloat((event.target as HTMLInputElement).value)); }
   onSeek(event: Event) { this.audioService.seek(parseFloat((event.target as HTMLInputElement).value)); }
   onSensitivityChange(event: Event) { this.sensitivity.set(parseFloat((event.target as HTMLInputElement).value)); }
-  setResponseCurve(curve: 'linear' | 'polynomial' | 'fractal') { this.responseCurve.set(curve); }
   setLightSource(position: LightSourcePosition) { this.lightSourcePosition.set(position); }
   toggleFullscreenControls() { this.fullscreenControlsActive.update(v => !v); }
   selectTheme(index: string) { const i = parseInt(index, 10); if (!isNaN(i) && i < this.themes.length) this.selectedTheme.set(this.themes[i]); }
@@ -611,7 +621,7 @@ export class AppComponent implements OnInit, OnDestroy {
   setSwitchInterval(event: Event) { this.switchInterval.set(parseInt((event.target as HTMLSelectElement).value, 10)); }
   setSwitchMode(mode: 'sequential' | 'random') { this.switchMode.set(mode); }
   toggleHolidayTheme(event: Event) { this.holidayService.setHolidayThemeEnabled((event.target as HTMLInputElement).checked); }
-  setSynergyDriveMode(mode: SynergyDriveMode) { this.synergyDriveMode.set(mode); }
+  setSynergyDriveMode(mode: SynergyDriveSetting) { this.synergyDriveMode.set(mode); }
 
   private startAutoSwitching(): void {
     this.stopAutoSwitching();

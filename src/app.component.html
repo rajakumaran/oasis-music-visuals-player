@@ -283,45 +283,20 @@
         <div class="mt-4 text-sm border-t border-white/10 pt-4">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Synergy Drive -->
-            <div class="flex flex-col gap-1 md:col-span-3">
-              <label class="font-semibold">Synergy Drive <span class="font-normal text-xs text-gray-400">- Reactivity Mode</span></label>
-              <div class="flex items-center rounded-md overflow-hidden h-full" [class]="effectiveTheme().button" title="Change the visualizer's reactivity personality">
+            <div class="flex flex-col gap-1">
+              <label class="font-semibold">Synergy Drive</label>
+              <div class="flex items-center rounded-md overflow-hidden h-full" [class]="effectiveTheme().button" title="Smart mode adapts to the music. Or, pick a specific personality.">
+                  <button (click)="setSynergyDriveMode('smart')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="synergyDriveMode() === 'smart' ? effectiveTheme().highlight : effectiveTheme().buttonHover">Smart</button>
                   <button (click)="setSynergyDriveMode('atmosphere')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="synergyDriveMode() === 'atmosphere' ? effectiveTheme().highlight : effectiveTheme().buttonHover">Atmosphere</button>
                   <button (click)="setSynergyDriveMode('rhythm')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="synergyDriveMode() === 'rhythm' ? effectiveTheme().highlight : effectiveTheme().buttonHover">Rhythm</button>
                   <button (click)="setSynergyDriveMode('transient')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="synergyDriveMode() === 'transient' ? effectiveTheme().highlight : effectiveTheme().buttonHover">Transient</button>
               </div>
             </div>
              <!-- EQ Presets -->
-            <div class="flex flex-col gap-1 md:col-span-3">
-              <label class="font-semibold">EQ Presets</label>
-              <div class="grid grid-cols-3 gap-2">
-                <div class="relative col-span-2">
-                  <select [class]="'w-full appearance-none rounded-md py-1 pl-2 pr-7 text-xs ' + effectiveTheme().button + ' ' + effectiveTheme().text" (change)="applyPreset($event)" title="Load a saved EQ preset">
-                    <option value="" disabled [selected]="!selectedPreset()">Load Preset...</option>
-                    @for(preset of presets(); track preset.name) { <option [value]="preset.name" [selected]="selectedPreset()?.name === preset.name">{{ preset.name }}</option> }
-                  </select>
-                  <i class="fa-solid fa-chevron-down absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-xs"></i>
-                </div>
-                <button (click)="deleteSelectedPreset()" [disabled]="!selectedPreset()" [class]="effectiveTheme().button + ' ' + effectiveTheme().buttonHover + ' text-xs rounded-md disabled:opacity-50 disabled:cursor-not-allowed'">Delete</button>
-              </div>
-              <div class="grid grid-cols-3 gap-2 mt-2">
-                <input type="text" [value]="newPresetName()" (input)="newPresetName.set($any($event.target).value)" placeholder="New preset name..." [class]="'col-span-2 text-xs rounded-md p-1 ' + effectiveTheme().base + ' border border-white/20' + ' placeholder:text-gray-400 focus:ring-1 ' + effectiveTheme().accent">
-                <button (click)="savePreset()" [disabled]="!newPresetName().trim()" [class]="effectiveTheme().button + ' ' + effectiveTheme().buttonHover + ' text-xs rounded-md disabled:opacity-50'">Save</button>
-              </div>
-            </div>
             <!-- Sensitivity Control -->
             <div class="flex flex-col gap-1">
               <label for="sensitivity-slider" class="font-semibold">Sensitivity: {{ sensitivity().toFixed(1) }}</label>
               <input type="range" id="sensitivity-slider" min="0.5" max="5" step="0.1" [value]="sensitivity()" (input)="onSensitivityChange($event)" [style.--thumb-bg]="effectiveTheme().sliderThumb" [style.--track-bg]="effectiveTheme().sliderTrack" title="Adjust visualizer sensitivity to the audio">
-            </div>
-            <!-- Response Curve Control -->
-            <div class="flex flex-col gap-1">
-              <label class="font-semibold">Response Curve</label>
-              <div class="flex items-center rounded-md overflow-hidden h-full" [class]="effectiveTheme().button" title="Change the visualizer's response algorithm">
-                  <button (click)="setResponseCurve('linear')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="responseCurve() === 'linear' ? effectiveTheme().highlight : effectiveTheme().buttonHover">Linear</button>
-                  <button (click)="setResponseCurve('polynomial')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="responseCurve() === 'polynomial' ? effectiveTheme().highlight : effectiveTheme().buttonHover">Punchy</button>
-                  <button (click)="setResponseCurve('fractal')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="responseCurve() === 'fractal' ? effectiveTheme().highlight : effectiveTheme().buttonHover">Celestial</button>
-              </div>
             </div>
              <!-- Kaleidoscope Control -->
             <div class="flex flex-col gap-2 justify-end">
@@ -343,6 +318,24 @@
                           <i class="fa-solid fa-chevron-down absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-xs"></i>
                       </div>
                   }
+              </div>
+            </div>
+            <!-- EQ Presets -->
+            <div class="flex flex-col gap-1 md:col-span-3">
+              <label class="font-semibold">EQ Presets</label>
+              <div class="grid grid-cols-3 gap-2">
+                <div class="relative col-span-2">
+                  <select [class]="'w-full appearance-none rounded-md py-1 pl-2 pr-7 text-xs ' + effectiveTheme().button + ' ' + effectiveTheme().text" (change)="applyPreset($event)" title="Load a saved EQ preset">
+                    <option value="" disabled [selected]="!selectedPreset()">Load Preset...</option>
+                    @for(preset of presets(); track preset.name) { <option [value]="preset.name" [selected]="selectedPreset()?.name === preset.name">{{ preset.name }}</option> }
+                  </select>
+                  <i class="fa-solid fa-chevron-down absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-xs"></i>
+                </div>
+                <button (click)="deleteSelectedPreset()" [disabled]="!selectedPreset()" [class]="effectiveTheme().button + ' ' + effectiveTheme().buttonHover + ' text-xs rounded-md disabled:opacity-50 disabled:cursor-not-allowed'">Delete</button>
+              </div>
+              <div class="grid grid-cols-3 gap-2 mt-2">
+                <input type="text" [value]="newPresetName()" (input)="newPresetName.set($any($event.target).value)" placeholder="New preset name..." [class]="'col-span-2 text-xs rounded-md p-1 ' + effectiveTheme().base + ' border border-white/20' + ' placeholder:text-gray-400 focus:ring-1 ' + effectiveTheme().accent">
+                <button (click)="savePreset()" [disabled]="!newPresetName().trim()" [class]="effectiveTheme().button + ' ' + effectiveTheme().buttonHover + ' text-xs rounded-md disabled:opacity-50'">Save</button>
               </div>
             </div>
           </div>
