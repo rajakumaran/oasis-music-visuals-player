@@ -3,7 +3,7 @@
   <!-- Header -->
   <header class="flex-shrink-0 flex items-center justify-between mb-4">
     <h1 class="text-2xl sm:text-3xl font-bold tracking-wider" [class]="effectiveTheme().accent">
-      <i class="fa-solid fa-music fa-wand-magic-sparkles"></i>AUDIO OASIS Version 2
+      <i class="fa-solid fa-music fa-wand-magic-sparkles fa-?"></i>AUDIO OASIS Version 3
     </h1>
     <div class="hidden md:block text-xs sm:text-sm font-sans tracking-wider" [class]="effectiveTheme().accent">Built by Muthukumaran Azhagesan (Kumar). Check his <a href="https://linktr.ee/muthukumaran.azhagesan" target="_blank" class="underline">Linktree</a></div>
     <div class="flex items-center gap-4">
@@ -282,6 +282,15 @@
         <!-- Advanced Controls -->
         <div class="mt-4 text-sm border-t border-white/10 pt-4">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Synergy Drive -->
+            <div class="flex flex-col gap-1 md:col-span-3">
+              <label class="font-semibold">Synergy Drive <span class="font-normal text-xs text-gray-400">- Reactivity Mode</span></label>
+              <div class="flex items-center rounded-md overflow-hidden h-full" [class]="effectiveTheme().button" title="Change the visualizer's reactivity personality">
+                  <button (click)="setSynergyDriveMode('atmosphere')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="synergyDriveMode() === 'atmosphere' ? effectiveTheme().highlight : effectiveTheme().buttonHover">Atmosphere</button>
+                  <button (click)="setSynergyDriveMode('rhythm')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="synergyDriveMode() === 'rhythm' ? effectiveTheme().highlight : effectiveTheme().buttonHover">Rhythm</button>
+                  <button (click)="setSynergyDriveMode('transient')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="synergyDriveMode() === 'transient' ? effectiveTheme().highlight : effectiveTheme().buttonHover">Transient</button>
+              </div>
+            </div>
              <!-- EQ Presets -->
             <div class="flex flex-col gap-1 md:col-span-3">
               <label class="font-semibold">EQ Presets</label>

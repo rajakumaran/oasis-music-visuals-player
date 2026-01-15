@@ -8,6 +8,7 @@ import { FullscreenToggleComponent } from './fullscreen-toggle/fullscreen-toggle
 import { inject as vercelAnalytics } from '@vercel/analytics'; // 1. Import the helper
 import { track } from '@vercel/analytics'; // 1. Import track
 type LightSourcePosition = 'none' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center-stage' | 'top-center';
+type SynergyDriveMode = 'atmosphere' | 'rhythm' | 'transient';
 
 interface AuraRing { id: number; radius: number; opacity: number; thickness: number; hue: number; }
 interface AuraParticle { id: number; x: number; y: number; opacity: number; size: number; }
@@ -34,6 +35,13 @@ export class AppComponent implements OnInit, OnDestroy {
   gainValues = this.audioService.gainValues;
   currentTrack = this.audioService.currentTrack;
   audioSource = this.audioService.audioSource;
+  beat = this.audioService.beat;
+  transient = this.audioService.transient;
+
+  // --- NEW: Synergy Drive ---
+  synergyDriveMode = signal<SynergyDriveMode>('rhythm');
+  private lastBeatTimestamp = 0;
+  private lastTransientTimestamp = 0;
 
   sensitivity = signal(1.0); //was 1.2
   responseCurve = signal<'linear' | 'polynomial' | 'fractal'>('polynomial');
@@ -195,11 +203,31 @@ export class AppComponent implements OnInit, OnDestroy {
     const sensitivityValue = this.sensitivity();
     const responseCurveType = this.responseCurve();
     const baseDecay = this.decayFactor();
+    const driveMode = this.synergyDriveMode();
+    const beatInfo = this.beat();
+    const transientInfo = this.transient();
+
     const bars = 64;
     const output = new Array(bars);
     const logLength = Math.log(data.length);
     let lastIndex = 0;
 
+    let beatKick = 0;
+    if (driveMode === 'rhythm' || driveMode === 'transient') {
+      if (beatInfo.timestamp > this.lastBeatTimestamp) {
+        this.lastBeatTimestamp = beatInfo.timestamp;
+        beatKick = Math.min(1, beatInfo.strength * 0.5);
+      }
+    }
+
+    let transientSpike = 0;
+    if (driveMode === 'transient') {
+       if (transientInfo.timestamp > this.lastTransientTimestamp) {
+        this.lastTransientTimestamp = transientInfo.timestamp;
+        transientSpike = Math.min(1, transientInfo.intensity * 1.5);
+      }
+    }
+    
     for (let i = 0; i < bars; i++) {
         let index = Math.floor(Math.exp(((i + 1) / bars) * logLength));
         if (index <= lastIndex) index = lastIndex + 1;
@@ -214,6 +242,12 @@ export class AppComponent implements OnInit, OnDestroy {
             const modulation = 0.7 + 0.3 * Math.abs(Math.sin((i / bars) * Math.PI * 4));
             normalizedValue = Math.pow(normalizedValue, 1.2) * modulation;
         }
+
+        // --- Synergy Drive Logic ---
+        const bassKickFactor = 1 - (i / bars); // Stronger kick for bass bars
+        const transientSpikeFactor = (i / bars); // Stronger spike for high-freq bars
+        normalizedValue += beatKick * bassKickFactor;
+        normalizedValue += transientSpike * transientSpikeFactor;
         
         const currentValue = this.smoothedBars[i];
         if (normalizedValue >= currentValue) {
@@ -224,7 +258,7 @@ export class AppComponent implements OnInit, OnDestroy {
             else if (i > bars * 0.7) finalDecay = Math.max(0.85, baseDecay - 0.08);
             this.smoothedBars[i] = currentValue * finalDecay;
         }
-        output[i] = this.smoothedBars[i];
+        output[i] = Math.min(1, this.smoothedBars[i]); // Clamp final value to 1
         lastIndex = index;
     }
     return output;
@@ -373,14 +407,21 @@ export class AppComponent implements OnInit, OnDestroy {
     const bars = this.visualizerBars();
     const bass = bars.slice(0, 4).reduce((s, v) => s + v, 0) / 4;
     const mids = bars.slice(4, 28).reduce((s, v) => s + v, 0) / 24;
-    const highs = bars.slice(28, 64).reduce((s, v) => s + v, 0) / 36;
+    const driveMode = this.synergyDriveMode();
+    const transientInfo = this.transient();
+    const beatInfo = this.beat();
     const maxRadius = 150;
 
     // Update rings
     this.auraRingsState = this.auraRingsState.map(r => ({ ...r, radius: r.radius + 1.2, opacity: r.opacity * 0.985 })).filter(r => r.opacity > 0.01);
     
-    // Create new ring on strong mid hits
-    if (mids > 0.6 && Math.random() > 0.7) {
+    // Create new ring on strong mid hits or a strong beat
+    let beatFired = false;
+    if ((driveMode === 'rhythm' || driveMode === 'transient') && beatInfo.timestamp > this.lastBeatTimestamp) {
+       this.auraRingsState.push({ id: this.nextAuraId++, radius: 20 + bass * 20, opacity: 0.6 + beatInfo.strength, thickness: 2 + mids * 4, hue: 180 + bass * 60 });
+       beatFired = true;
+    }
+    if (!beatFired && mids > 0.6 && Math.random() > 0.7) {
         this.auraRingsState.push({ id: this.nextAuraId++, radius: 20 + bass * 20, opacity: 0.5 + mids * 0.5, thickness: 1 + mids * 3, hue: 180 + bass * 60 });
     }
     if (this.auraRingsState.length > 15) this.auraRingsState.shift();
@@ -388,15 +429,25 @@ export class AppComponent implements OnInit, OnDestroy {
     // Update particles
     this.auraParticlesState = this.auraParticlesState.map(p => ({...p, opacity: p.opacity * 0.96 })).filter(p => p.opacity > 0.01);
 
-    // Create new particles on high frequency hits
-    if (highs > 0.5) {
+    // Create new particles on high frequency hits OR a sharp transient
+    let transientFired = false;
+    if (driveMode === 'transient' && transientInfo.timestamp > this.lastTransientTimestamp) {
+        for (let i = 0; i < Math.floor(transientInfo.intensity * 25); i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 20 + Math.random() * maxRadius;
+            this.auraParticlesState.push({ id: this.nextAuraId++, x: Math.cos(angle) * dist, y: Math.sin(angle) * dist, opacity: 0.7 + Math.random() * 0.3, size: 0.8 + Math.random() * 1.8 });
+        }
+        transientFired = true;
+    }
+    const highs = bars.slice(28, 64).reduce((s, v) => s + v, 0) / 36;
+    if (!transientFired && highs > 0.5) {
       for (let i = 0; i < Math.floor(highs * 5); i++) {
         const angle = Math.random() * Math.PI * 2;
         const dist = 20 + Math.random() * maxRadius;
         this.auraParticlesState.push({ id: this.nextAuraId++, x: Math.cos(angle) * dist, y: Math.sin(angle) * dist, opacity: 0.5 + Math.random() * 0.5, size: 0.5 + Math.random() * 1.5 });
       }
     }
-    if (this.auraParticlesState.length > 100) this.auraParticlesState.splice(0, this.auraParticlesState.length - 100);
+    if (this.auraParticlesState.length > 150) this.auraParticlesState.splice(0, this.auraParticlesState.length - 150);
 
     return {
       coreSize: 15 + bass * 25,
@@ -411,15 +462,26 @@ export class AppComponent implements OnInit, OnDestroy {
     const bass = bars.slice(0, 3).reduce((s, v) => s + v, 0) / 3;
     const lowMids = bars.slice(3, 10).reduce((s, v) => s + v, 0) / 7;
     const highMids = bars.slice(10, 32).reduce((s, v) => s + v, 0) / 22;
-    const highs = bars.slice(32, 64).reduce((s, v) => s + v, 0) / 32;
-
     const time = performance.now() / 1000;
+    const driveMode = this.synergyDriveMode();
+    const transientInfo = this.transient();
+    const beatInfo = this.beat();
+    
+    let beatScale = 1;
+    if ((driveMode === 'rhythm' || driveMode === 'transient') && beatInfo.timestamp > this.lastBeatTimestamp) {
+       beatScale = 1 + beatInfo.strength * 0.5;
+    }
+
+    let sparkleOpacity = 0;
+    if (driveMode === 'transient' && transientInfo.timestamp > this.lastTransientTimestamp) {
+      sparkleOpacity = transientInfo.intensity;
+    }
 
     return {
-      center: { scale: 1 + bass * 0.5, opacity: 0.5 + bass * 0.5 },
-      innerRing: { rotation: time * 15, scale: 1 + lowMids * 0.2, opacity: 0.4 + lowMids * 0.6 },
-      outerRing: { rotation: -time * 10, scale: 1 + highMids * 0.3, opacity: 0.3 + highMids * 0.7 },
-      sparkle: { opacity: highs > 0.6 ? 1 : 0, scale: 1 + highs * 0.5 }
+      center: { scale: (1 + bass * 0.5) * beatScale, opacity: 0.5 + bass * 0.5 },
+      innerRing: { rotation: time * 15, scale: (1 + lowMids * 0.2) * beatScale, opacity: 0.4 + lowMids * 0.6 },
+      outerRing: { rotation: -time * 10, scale: (1 + highMids * 0.3) * beatScale, opacity: 0.3 + highMids * 0.7 },
+      sparkle: { opacity: sparkleOpacity, scale: 1 + sparkleOpacity * 0.5 }
     };
   });
 
@@ -549,6 +611,7 @@ export class AppComponent implements OnInit, OnDestroy {
   setSwitchInterval(event: Event) { this.switchInterval.set(parseInt((event.target as HTMLSelectElement).value, 10)); }
   setSwitchMode(mode: 'sequential' | 'random') { this.switchMode.set(mode); }
   toggleHolidayTheme(event: Event) { this.holidayService.setHolidayThemeEnabled((event.target as HTMLInputElement).checked); }
+  setSynergyDriveMode(mode: SynergyDriveMode) { this.synergyDriveMode.set(mode); }
 
   private startAutoSwitching(): void {
     this.stopAutoSwitching();

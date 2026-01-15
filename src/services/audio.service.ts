@@ -2,7 +2,7 @@ import { Injectable, signal, effect, WritableSignal, computed } from '@angular/c
 import { Track } from '../models/track.model';
 
 const BANDS = [60, 170, 310, 600, 1000, 3000, 6000];
-const FFT_SIZE = 512;
+const FFT_SIZE = 2048; // Increased for better frequency resolution as per research
 const CROSSFADE_DURATION = 0.75; // seconds
 
 @Injectable({ providedIn: 'root' })
@@ -18,6 +18,16 @@ export class AudioService {
   private gainNodes: BiquadFilterNode[] = [];
   private masterGainNode: GainNode | null = null;
   private animationFrameId: number | null = null;
+  private pauseTimeout: any = null;
+
+  // --- Beat & Transient Detection ---
+  private beatHistory = {
+    bass: new Array(43).fill(0), // ~1s history for bass band at ~43fps
+    mids: new Array(43).fill(0), // ~1s history for mids band
+  };
+  private beatHistoryIndex = 0;
+  private lastBeatTime = 0;
+  private lastFftFrame: Uint8Array | null = null;
 
   // State Signals
   playlist = signal<Track[]>([]);
@@ -33,6 +43,10 @@ export class AudioService {
   gainValues = signal<number[]>(BANDS.map(() => 0));
   frequencyData: WritableSignal<Uint8Array> = signal(new Uint8Array(FFT_SIZE / 2));
   
+  // --- NEW --- Audio Analysis Signals for Synergy Drive
+  beat = signal<{ strength: number, timestamp: number }>({ strength: 0, timestamp: 0 });
+  transient = signal<{ intensity: number, timestamp: number }>({ intensity: 0, timestamp: 0 });
+
   currentTrack = computed(() => {
     const idx = this.currentTrackIndex();
     const list = this.playlist();
@@ -46,12 +60,14 @@ export class AudioService {
       const track = this.currentTrack();
       const audioEl = this.audioElement;
       if (track && audioEl) {
-        // Stop current playback before changing source
-        if (!audioEl.paused) {
-          audioEl.pause();
+        if (audioEl.src !== track.url) {
+          if (!audioEl.paused) {
+            audioEl.pause();
+          }
+          audioEl.src = track.url;
+          audioEl.load();
         }
-        audioEl.src = track.url;
-        audioEl.load();
+        
         if (this.isPlaying()) {
           this.playCurrentTrackWithFadeIn();
         }
@@ -72,16 +88,25 @@ export class AudioService {
       if (this.audioContext?.state === 'suspended') {
         await this.audioContext.resume();
       }
-      await this.audioElement?.play();
+
+      if (this.audioElement?.paused) {
+        await this.audioElement?.play();
+      }
+
       if (this.isCrossfadeEnabled() && this.masterGainNode && this.audioContext) {
         this.masterGainNode.gain.cancelScheduledValues(this.audioContext.currentTime);
+        this.masterGainNode.gain.setValueAtTime(this.masterGainNode.gain.value, this.audioContext.currentTime);
         this.masterGainNode.gain.linearRampToValueAtTime(1, this.audioContext.currentTime + CROSSFADE_DURATION);
       } else if (this.masterGainNode) {
         this.masterGainNode.gain.value = 1;
       }
     } catch (e) {
-      console.error("Play failed:", e);
-      this.isPlaying.set(false);
+      if (e instanceof DOMException && e.name === 'AbortError') {
+        // This can happen if the user rapidly clicks play/pause. The new state (e.g. paused) is the desired outcome, so we can ignore this error.
+      } else {
+        console.error("Play failed:", e);
+        this.isPlaying.set(false);
+      }
     }
   }
 
@@ -95,6 +120,7 @@ export class AudioService {
     this.mediaElementSourceNode = this.audioContext.createMediaElementSource(this.audioElement);
     this.analyserNode = this.audioContext.createAnalyser();
     this.analyserNode.fftSize = FFT_SIZE;
+    this.analyserNode.smoothingTimeConstant = 0.75; // Add some smoothing
     this.masterGainNode = this.audioContext.createGain();
     
     let lastNode: AudioNode = this.mediaElementSourceNode;
@@ -145,24 +171,27 @@ export class AudioService {
     }
   }
 
-  selectTrack(index: number) {
+  async selectTrack(index: number) {
     if (index >= 0 && index < this.playlist().length) {
       if (this.currentTrackIndex() === index) {
-        this.togglePlay();
+        await this.togglePlay();
       } else {
         const wasPlaying = this.isPlaying();
-        const changeTrack = () => {
-          this.currentTrackIndex.set(index);
-          this.isPlaying.set(wasPlaying || true);
-        };
+        
+        if (this.pauseTimeout) {
+          clearTimeout(this.pauseTimeout);
+          this.pauseTimeout = null;
+        }
 
         if (wasPlaying && this.isCrossfadeEnabled() && this.masterGainNode && this.audioContext) {
           this.masterGainNode.gain.cancelScheduledValues(this.audioContext.currentTime);
+          this.masterGainNode.gain.setValueAtTime(this.masterGainNode.gain.value, this.audioContext.currentTime);
           this.masterGainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + CROSSFADE_DURATION);
-          setTimeout(changeTrack, CROSSFADE_DURATION * 1000);
-        } else {
-          changeTrack();
+          await new Promise(resolve => setTimeout(resolve, CROSSFADE_DURATION * 1000));
         }
+
+        this.currentTrackIndex.set(index);
+        this.isPlaying.set(wasPlaying || true);
       }
     }
   }
@@ -181,6 +210,11 @@ export class AudioService {
         await this.audioContext.resume();
     }
 
+    if (this.pauseTimeout) {
+      clearTimeout(this.pauseTimeout);
+      this.pauseTimeout = null;
+    }
+
     this.isPlaying.update(p => !p);
     
     if (this.isPlaying()) {
@@ -193,8 +227,12 @@ export class AudioService {
     } else {
       if (this.isCrossfadeEnabled() && this.masterGainNode && this.audioContext) {
          this.masterGainNode.gain.cancelScheduledValues(this.audioContext.currentTime);
+         this.masterGainNode.gain.setValueAtTime(this.masterGainNode.gain.value, this.audioContext.currentTime);
          this.masterGainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + CROSSFADE_DURATION);
-         setTimeout(() => this.audioElement?.pause(), CROSSFADE_DURATION * 1000);
+         this.pauseTimeout = setTimeout(() => {
+            this.audioElement?.pause();
+            this.pauseTimeout = null;
+          }, CROSSFADE_DURATION * 1000);
       } else {
          this.audioElement?.pause();
       }
@@ -202,33 +240,19 @@ export class AudioService {
     }
   }
 
-  private changeTrack(newIndex: number) {
-      const change = () => {
-          this.currentTrackIndex.set(newIndex);
-          this.isPlaying.set(true);
-      };
-      if (this.isPlaying() && this.isCrossfadeEnabled() && this.audioContext && this.masterGainNode) {
-          this.masterGainNode.gain.cancelScheduledValues(this.audioContext.currentTime);
-          this.masterGainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + CROSSFADE_DURATION);
-          setTimeout(change, CROSSFADE_DURATION * 1000);
-      } else {
-          change();
-      }
-  }
-
-  next() {
+  async next() {
     const idx = this.currentTrackIndex();
     if (idx !== null && this.playlist().length > 1) {
       const newIndex = (idx + 1) % this.playlist().length;
-      this.changeTrack(newIndex);
+      await this.selectTrack(newIndex);
     }
   }
 
-  previous() {
+  async previous() {
     const idx = this.currentTrackIndex();
     if (idx !== null && this.playlist().length > 1) {
       const newIndex = (idx - 1 + this.playlist().length) % this.playlist().length;
-      this.changeTrack(newIndex);
+      await this.selectTrack(newIndex);
     }
   }
 
@@ -258,14 +282,13 @@ export class AudioService {
       this.isMicrophonePermissionGranted.set(true);
       
       if (this.isPlaying()) {
-        this.togglePlay(); // Pause file playback gracefully
+        await this.togglePlay(); // Pause file playback gracefully
       }
 
       this.micSourceNode = this.audioContext!.createMediaStreamSource(this.micStream);
       this.mediaElementSourceNode?.disconnect(); // Disconnect file source
       this.micSourceNode.connect(this.gainNodes[0]); // Connect mic to filter chain
       
-      // *** BUG FIX: Set master gain to 1 for microphone input ***
       if (this.masterGainNode) {
         this.masterGainNode.gain.cancelScheduledValues(this.audioContext.currentTime);
         this.masterGainNode.gain.value = 1;
@@ -289,7 +312,6 @@ export class AudioService {
       this.micSourceNode.disconnect();
       this.micSourceNode = null;
     }
-    // Reconnect file source if it exists
     if (this.mediaElementSourceNode && this.gainNodes.length > 0) {
       this.mediaElementSourceNode.connect(this.gainNodes[0]);
     }
@@ -297,6 +319,92 @@ export class AudioService {
     if (!this.isPlaying()) {
         this.stopVisualization();
     }
+  }
+  
+  private detectBeat(dataArray: Uint8Array) {
+    const now = performance.now();
+    // Cooldown to avoid beat "flutter" on things like bass rolls or very fast kicks
+    if (now - this.lastBeatTime < 80) { // 80ms cooldown, allows up to ~187 BPM
+        return;
+    }
+
+    // --- Band Definitions (based on 1024 bins, ~23Hz/bin with 48k sample rate) ---
+    const BASS_START = 1, BASS_END = 12;     // ~23Hz - 276Hz (Kick drum fundamental)
+    const MIDS_START = 40, MIDS_END = 120; // ~920Hz - 2.7kHz (Snare "crack")
+
+    let bassEnergy = 0;
+    for (let i = BASS_START; i <= BASS_END; i++) {
+        bassEnergy += dataArray[i];
+    }
+    bassEnergy /= (BASS_END - BASS_START + 1);
+
+    let midsEnergy = 0;
+    for (let i = MIDS_START; i <= MIDS_END; i++) {
+        midsEnergy += dataArray[i];
+    }
+    midsEnergy /= (MIDS_END - MIDS_START + 1);
+    
+    // --- Dynamic Thresholding based on recent energy history ---
+    const avgBass = this.beatHistory.bass.reduce((s, v) => s + v, 0) / this.beatHistory.bass.length;
+    const avgMids = this.beatHistory.mids.reduce((s, v) => s + v, 0) / this.beatHistory.mids.length;
+    
+    const bassThreshold = avgBass * 1.3 + 20; 
+    const midsThreshold = avgMids * 1.3 + 15;
+
+    let beatDetected = false;
+    let beatStrength = 0;
+    
+    if (bassEnergy > bassThreshold) {
+        beatDetected = true;
+        beatStrength = (bassEnergy - avgBass) / 255 * 1.5; // Bass hits are primary
+    }
+    
+    // A mid spike can also be a beat (snare), but we give it less priority if bass already hit.
+    if (!beatDetected && midsEnergy > midsThreshold) {
+        beatDetected = true;
+        beatStrength = (midsEnergy - avgMids) / 255;
+    }
+
+    if (beatDetected) {
+      this.beat.set({ strength: Math.min(1.0, beatStrength), timestamp: now });
+      this.lastBeatTime = now;
+    }
+    
+    // Update history buffers
+    this.beatHistory.bass[this.beatHistoryIndex] = bassEnergy;
+    this.beatHistory.mids[this.beatHistoryIndex] = midsEnergy;
+    this.beatHistoryIndex = (this.beatHistoryIndex + 1) % this.beatHistory.bass.length;
+  }
+  
+  private detectTransient(dataArray: Uint8Array) {
+    if (!this.lastFftFrame) {
+      this.lastFftFrame = new Uint8Array(dataArray);
+      return;
+    }
+    
+    let flux = 0;
+    // Spectral Flux: sum of positive changes in spectral bins.
+    // We focus on higher frequencies for "sharper" transient detection (cymbals, hi-hats, synth attacks).
+    const startBin = 180; // Start around ~4.1kHz
+    for (let i = startBin; i < dataArray.length; i++) {
+      const diff = dataArray[i] - this.lastFftFrame[i];
+      if (diff > 0) { // Only consider increases in energy
+        flux += diff;
+      }
+    }
+    
+    // Normalize the flux value for consistent reactivity
+    const normalizedFlux = flux / (dataArray.length - startBin) / 255;
+    
+    // Adjusted sensitivity for the more volatile high-frequency range.
+    if (normalizedFlux > 0.035) {
+      this.transient.set({ 
+        intensity: Math.min(1, normalizedFlux * 20), // Higher multiplier for more "sparkle"
+        timestamp: performance.now() 
+      });
+    }
+    
+    this.lastFftFrame.set(dataArray);
   }
 
   private visualize() {
@@ -309,7 +417,14 @@ export class AudioService {
 
     const dataArray = new Uint8Array(this.analyserNode.frequencyBinCount);
     this.analyserNode.getByteFrequencyData(dataArray);
+    
+    // Set the raw FFT data for spectrum-based visuals
     this.frequencyData.set(dataArray);
+
+    // Run our new advanced detectors
+    this.detectBeat(dataArray);
+    this.detectTransient(dataArray);
+    
     this.animationFrameId = requestAnimationFrame(() => this.visualize());
   }
 
@@ -325,6 +440,9 @@ export class AudioService {
       this.animationFrameId = null;
       // Clear the bars when visualization stops
       this.frequencyData.set(new Uint8Array(FFT_SIZE / 2));
+      this.lastFftFrame = null;
+      this.beatHistory.bass.fill(0);
+      this.beatHistory.mids.fill(0);
     }
   }
 }
