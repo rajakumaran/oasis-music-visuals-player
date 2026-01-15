@@ -1,4 +1,5 @@
 # oasis-music-visuals-player
+January/15th/2026: This is going to be the hottest music player that I've built, and this is my MVP at least for the next few months this year. It is packed with scientific research based visuals and audio quality. 
 
 January/10th/2026 #1: In this deployment, I performed some scans so that this my app is free of security vulnerabilities.
 
