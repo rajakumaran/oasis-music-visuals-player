@@ -1,7 +1,7 @@
 import { Injectable, signal, effect, WritableSignal, computed } from '@angular/core';
 import { Track } from '../models/track.model';
 
-const BANDS = [60, 170, 310, 600, 1000, 3000, 6000];
+const BANDS = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 const FFT_SIZE = 2048; // Increased for better frequency resolution as per research
 const CROSSFADE_DURATION = 0.75; // seconds
 
@@ -333,11 +333,8 @@ export class AudioService {
     
     if (bassEnergy > bassThreshold) {
         beatDetected = true;
-        beatStrength = (bassEnergy - avgBass) / 255 * 1.5; // Bass hits are primary
-    }
-    
-    // A mid spike can also be a beat (snare), but we give it less priority if bass already hit.
-    if (!beatDetected && midsEnergy > midsThreshold) {
+        beatStrength = (bassEnergy - avgBass) / 255 * 1.5;
+    } else if (midsEnergy > midsThreshold) {
         beatDetected = true;
         beatStrength = (midsEnergy - avgMids) / 255;
     }

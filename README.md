@@ -1,4 +1,7 @@
 # oasis-music-visuals-player
+# January/17th/2026:
+this version is the hottest, mainly its a revamped one totally, 10 band equalizer, more styles, etc. 
+As this version will work only with latest version Angular 21, I have to check-in into git before I can proceed further. Hence this is a non-working version.
 
 # January/15th/2026 #3:
 # #####################

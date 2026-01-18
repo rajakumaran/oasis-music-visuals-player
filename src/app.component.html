@@ -103,7 +103,7 @@
     <!-- Equalizer Section -->
     <div id="visualizer-section" class="lg:col-span-2 bg-black/20 p-4 sm:p-6 rounded-lg flex flex-col justify-between">
       <div class="flex justify-between items-center border-b border-white/10 pb-2 mb-3">
-        <h2 class="text-xl font-semibold">7-Band Graphic Equalizer</h2>
+        <h2 class="text-xl font-semibold">10-Band Graphic Equalizer</h2>
       </div>
       
       <!-- Visualizer Display -->
@@ -119,11 +119,14 @@
         <div class="absolute inset-0 pointer-events-none transition-all duration-500" [style.background]="lightingOverlayStyle()"></div>
         <div class="visualizer-content-host relative w-full h-full" [style.filter]="isKaleidoscope() && effectiveTheme().type !== 'led' ? 'hue-rotate(' + kaleidoscopeHueShift() + 'deg)' : 'none'">
             @switch (effectiveTheme().type) {
+              @case ('webgl') {
+                <app-webgl-visualizer [bars]="visualizerBars()" [barWidth]="barWidth()" [theme]="effectiveTheme()" />
+              }
               @case ('glass-box') {
                 <div class="visualizer-box-3d">
-                  <div class="visualizer-stage">
+                  <div class="visualizer-stage" [style.--bar-width.%]="barWidth()">
                      @for (barHeight of visualizerBars(); track $index) {
-                        <div class="flex-1 self-end bar-glass-box" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div>
+                        <div class="bar-wrapper"><div class="bar-glass-box" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div>
                      }
                   </div>
                   <div class="glass-pane-overlay"></div>
@@ -244,15 +247,15 @@
                 </svg>
               }
               @default {
-                <div class="visualizer-content-default p-2 flex items-end justify-center h-full w-full gap-[2px]">
+                <div class="visualizer-content-default p-2 flex items-end justify-center h-full w-full gap-[2px]" [style.--bar-width.%]="barWidth()">
                   @switch (effectiveTheme().type) {
-                    @case ('led') { @for (litSegments of ledBars(); track $index) { <div class="flex-1 h-full flex flex-col-reverse justify-start items-center" style="gap: 2px;"> @for (segment of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]; track segment) { <div class="led-segment" [class]="segment < litSegments ? (isKaleidoscope() ? 'led-on' : (segment > 12 ? 'led-on led-red' : (segment > 8 ? 'led-on led-yellow' : 'led-on led-green'))) : 'led-off'" [style.width.px]="ledSegmentWidth()" [style.height.px]="ledSegmentHeight()" [style.background-color]="isKaleidoscope() && segment < litSegments ? 'hsl(' + (($index * 5 + segment * 15 + kaleidoscopeHueShift()) % 360) + ', 100%, 50%)' : null" [style.color]="isKaleidoscope() && segment < litSegments ? 'hsl(' + (($index * 5 + segment * 15 + kaleidoscopeHueShift()) % 360) + ', 100%, 50%)' : null"> </div> } </div> } }
-                    @case ('3d') { @for (barHeight of visualizerBars(); track $index) { <div class="flex-1 h-full relative"> <div class="bar-3d" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div> </div> } }
-                    @case ('shadow') { @for (barHeight of visualizerBars(); track $index) { <div class="flex-1 self-end transition-[height] duration-75 ease-out" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div> } }
-                    @case ('glossy') { @for (barHeight of visualizerBars(); track $index) { <div class="flex-1 self-end bar-glossy" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div> } }
-                    @case ('glass') { @for (barHeight of visualizerBars(); track $index) { <div class="flex-1 self-end bar-glass" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div> } }
-                    @case ('convex') { @for (barHeight of visualizerBars(); track $index) { <div class="flex-1 self-end bar-convex" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div> } }
-                    @case ('concave') { @for (barHeight of visualizerBars(); track $index) { <div class="flex-1 self-end bar-concave" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div> } }
+                    @case ('led') { @for (litSegments of ledBars(); track $index) { <div class="bar-wrapper h-full flex flex-col-reverse justify-start items-center" style="gap: 2px;"> @for (segment of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]; track segment) { <div class="led-segment" [class]="segment < litSegments ? (isKaleidoscope() ? 'led-on' : (segment > 12 ? 'led-on led-red' : (segment > 8 ? 'led-on led-yellow' : 'led-on led-green'))) : 'led-off'" [style.width.px]="ledSegmentWidth()" [style.height.px]="ledSegmentHeight()" [style.background-color]="isKaleidoscope() && segment < litSegments ? 'hsl(' + (($index * 5 + segment * 15 + kaleidoscopeHueShift()) % 360) + ', 100%, 50%)' : null" [style.color]="isKaleidoscope() && segment < litSegments ? 'hsl(' + (($index * 5 + segment * 15 + kaleidoscopeHueShift()) % 360) + ', 100%, 50%)' : null"> </div> } </div> } }
+                    @case ('3d') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-3d" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
+                    @case ('shadow') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-shadow" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
+                    @case ('glossy') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-glossy" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
+                    @case ('glass') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-glass" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
+                    @case ('convex') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-convex" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
+                    @case ('concave') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-concave" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
                   }
                 </div>
               }
@@ -268,7 +271,7 @@
       </div>
       <!-- Faders & Controls -->
       <div id="controls-container" [class.active]="fullscreenControlsActive()">
-        <div class="grid grid-cols-7 gap-x-2 sm:gap-x-4">
+        <div class="grid grid-cols-10 gap-x-2 sm:gap-x-3">
           @for(gain of gainValues(); track $index) {
             <div class="flex flex-col items-center gap-2">
                <div class="h-24 flex items-center justify-center" [title]="bandFrequencies[$index] + ' Hz Band'">
@@ -299,6 +302,10 @@
               <input type="range" id="sensitivity-slider" min="0.5" max="5" step="0.1" [value]="sensitivity()" (input)="onSensitivityChange($event)" [style.--thumb-bg]="effectiveTheme().sliderThumb" [style.--track-bg]="effectiveTheme().sliderTrack" title="Adjust visualizer sensitivity to the audio">
             </div>
              <!-- Kaleidoscope Control -->
+               <div class="flex flex-col gap-1">
+                <label for="bar-width-slider" class="font-semibold">Bar Width: {{ barWidth() }}%</label>
+                <input type="range" id="bar-width-slider" min="10" max="100" step="5" [value]="barWidth()" (input)="onBarWidthChange($event)" [style.--thumb-bg]="effectiveTheme().sliderThumb" [style.--track-bg]="effectiveTheme().sliderTrack" title="Adjust the width of the visualizer bars">
+                </div>
             <div class="flex flex-col gap-2 justify-end">
               <button (click)="toggleKaleidoscope()" class="px-2 py-2 rounded-md transition-colors w-full h-full text-xs" [class]="(isKaleidoscope() ? effectiveTheme().highlight : effectiveTheme().button) + ' ' + effectiveTheme().buttonHover" title="Toggle a psychedelic color cycling effect">
                   <i class="fa-solid fa-palette mr-1"></i> Kaleidoscope {{ isKaleidoscope() ? "ON" : "OFF" }}

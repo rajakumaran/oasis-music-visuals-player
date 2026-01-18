@@ -5,6 +5,7 @@ import { HolidayService } from './services/holiday.service';
 import { PresetService, Preset } from './services/preset.service';
 import { EqualizerTheme } from './models/equalizer-theme.model';
 import { FullscreenToggleComponent } from './fullscreen-toggle/fullscreen-toggle.component';
+import { WebglVisualizerComponent } from './webgl-visualizer/webgl-visualizer.component';
 import { inject as vercelAnalytics } from '@vercel/analytics'; // 1. Import the helper
 import { track } from '@vercel/analytics'; // 1. Import track
 type LightSourcePosition = 'none' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center-stage' | 'top-center';
@@ -17,7 +18,7 @@ interface AuraParticle { id: number; x: number; y: number; opacity: number; size
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FullscreenToggleComponent],
+  imports: [CommonModule, FullscreenToggleComponent, WebglVisualizerComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -48,12 +49,15 @@ export class AppComponent implements OnInit, OnDestroy {
   private lastBeatTimestamp = 0;
   private lastTransientTimestamp = 0;
 
-  sensitivity = signal(1.2);
+  sensitivity = signal(0.7); //was 1.2
   backgroundImageUrl = signal<string | null>(null);
   private smoothedBars = new Array(64).fill(0);
   
   decayFactor = signal(0.94); // Base decay factor for visualizer bars
   private readonly resizeListener = () => this.updateDecayFactor();
+
+  // --- NEW: Bar Width Control ---
+  barWidth = signal(80); // As a percentage
 
   // --- Ticker Properties ---
   tickerMessages: string[] = [
@@ -503,10 +507,11 @@ export class AppComponent implements OnInit, OnDestroy {
     };
   });
 
-  bandFrequencies = ['60', '170', '310', '600', '1k', '3k', '6k'];
+  bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k'];
 
   themes: EqualizerTheme[] = [
     { name: 'Mukyo', type: '3d', base: 'bg-gradient-to-br from-gray-900 via-black to-blue-900', display: 'bg-gray-900/70', bar: 'bg-gradient-to-t from-sky-500 to-cyan-200 shadow-[0_0_8px_#22d3ee,0_0_12px_#67e8f9]', sliderTrack: 'bg-gray-700', sliderThumb: 'bg-gray-300', text: 'text-gray-300', accent: 'text-cyan-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-gray-800' },
+    { name: 'VoxelScape', type: 'webgl', base: 'bg-gray-900', display: '#111827', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: '#a78bfa', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-violet-500/50' },
     { name: 'Muknics', type: '3d', base: 'bg-gradient-to-br from-stone-800 via-neutral-900 to-stone-900', display: 'bg-black/60 backdrop-blur-sm', bar: 'bg-gradient-to-t from-orange-600 via-amber-400 to-yellow-200 shadow-[0_0_7px_#f59e0b]', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-amber-500', text: 'text-amber-100', accent: 'text-amber-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-gray-700/50' },
     { name: 'Pioneer', type: 'shadow', base: 'bg-slate-200', display: 'bg-blue-900/80', bar: 'bg-gradient-to-t from-sky-600 to-sky-400 shadow-[0_0_8px_#38bdf8,-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-blue-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
     { name: 'Glass Box', type: 'glass-box', base: 'bg-gray-900', display: 'bg-black/50', bar: 'bg-gradient-to-t from-purple-500 to-cyan-300 text-cyan-300', sliderTrack: 'bg-purple-800/60', sliderThumb: 'bg-cyan-300', text: 'text-purple-200', accent: 'text-cyan-300', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-cyan-500/50' },
@@ -614,6 +619,7 @@ export class AppComponent implements OnInit, OnDestroy {
   onGainChange(event: Event, index: number) { this.audioService.changeGain(index, parseFloat((event.target as HTMLInputElement).value)); }
   onSeek(event: Event) { this.audioService.seek(parseFloat((event.target as HTMLInputElement).value)); }
   onSensitivityChange(event: Event) { this.sensitivity.set(parseFloat((event.target as HTMLInputElement).value)); }
+  onBarWidthChange(event: Event) { this.barWidth.set(parseFloat((event.target as HTMLInputElement).value)); }
   setLightSource(position: LightSourcePosition) { this.lightSourcePosition.set(position); }
   toggleFullscreenControls() { this.fullscreenControlsActive.update(v => !v); }
   selectTheme(index: string) { const i = parseInt(index, 10); if (!isNaN(i) && i < this.themes.length) this.selectedTheme.set(this.themes[i]); }
