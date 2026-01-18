@@ -3,7 +3,7 @@ import { Track } from '../models/track.model';
 
 const BANDS = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 const FFT_SIZE = 2048; // Increased for better frequency resolution as per research
-const CROSSFADE_DURATION = 0.75; // seconds
+const CROSSFADE_DURATION = 1.75; // seconds
 
 @Injectable({ providedIn: 'root' })
 export class AudioService {

@@ -3,12 +3,12 @@
   <!-- Header -->
   <header class="flex-shrink-0 flex items-center justify-between mb-4">
     <h1 class="text-2xl sm:text-3xl font-bold tracking-wider" [class]="effectiveTheme().accent">
-      <i class="fa-solid fa-music fa-wand-magic-sparkles fa-?"></i>AUDIO OASIS Version 3
+      <i class="fa-solid fa-music fa-wand-magic-sparkles fa-?"></i>AUDIO OASIS Version 3 with 3D styles  & 10-Band Equalizer!
     </h1>
     <div class="hidden md:block text-xs sm:text-sm font-sans tracking-wider" [class]="effectiveTheme().accent">Built by Muthukumaran Azhagesan (Kumar). Check his <a href="https://linktr.ee/muthukumaran.azhagesan" target="_blank" class="underline">Linktree</a></div>
     <div class="flex items-center gap-4">
-      <button (click)="toggleAudioSource()" 
-              [class]="'cursor-pointer p-2 rounded-md ' + effectiveTheme().button + ' ' + effectiveTheme().buttonHover" 
+      <button (click)="toggleAudioSource()"
+              [class]="'cursor-pointer p-2 rounded-md ' + effectiveTheme().button + ' ' + effectiveTheme().buttonHover"
               [title]="audioSource() === 'file' ? 'Switch to Microphone Input' : 'Switch to File Input'">
         <i class="fa-solid" [class]="audioSource() === 'file' ? 'fa-microphone' : 'fa-music'"></i>
       </button>
@@ -18,8 +18,8 @@
       </label>
       <div class="flex flex-col items-end">
         <div class="relative" title="Select a visual theme">
-          <select (change)="selectTheme($any($event.target).value)" 
-                  [value]="selectedThemeIndex()" 
+          <select (change)="selectTheme($any($event.target).value)"
+                  [value]="selectedThemeIndex()"
                   [disabled]="isHolidayThemeOn()"
                   [class]="'appearance-none rounded-md py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 ' + effectiveTheme().button + ' ' + effectiveTheme().text">
             @for (theme of themes; track theme.name; let i = $index) {
@@ -74,7 +74,7 @@
           } @else {
             <ul>
               @for (track of playlist(); track track.url; let i = $index) {
-                <li 
+                <li
                   draggable="true"
                   (dragstart)="onDragStart(i)"
                   (dragover)="onDragOver($event)"
@@ -97,7 +97,7 @@
             </ul>
           }
         }
-      </div>      
+      </div>
     </div>
 
     <!-- Equalizer Section -->
@@ -120,11 +120,17 @@
         <div class="visualizer-content-host relative w-full h-full" [style.filter]="isKaleidoscope() && effectiveTheme().type !== 'led' ? 'hue-rotate(' + kaleidoscopeHueShift() + 'deg)' : 'none'">
             @switch (effectiveTheme().type) {
               @case ('webgl') {
-                <app-webgl-visualizer [bars]="visualizerBars()" [barWidth]="barWidth()" [theme]="effectiveTheme()" />
+                <app-webgl-visualizer
+                  [bars]="visualizerBars()"
+                  [theme]="effectiveTheme()"
+                  [isPlaying]="isPlaying()"
+                  [beat]="beat()"
+                  [musicProfile]="effectiveSynergyDriveMode()"
+                />
               }
               @case ('glass-box') {
                 <div class="visualizer-box-3d">
-                  <div class="visualizer-stage" [style.--bar-width.%]="barWidth()">
+                  <div class="visualizer-stage">
                      @for (barHeight of visualizerBars(); track $index) {
                         <div class="bar-wrapper"><div class="bar-glass-box" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div>
                      }
@@ -247,7 +253,7 @@
                 </svg>
               }
               @default {
-                <div class="visualizer-content-default p-2 flex items-end justify-center h-full w-full gap-[2px]" [style.--bar-width.%]="barWidth()">
+                <div class="visualizer-content-default p-2 flex items-end justify-center h-full w-full" [style.gap.px]="barSpacing()">
                   @switch (effectiveTheme().type) {
                     @case ('led') { @for (litSegments of ledBars(); track $index) { <div class="bar-wrapper h-full flex flex-col-reverse justify-start items-center" style="gap: 2px;"> @for (segment of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]; track segment) { <div class="led-segment" [class]="segment < litSegments ? (isKaleidoscope() ? 'led-on' : (segment > 12 ? 'led-on led-red' : (segment > 8 ? 'led-on led-yellow' : 'led-on led-green'))) : 'led-off'" [style.width.px]="ledSegmentWidth()" [style.height.px]="ledSegmentHeight()" [style.background-color]="isKaleidoscope() && segment < litSegments ? 'hsl(' + (($index * 5 + segment * 15 + kaleidoscopeHueShift()) % 360) + ', 100%, 50%)' : null" [style.color]="isKaleidoscope() && segment < litSegments ? 'hsl(' + (($index * 5 + segment * 15 + kaleidoscopeHueShift()) % 360) + ', 100%, 50%)' : null"> </div> } </div> } }
                     @case ('3d') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-3d" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
@@ -277,14 +283,14 @@
                <div class="h-24 flex items-center justify-center" [title]="bandFrequencies[$index] + ' Hz Band'">
                   <input type="range" orient="vertical" min="-20" max="20" step="0.5" [value]="gain" (input)="onGainChange($event, $index)" class="h-full vertical" [style.--thumb-bg]="effectiveTheme().sliderThumb" [style.--track-bg]="effectiveTheme().sliderTrack">
               </div>
-              <span class="text-xs sm:text-sm font-mono">{{ bandFrequencies[$index] }}</span>
+              <span class="text-xs font-mono">{{ bandFrequencies[$index] }}</span>
             </div>
           }
         </div>
         
         <!-- Advanced Controls -->
         <div class="mt-4 text-sm border-t border-white/10 pt-4">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <!-- Synergy Drive -->
             <div class="flex flex-col gap-1">
               <label class="font-semibold">Synergy Drive</label>
@@ -298,13 +304,19 @@
              <!-- EQ Presets -->
             <!-- Sensitivity Control -->
             <div class="flex flex-col gap-1">
-              <label for="sensitivity-slider" class="font-semibold">Sensitivity: {{ sensitivity().toFixed(1) }}</label>
-              <input type="range" id="sensitivity-slider" min="0.5" max="5" step="0.1" [value]="sensitivity()" (input)="onSensitivityChange($event)" [style.--thumb-bg]="effectiveTheme().sliderThumb" [style.--track-bg]="effectiveTheme().sliderTrack" title="Adjust visualizer sensitivity to the audio">
+                <label for="sensitivity-slider" class="font-semibold">Sensitivity: {{ sensitivity().toFixed(1) }}</label>
+                <input type="range" id="sensitivity-slider" min="0.5" max="5" step="0.1" [value]="sensitivity()" (input)="onSensitivityChange($event)" [style.--thumb-bg]="effectiveTheme().sliderThumb" [style.--track-bg]="effectiveTheme().sliderTrack" title="Adjust visualizer sensitivity to the audio">
+            </div>
+            <div class="flex flex-col gap-1">
+                <label for="bar-count-slider" class="font-semibold">Bar Density: {{ barCount() }}</label>
+                <input type="range" id="bar-count-slider" min="16" max="256" step="4" [value]="barCount()" (input)="onBarCountChange($event)" [style.--thumb-bg]="effectiveTheme().sliderThumb" [style.--track-bg]="effectiveTheme().sliderTrack" title="Adjust the number of visualizer bars">
             </div>
              <!-- Kaleidoscope Control -->
                <div class="flex flex-col gap-1">
-                <label for="bar-width-slider" class="font-semibold">Bar Width: {{ barWidth() }}%</label>
-                <input type="range" id="bar-width-slider" min="10" max="100" step="5" [value]="barWidth()" (input)="onBarWidthChange($event)" [style.--thumb-bg]="effectiveTheme().sliderThumb" [style.--track-bg]="effectiveTheme().sliderTrack" title="Adjust the width of the visualizer bars">
+                  <label for="bar-count-slider" class="font-semibold">Bar Count: {{ barCount() }}</label>
+                <input type="range" id="bar-count-slider" min="16" max="256" step="16" [value]="barCount()" (input)="onBarCountChange($event)" [style.--thumb-bg]="effectiveTheme().sliderThumb" [style.--track-bg]="effectiveTheme().sliderTrack" title="Adjust the number of visualizer bars">
+
+                <!-- <input type="range" id="bar-width-slider" min="10" max="100" step="5" [value]="barWidth()" (input)="onBarWidthChange($event)" [style.--thumb-bg]="effectiveTheme().sliderThumb" [style.--track-bg]="effectiveTheme().sliderTrack" title="Adjust the width of the visualizer bars"> -->
                 </div>
             <div class="flex flex-col gap-2 justify-end">
               <button (click)="toggleKaleidoscope()" class="px-2 py-2 rounded-md transition-colors w-full h-full text-xs" [class]="(isKaleidoscope() ? effectiveTheme().highlight : effectiveTheme().button) + ' ' + effectiveTheme().buttonHover" title="Toggle a psychedelic color cycling effect">
@@ -326,9 +338,12 @@
                       </div>
                   }
               </div>
+              <div class="flex flex-col gap-1">
+                <label for="bar-spacing-slider" class="font-semibold">Bar Spacing: {{ barSpacing() }}px</label>
+                <input type="range" id="bar-spacing-slider" min="0" max="10" step="1" [value]="barSpacing()" (input)="onBarSpacingChange($event)" [style.--thumb-bg]="effectiveTheme().sliderThumb" [style.--track-bg]="effectiveTheme().sliderTrack" title="Adjust the space between visualizer bars"></div>
             </div>
             <!-- EQ Presets -->
-            <div class="flex flex-col gap-1 md:col-span-3">
+            <div class="flex flex-col gap-1 md:col-span-2 lg:col-span-4">
               <label class="font-semibold">EQ Presets</label>
               <div class="grid grid-cols-3 gap-2">
                 <div class="relative col-span-2">

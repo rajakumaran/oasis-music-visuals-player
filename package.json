@@ -1,5 +1,5 @@
 {
-  "name": "audio-oasis-music-equalizer-v3",
+  "name": "audio-oasis-music-equalizer",
   "private": true,
   "version": "3.1.1",
   "type": "module",
@@ -9,13 +9,13 @@
     "preview": "ng serve --configuration=production"
   },
   "dependencies": {
-    "@angular/build": "^20.3.14",
-    "@angular/cli": "^21.0.0",
-    "@angular/common": "^21.0.0",
-    "@angular/compiler": "^21.0.0",
-    "@angular/compiler-cli": "^21.0.0",
-    "@angular/core": "^21.0.0",
-    "@angular/platform-browser": "^21.0.0",
+    "@angular/build": "^21.1.0",
+    "@angular/cli": "^21.1.0",
+    "@angular/common": "^21.1.0",
+    "@angular/compiler": "^21.1.0",
+    "@angular/compiler-cli": "^21.1.0",
+    "@angular/core": "^21.1.0",
+    "@angular/platform-browser": "^21.1.0",
     "@google/genai": "latest",
     "@vercel/analytics": "^1.6.1",
     "rxjs": "^7.8.2",

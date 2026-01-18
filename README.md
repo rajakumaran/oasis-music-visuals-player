@@ -1,4 +1,18 @@
 # oasis-music-visuals-player
+
+# January/18th/2026:
+These are the hottest features of my music player so far (in this check-in). 3D style named VoxelScape, dynamic bar count increment/decrement, and 10 band equalizer all working great.
+Plus Around 50+ various themes
+
+VoxelScape 2.0 - Feature Breakdown
+Dynamic Camera & Bar Physics: The visualizer is no longer static. The camera now subtly orbits the scene when music plays, with its speed tied to the average audio level, creating a feeling of being drawn into the music. The bars themselves have been upgraded with a spring-physics system; they now bounce and react realistically to changes in the music, with an extra "kick" from the bass drum, thanks to the beat detection engine.
+
+Atmospheric Fog: The scene is now filled with a dynamic fog that reacts to the style of the music. For ambient tracks, the fog is dense and dark, creating an intimate atmosphere. For rhythmic or high-energy transient tracks, the fog pulls back and takes on the vibrant accent color of the theme, making the scene feel larger and more energetic.
+
+Synchronized Lighting: The main directional light now pulses in sync with the music's beat. Each kick drum or strong rhythmic element causes the light to flash, casting dynamic shadows and making the entire scene feel more alive.
+
+Realistic Floor Reflections: The flat, metallic floor has been replaced with a high-fidelity, real-time reflective surface. The voxels now cast beautiful, shimmering reflections, adding a significant layer of depth and polish to the entire visual experience.
+
 # January/17th/2026:
 this version is the hottest, mainly its a revamped one totally, 10 band equalizer, more styles, etc. 
 As this version will work only with latest version Angular 21, I have to check-in into git before I can proceed further. Hence this is a non-working version.

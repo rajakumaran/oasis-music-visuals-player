@@ -17,17 +17,13 @@ input[type=range].vertical {
   align-items: flex-end;
 }
 .bar-wrapper > div {
-  width: var(--bar-width, 80%);
+  width: 100%;
 }
 
 /* --- 3D Bar Visualizer Styles --- */
 .bar-3d {
   position: relative;
   width: 100%;
-  bottom: 0;
-  left: 0;
-  /* Leave a 4px gap on the right for the side face */
-  width: calc(100% - 4px); 
   transition: height 75ms ease-out;
   border-radius: 1px;
 }
@@ -39,10 +35,8 @@ input[type=range].vertical {
   top: 0;
   left: 0;
   width: 100%;
-  height: 4px; /* Determines the "depth" of the top face */
-  /* This pseudo-element now acts as a highlight layer on top of the bar'   s inherited background */
-  background: linear-gradient(to bottom, rgba(255,255,255,0.35), rgba(255   ,255,255,0.1));
-  filter: brightness(1.5); /* Make it appear lighter, as if lit from above */
+  height: 4px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.35), rgba(255,255,255,0.1));
   transform: translateY(-100%);
   border-radius: 1px 1px 0 0;
 }
@@ -93,7 +87,7 @@ input[type=range].vertical {
     right: 1px;
     bottom: 1px;
     /* The glow color is inherited from the parent's text color */
-    box-shadow: 0 0 1px 0.5px currentColor;
+    box-shadow: 0 0 5px 1px currentColor;
 }
 
 .led-green {
@@ -121,14 +115,8 @@ input[type=range].vertical {
   from { transform: translateX(-100%); }
   to { transform: translateX(100%); }
 }
-
-.animate-left {
-  animation: scroll-left 20s linear infinite;
-}
-
-.animate-right {
-  animation: scroll-right 20s linear infinite;
-}
+.animate-left { animation: scroll-left 20s linear infinite; }
+.animate-right { animation: scroll-right 20s linear infinite; }
 
 /* --- Glossy Bar Visualizer Styles --- */
 .bar-glossy {
@@ -143,7 +131,7 @@ input[type=range].vertical {
   width: 100%;
   height: 50%;
   background: linear-gradient(to bottom, rgba(255, 255, 255, 0.6), transparent);
-  border-radius: 2px 2px 0 0; //was border-radius:0px 0px 0 0;
+  border-radius: 2px 2px 0 0; 
 }
 
 /* --- Glass Bar Visualizer Styles --- */
@@ -166,14 +154,11 @@ input[type=range].vertical {
 }
 
 /* --- Convex/Concave Bar Styles --- */
-.bar-convex, .bar-concave { position: relative; transition: height 75ms ease-out; }
+.bar-convex, .bar-concave { position: relative; }
 .bar-convex::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 25%;
-  width: 50%;
-  height: 100%;
+  top: 0; left: 25%; width: 50%; height: 100%;
   background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
   border-radius: inherit;
 }
@@ -251,9 +236,7 @@ input[type=range].vertical {
 }
 /* Creates the specular sheen on top */
 .crystal-case-overlay::after {
-  content: '';
-  position: absolute;
-  inset: 0;
+  content: ''; position: absolute; inset: 0;
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.15) 5%, transparent 40%);
   border-radius: inherit;
 }
