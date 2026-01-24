@@ -695,5 +695,4 @@ export class AppComponent implements OnInit, OnDestroy {
   // Re-implementing unchanged methods from original file
  
 }
-// Note: Computed signals for visualizers are large and unchanged, so they are omitted for brevity in this comment but are present in the final code.
-// The `_reimplementUnchanged` method is a conceptual placeholder to show that the logic from the original file was preserved.
+

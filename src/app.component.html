@@ -21,212 +21,8 @@
   </header>
 
   <main class="flex-1 flex flex-col md:flex-row min-h-0">
-    <!-- Visualizer area -->
-    <section id="visualizer-section" class="flex-1 relative flex flex-col min-h-0">
-      <div id="visualizer-display-wrapper" class="relative flex-1 bg-cover bg-center" [style.background-image]="backgroundImageUrl() ? 'url(' + backgroundImageUrl()! + ')' : null">
-        <app-fullscreen-toggle targetElementId="visualizer-display-wrapper"></app-fullscreen-toggle>
-        <div [class]="'absolute inset-0 transition-opacity ' + effectiveTheme().display"></div>
-        
-        @if (effectiveTheme().type === 'glass-box') {
-          <div class="crystal-case-overlay"></div>
-        }
-
-        <div class="absolute inset-0 pointer-events-none transition-all duration-500" [style.background]="lightingOverlayStyle()"></div>
-        <div class="visualizer-content-host relative w-full h-full" [style.filter]="isKaleidoscope() && effectiveTheme().type !== 'led' ? 'hue-rotate(' + kaleidoscopeHueShift() + 'deg)' : 'none'">
-            @switch (effectiveTheme().type) {
-              @case ('webgl') {
-                <app-webgl-visualizer 
-                  [bars]="visualizerBars()" 
-                  [theme]="effectiveTheme()"
-                  [isPlaying]="isPlaying()"
-                  [beat]="beat()"
-                  [musicProfile]="effectiveSynergyDriveMode()"
-                />
-              }
-              @case ('glass-box') {
-                <div class="visualizer-box-3d">
-                  <div class="visualizer-stage">
-                     @for (barHeight of visualizerBars(); track $index) {
-                        <div class="bar-wrapper"><div class="bar-glass-box" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div>
-                     }
-                  </div>
-                  <div class="glass-pane-overlay"></div>
-                </div>
-              }
-              @case ('fractal') {
-                <svg class="w-full h-full" viewBox="0 0 640 160" preserveAspectRatio="none">
-                  <defs>
-                    <radialGradient id="fractalGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-                      <stop offset="0%" stop-color="#67e8f9" stop-opacity="1"/>
-                      <stop offset="60%" stop-color="#22d3ee" stop-opacity="0.8"/>
-                      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.2"/>
-                    </radialGradient>
-                    <filter id="fractalGlow" x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur stdDeviation="2.5" result="coloredBlur"></feGaussianBlur>
-                      <feMerge>
-                        <feMergeNode in="coloredBlur"></feMergeNode>
-                        <feMergeNode in="SourceGraphic"></feMergeNode>
-                      </feMerge>
-                    </filter>
-                  </defs>
-                  @for (circle of fractalCircles(); track circle.id) {
-                    <circle [attr.cx]="circle.cx" [attr.cy]="circle.cy" [attr.r]="circle.r" fill="url(#fractalGradient)" filter="url(#fractalGlow)" style="transition: all 75ms ease-out; will-change: cy, r;"></circle>
-                  }
-                </svg>
-              }
-              @case ('neural') {
-                <svg class="w-full h-full" viewBox="0 0 640 160" preserveAspectRatio="none">
-                  <defs>
-                    <filter id="neuralGlow"><feGaussianBlur stdDeviation="1.5" result="coloredBlur"></feGaussianBlur><feMerge><feMergeNode in="coloredBlur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter>
-                  </defs>
-                  <g class="neural-connections" filter="url(#neuralGlow)">
-                    @for(conn of neuralNetwork().connections; track conn.id) {
-                      <line [attr.x1]="conn.x1" [attr.y1]="conn.y1" [attr.x2]="conn.x2" [attr.y2]="conn.y2" [style.opacity]="conn.opacity"></line>
-                    }
-                  </g>
-                  <g class="neural-nodes" filter="url(#neuralGlow)">
-                    @for(node of neuralNetwork().nodes; track node.id) {
-                      <circle [attr.cx]="node.cx" [attr.cy]="node.cy" [attr.r]="node.r" [style.opacity]="node.opacity"></circle>
-                    }
-                  </g>
-                </svg>
-              }
-              @case ('plasma') {
-                <svg class="w-full h-full" viewBox="0 0 320 160" preserveAspectRatio="none">
-                  <defs>
-                    <filter id="plasmaGlow"><feGaussianBlur stdDeviation="3" result="blur"></feGaussianBlur><feBlend in="SourceGraphic" in2="blur" mode="screen"></feBlend></filter>
-                  </defs>
-                  <g class="plasma-field" filter="url(#plasmaGlow)">
-                    @for(path of plasmaPaths(); track path.id) {
-                      <path [attr.d]="path.d" [style.opacity]="path.opacity"></path>
-                    }
-                  </g>
-                </svg>
-              }
-              @case ('hyperlane') {
-                <svg class="w-full h-full" viewBox="0 0 320 160" preserveAspectRatio="none">
-                  <defs><filter id="hyperlaneGlow"><feGaussianBlur stdDeviation="1"></feGaussianBlur></filter></defs>
-                  <g filter="url(#hyperlaneGlow)">
-                    @for(layer of hyperlaneLayers(); track layer.id) {
-                      <rect [attr.x]="layer.x" [attr.y]="layer.y" [attr.width]="layer.width" [attr.height]="layer.height" fill="none" [attr.stroke]="layer.stroke" stroke-width="2" [style.opacity]="layer.opacity"></rect>
-                    }
-                  </g>
-                </svg>
-              }
-               @case ('aura') {
-                <svg class="w-full h-full" viewBox="-150 -100 300 200" preserveAspectRatio="xMidYMid meet">
-                  <defs>
-                    <filter id="auraGlow"><feGaussianBlur stdDeviation="3.5" result="coloredBlur"></feGaussianBlur><feMerge><feMergeNode in="coloredBlur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter>
-                    <radialGradient id="auraCoreGradient"><stop offset="0%" stop-color="rgba(255,255,255,0.8)"></stop><stop offset="100%" stop-color="rgba(255,255,255,0)"></stop></radialGradient>
-                  </defs>
-                  <g class="aura-bloom-viz" filter="url(#auraGlow)">
-                    @for (particle of auraBloom().particles; track particle.id) {
-                      <circle [attr.cx]="particle.x" [attr.cy]="particle.y" [attr.r]="particle.size" fill="#a5f3fc" [style.opacity]="particle.opacity" />
-                    }
-                    @for (ring of auraBloom().rings; track ring.id) {
-                      <circle cx="0" cy="0" [attr.r]="ring.radius" fill="none" [attr.stroke]="'hsla(' + ring.hue + ', 90%, 70%, ' + ring.opacity + ')'" [attr.stroke-width]="ring.thickness" />
-                    }
-                    <circle cx="0" cy="0" [attr.r]="auraBloom().coreSize" fill="url(#auraCoreGradient)" [style.opacity]="auraBloom().coreOpacity" />
-                  </g>
-                </svg>
-              }
-              @case ('glyphs') {
-                <svg class="w-full h-full" viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid meet">
-                  <defs>
-                    <filter id="glyphGlow"><feGaussianBlur stdDeviation="2" result="blur"></feGaussianBlur><feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter>
-                    <symbol id="glyph-chevron" viewBox="-10 -10 20 20"><path d="M -5,5 L 0,-5 L 5,5" /></symbol>
-                    <symbol id="glyph-tri" viewBox="-10 -10 20 20"><path d="M 0,-8 L 8,6 L -8,6 Z" /></symbol>
-                  </defs>
-                  <g class="rhythmic-glyphs-viz" filter="url(#glyphGlow)">
-                    @let glyphs = rhythmicGlyphs();
-                    <g [style.opacity]="glyphs.outerRing.opacity" [attr.transform]="'rotate(' + glyphs.outerRing.rotation + ') scale(' + glyphs.outerRing.scale + ')'">
-                      @for (i of [0,1,2,3,4,5,6,7]; track i) {
-                        <use href="#glyph-chevron" width="10" height="10" [attr.transform]="'rotate(' + i * 45 + ') translate(0, -70)'"/>
-                      }
-                    </g>
-                    <g [style.opacity]="glyphs.innerRing.opacity" [attr.transform]="'rotate(' + glyphs.innerRing.rotation + ') scale(' + glyphs.innerRing.scale + ')'">
-                      @for (i of [0,1,2,3,4,5]; track i) {
-                        <use href="#glyph-tri" width="8" height="8" [attr.transform]="'rotate(' + i * 60 + ') translate(0, -45)'"/>
-                      }
-                    </g>
-                    <circle cx="0" cy="0" r="25" [style.opacity]="glyphs.center.opacity" [attr.transform]="'scale(' + glyphs.center.scale + ')'" />
-                    <circle cx="0" cy="0" r="100" class="sparkle-ring" [style.opacity]="glyphs.sparkle.opacity" [attr.transform]="'scale(' + glyphs.sparkle.scale + ')'" />
-                  </g>
-                </svg>
-              }
-              @case ('liquid') {
-                <svg class="w-full h-full">
-                  <defs>
-                    <filter id="liquifyFilter">
-                      <feTurbulence type="fractalNoise" [attr.baseFrequency]="liquifyParams().turbulence" numOctaves="3" result="turbulence" />
-                      <feDisplacementMap in2="turbulence" in="SourceGraphic" [attr.scale]="liquifyParams().scale" xChannelSelector="R" yChannelSelector="G" />
-                      <feGaussianBlur stdDeviation="1.5" />
-                      <feColorMatrix type="matrix" values="1 0 0 0 0, 0 1 0 0 0, 0 0 1 0 0, 0 0 0 18 -7" />
-                    </filter>
-                  </defs>
-                  <rect width="100%" height="100%" class="liquify-surface" filter="url(#liquifyFilter)" />
-                </svg>
-              }
-              @default {
-                <div class="visualizer-content-default p-2 flex items-end justify-center h-full w-full" [style.gap.px]="barSpacing()">
-                  @switch (effectiveTheme().type) {
-                    @case ('led') { @for (litSegments of ledBars(); track $index) { <div class="bar-wrapper h-full flex flex-col-reverse justify-start items-center" style="gap: 2px;"> @for (segment of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]; track segment) { <div class="led-segment" [class]="segment < litSegments ? (isKaleidoscope() ? 'led-on' : (segment > 12 ? 'led-on led-red' : (segment > 8 ? 'led-on led-yellow' : 'led-on led-green'))) : 'led-off'" [style.width.px]="ledSegmentWidth()" [style.height.px]="ledSegmentHeight()" [style.background-color]="isKaleidoscope() && segment < litSegments ? 'hsl(' + (($index * 5 + segment * 15 + kaleidoscopeHueShift()) % 360) + ', 100%, 50%)' : null" [style.color]="isKaleidoscope() && segment < litSegments ? 'hsl(' + (($index * 5 + segment * 15 + kaleidoscopeHueShift()) % 360) + ', 100%, 50%)' : null"> </div> } </div> } }
-                    @case ('3d') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-3d" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
-                    @case ('shadow') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-shadow" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
-                    @case ('glossy') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-glossy" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
-                    @case ('glass') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-glass" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
-                    @case ('convex') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-convex" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
-                    @case ('concave') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-concave" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
-                  }
-                </div>
-              }
-            }
-        </div>
-
-        @if (showOpportunisticTicker()) {
-          <div class="absolute bottom-4 left-0 right-0 text-center text-sm opacity-70 animate-pulse">
-            {{ opportunisticTickerMessage() }}
-          </div>
-        }
-      </div>
-
-      <!-- Player controls -->
-      @if (audioSource() === 'file') {
-        <footer class="flex-shrink-0 bg-gradient-to-t from-black/80 to-transparent p-6 w-full">
-          @if (currentTrack(); as track) {
-            <div class="text-center mb-4">
-              <h3 class="font-medium truncate" [title]="track.name">{{ track.name }}</h3>
-              <div class="w-full h-5 relative overflow-hidden mt-1 text-sm">
-                <p class="absolute whitespace-nowrap will-change-transform" [class]="effectiveTheme().accent + ' ' + animationClass()">
-                  {{ currentTickerMessage() }}
-                </p>
-              </div>
-            </div>
-
-            <div class="flex justify-center items-center gap-6">
-              <button (click)="audioService.previous()" [disabled]="playlist().length < 2" class="btn btn-circle btn-ghost" title="Previous Track">
-                <i class="fa-solid fa-backward-step"></i>
-              </button>
-              <button (click)="onPlayPauseClick()" [disabled]="!currentTrack()" class="btn btn-circle btn-primary btn-lg" [title]="isPlaying() ? 'Pause' : 'Play'">
-                <i class="fa-solid text-2xl" [class.fa-play]="!isPlaying()" [class.fa-pause]="isPlaying()"></i>
-              </button>
-              <button (click)="audioService.next()" [disabled]="playlist().length < 2" class="btn btn-circle btn-ghost" title="Next Track">
-                <i class="fa-solid fa-forward-step"></i>
-              </button>
-            </div>
-
-            <div class="flex items-center gap-4 mt-4">
-              <span class="text-sm font-mono">{{ formatTime(currentTime()) }}</span>
-              <input type="range" min="0" [max]="duration()" [value]="currentTime()" (input)="onSeek($event)" class="range range-primary range-sm flex-1" />
-              <span class="text-sm font-mono">{{ formatTime(duration()) }}</span>
-            </div>
-          } @else {
-            <div class="text-center text-gray-400 h-24 flex items-center justify-center">No Track Loaded</div>
-          }
-        </footer>
-      }
-    </section>
-    <!-- Sidebar / Controls -->
+    <!-- For the Sidebar / Controls to be here, place the code chunk here. MKA-->
+<!-- Sidebar / Controls -->
     <aside class="w-full md:w-80 bg-gray-900/80 backdrop-blur-sm border-r border-gray-800 p-6 overflow-y-auto">
       <h2 class="text-xl font-semibold mb-6">Controls</h2>
 
@@ -445,6 +241,212 @@
           </div>
         }
       </div>
-    </aside>    
+    </aside>  
+    <!-- Visualizer area -->
+    <section id="visualizer-section" class="flex-1 relative flex flex-col min-h-0">
+      <div id="visualizer-display-wrapper" class="relative flex-1 bg-cover bg-center" [style.background-image]="backgroundImageUrl() ? 'url(' + backgroundImageUrl()! + ')' : null">
+        <app-fullscreen-toggle targetElementId="visualizer-display-wrapper"></app-fullscreen-toggle>
+        <div [class]="'absolute inset-0 transition-opacity ' + effectiveTheme().display"></div>
+        
+        @if (effectiveTheme().type === 'glass-box') {
+          <div class="crystal-case-overlay"></div>
+        }
+
+        <div class="absolute inset-0 pointer-events-none transition-all duration-500" [style.background]="lightingOverlayStyle()"></div>
+        <div class="visualizer-content-host relative w-full h-full" [style.filter]="isKaleidoscope() && effectiveTheme().type !== 'led' ? 'hue-rotate(' + kaleidoscopeHueShift() + 'deg)' : 'none'">
+            @switch (effectiveTheme().type) {
+              @case ('webgl') {
+                <app-webgl-visualizer 
+                  [bars]="visualizerBars()" 
+                  [theme]="effectiveTheme()"
+                  [isPlaying]="isPlaying()"
+                  [beat]="beat()"
+                  [musicProfile]="effectiveSynergyDriveMode()"
+                />
+              }
+              @case ('glass-box') {
+                <div class="visualizer-box-3d">
+                  <div class="visualizer-stage">
+                     @for (barHeight of visualizerBars(); track $index) {
+                        <div class="bar-wrapper"><div class="bar-glass-box" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div>
+                     }
+                  </div>
+                  <div class="glass-pane-overlay"></div>
+                </div>
+              }
+              @case ('fractal') {
+                <svg class="w-full h-full" viewBox="0 0 640 160" preserveAspectRatio="none">
+                  <defs>
+                    <radialGradient id="fractalGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                      <stop offset="0%" stop-color="#67e8f9" stop-opacity="1"/>
+                      <stop offset="60%" stop-color="#22d3ee" stop-opacity="0.8"/>
+                      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.2"/>
+                    </radialGradient>
+                    <filter id="fractalGlow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="2.5" result="coloredBlur"></feGaussianBlur>
+                      <feMerge>
+                        <feMergeNode in="coloredBlur"></feMergeNode>
+                        <feMergeNode in="SourceGraphic"></feMergeNode>
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  @for (circle of fractalCircles(); track circle.id) {
+                    <circle [attr.cx]="circle.cx" [attr.cy]="circle.cy" [attr.r]="circle.r" fill="url(#fractalGradient)" filter="url(#fractalGlow)" style="transition: all 75ms ease-out; will-change: cy, r;"></circle>
+                  }
+                </svg>
+              }
+              @case ('neural') {
+                <svg class="w-full h-full" viewBox="0 0 640 160" preserveAspectRatio="none">
+                  <defs>
+                    <filter id="neuralGlow"><feGaussianBlur stdDeviation="1.5" result="coloredBlur"></feGaussianBlur><feMerge><feMergeNode in="coloredBlur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter>
+                  </defs>
+                  <g class="neural-connections" filter="url(#neuralGlow)">
+                    @for(conn of neuralNetwork().connections; track conn.id) {
+                      <line [attr.x1]="conn.x1" [attr.y1]="conn.y1" [attr.x2]="conn.x2" [attr.y2]="conn.y2" [style.opacity]="conn.opacity"></line>
+                    }
+                  </g>
+                  <g class="neural-nodes" filter="url(#neuralGlow)">
+                    @for(node of neuralNetwork().nodes; track node.id) {
+                      <circle [attr.cx]="node.cx" [attr.cy]="node.cy" [attr.r]="node.r" [style.opacity]="node.opacity"></circle>
+                    }
+                  </g>
+                </svg>
+              }
+              @case ('plasma') {
+                <svg class="w-full h-full" viewBox="0 0 320 160" preserveAspectRatio="none">
+                  <defs>
+                    <filter id="plasmaGlow"><feGaussianBlur stdDeviation="3" result="blur"></feGaussianBlur><feBlend in="SourceGraphic" in2="blur" mode="screen"></feBlend></filter>
+                  </defs>
+                  <g class="plasma-field" filter="url(#plasmaGlow)">
+                    @for(path of plasmaPaths(); track path.id) {
+                      <path [attr.d]="path.d" [style.opacity]="path.opacity"></path>
+                    }
+                  </g>
+                </svg>
+              }
+              @case ('hyperlane') {
+                <svg class="w-full h-full" viewBox="0 0 320 160" preserveAspectRatio="none">
+                  <defs><filter id="hyperlaneGlow"><feGaussianBlur stdDeviation="1"></feGaussianBlur></filter></defs>
+                  <g filter="url(#hyperlaneGlow)">
+                    @for(layer of hyperlaneLayers(); track layer.id) {
+                      <rect [attr.x]="layer.x" [attr.y]="layer.y" [attr.width]="layer.width" [attr.height]="layer.height" fill="none" [attr.stroke]="layer.stroke" stroke-width="2" [style.opacity]="layer.opacity"></rect>
+                    }
+                  </g>
+                </svg>
+              }
+               @case ('aura') {
+                <svg class="w-full h-full" viewBox="-150 -100 300 200" preserveAspectRatio="xMidYMid meet">
+                  <defs>
+                    <filter id="auraGlow"><feGaussianBlur stdDeviation="3.5" result="coloredBlur"></feGaussianBlur><feMerge><feMergeNode in="coloredBlur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter>
+                    <radialGradient id="auraCoreGradient"><stop offset="0%" stop-color="rgba(255,255,255,0.8)"></stop><stop offset="100%" stop-color="rgba(255,255,255,0)"></stop></radialGradient>
+                  </defs>
+                  <g class="aura-bloom-viz" filter="url(#auraGlow)">
+                    @for (particle of auraBloom().particles; track particle.id) {
+                      <circle [attr.cx]="particle.x" [attr.cy]="particle.y" [attr.r]="particle.size" fill="#a5f3fc" [style.opacity]="particle.opacity" />
+                    }
+                    @for (ring of auraBloom().rings; track ring.id) {
+                      <circle cx="0" cy="0" [attr.r]="ring.radius" fill="none" [attr.stroke]="'hsla(' + ring.hue + ', 90%, 70%, ' + ring.opacity + ')'" [attr.stroke-width]="ring.thickness" />
+                    }
+                    <circle cx="0" cy="0" [attr.r]="auraBloom().coreSize" fill="url(#auraCoreGradient)" [style.opacity]="auraBloom().coreOpacity" />
+                  </g>
+                </svg>
+              }
+              @case ('glyphs') {
+                <svg class="w-full h-full" viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid meet">
+                  <defs>
+                    <filter id="glyphGlow"><feGaussianBlur stdDeviation="2" result="blur"></feGaussianBlur><feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter>
+                    <symbol id="glyph-chevron" viewBox="-10 -10 20 20"><path d="M -5,5 L 0,-5 L 5,5" /></symbol>
+                    <symbol id="glyph-tri" viewBox="-10 -10 20 20"><path d="M 0,-8 L 8,6 L -8,6 Z" /></symbol>
+                  </defs>
+                  <g class="rhythmic-glyphs-viz" filter="url(#glyphGlow)">
+                    @let glyphs = rhythmicGlyphs();
+                    <g [style.opacity]="glyphs.outerRing.opacity" [attr.transform]="'rotate(' + glyphs.outerRing.rotation + ') scale(' + glyphs.outerRing.scale + ')'">
+                      @for (i of [0,1,2,3,4,5,6,7]; track i) {
+                        <use href="#glyph-chevron" width="10" height="10" [attr.transform]="'rotate(' + i * 45 + ') translate(0, -70)'"/>
+                      }
+                    </g>
+                    <g [style.opacity]="glyphs.innerRing.opacity" [attr.transform]="'rotate(' + glyphs.innerRing.rotation + ') scale(' + glyphs.innerRing.scale + ')'">
+                      @for (i of [0,1,2,3,4,5]; track i) {
+                        <use href="#glyph-tri" width="8" height="8" [attr.transform]="'rotate(' + i * 60 + ') translate(0, -45)'"/>
+                      }
+                    </g>
+                    <circle cx="0" cy="0" r="25" [style.opacity]="glyphs.center.opacity" [attr.transform]="'scale(' + glyphs.center.scale + ')'" />
+                    <circle cx="0" cy="0" r="100" class="sparkle-ring" [style.opacity]="glyphs.sparkle.opacity" [attr.transform]="'scale(' + glyphs.sparkle.scale + ')'" />
+                  </g>
+                </svg>
+              }
+              @case ('liquid') {
+                <svg class="w-full h-full">
+                  <defs>
+                    <filter id="liquifyFilter">
+                      <feTurbulence type="fractalNoise" [attr.baseFrequency]="liquifyParams().turbulence" numOctaves="3" result="turbulence" />
+                      <feDisplacementMap in2="turbulence" in="SourceGraphic" [attr.scale]="liquifyParams().scale" xChannelSelector="R" yChannelSelector="G" />
+                      <feGaussianBlur stdDeviation="1.5" />
+                      <feColorMatrix type="matrix" values="1 0 0 0 0, 0 1 0 0 0, 0 0 1 0 0, 0 0 0 18 -7" />
+                    </filter>
+                  </defs>
+                  <rect width="100%" height="100%" class="liquify-surface" filter="url(#liquifyFilter)" />
+                </svg>
+              }
+              @default {
+                <div class="visualizer-content-default p-2 flex items-end justify-center h-full w-full" [style.gap.px]="barSpacing()">
+                  @switch (effectiveTheme().type) {
+                    @case ('led') { @for (litSegments of ledBars(); track $index) { <div class="bar-wrapper h-full flex flex-col-reverse justify-start items-center" style="gap: 2px;"> @for (segment of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]; track segment) { <div class="led-segment" [class]="segment < litSegments ? (isKaleidoscope() ? 'led-on' : (segment > 12 ? 'led-on led-red' : (segment > 8 ? 'led-on led-yellow' : 'led-on led-green'))) : 'led-off'" [style.width.px]="ledSegmentWidth()" [style.height.px]="ledSegmentHeight()" [style.background-color]="isKaleidoscope() && segment < litSegments ? 'hsl(' + (($index * 5 + segment * 15 + kaleidoscopeHueShift()) % 360) + ', 100%, 50%)' : null" [style.color]="isKaleidoscope() && segment < litSegments ? 'hsl(' + (($index * 5 + segment * 15 + kaleidoscopeHueShift()) % 360) + ', 100%, 50%)' : null"> </div> } </div> } }
+                    @case ('3d') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-3d" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
+                    @case ('shadow') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-shadow" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
+                    @case ('glossy') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-glossy" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
+                    @case ('glass') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-glass" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
+                    @case ('convex') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-convex" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
+                    @case ('concave') { @for (barHeight of visualizerBars(); track $index) { <div class="bar-wrapper"><div class="bar-concave" [class]="effectiveTheme().bar" [style.height.%]="barHeight * 100"></div></div> } }
+                  }
+                </div>
+              }
+            }
+        </div>
+
+        @if (showOpportunisticTicker()) {
+          <div class="absolute bottom-4 left-0 right-0 text-center text-sm opacity-70 animate-pulse">
+            {{ opportunisticTickerMessage() }}
+          </div>
+        }
+      </div>
+
+      <!-- Player controls -->
+      @if (audioSource() === 'file') {
+        <footer class="flex-shrink-0 bg-gradient-to-t from-black/80 to-transparent p-6 w-full">
+          @if (currentTrack(); as track) {
+            <div class="text-center mb-4">
+              <h3 class="font-medium truncate" [title]="track.name">{{ track.name }}</h3>
+              <div class="w-full h-5 relative overflow-hidden mt-1 text-sm">
+                <p class="absolute whitespace-nowrap will-change-transform" [class]="effectiveTheme().accent + ' ' + animationClass()">
+                  {{ currentTickerMessage() }}
+                </p>
+              </div>
+            </div>
+
+            <div class="flex justify-center items-center gap-6">
+              <button (click)="audioService.previous()" [disabled]="playlist().length < 2" class="btn btn-circle btn-ghost" title="Previous Track">
+                <i class="fa-solid fa-backward-step"></i>
+              </button>
+              <button (click)="onPlayPauseClick()" [disabled]="!currentTrack()" class="btn btn-circle btn-primary btn-lg" [title]="isPlaying() ? 'Pause' : 'Play'">
+                <i class="fa-solid text-2xl" [class.fa-play]="!isPlaying()" [class.fa-pause]="isPlaying()"></i>
+              </button>
+              <button (click)="audioService.next()" [disabled]="playlist().length < 2" class="btn btn-circle btn-ghost" title="Next Track">
+                <i class="fa-solid fa-forward-step"></i>
+              </button>
+            </div>
+
+            <div class="flex items-center gap-4 mt-4">
+              <span class="text-sm font-mono">{{ formatTime(currentTime()) }}</span>
+              <input type="range" min="0" [max]="duration()" [value]="currentTime()" (input)="onSeek($event)" class="range range-primary range-sm flex-1" />
+              <span class="text-sm font-mono">{{ formatTime(duration()) }}</span>
+            </div>
+          } @else {
+            <div class="text-center text-gray-400 h-24 flex items-center justify-center">No Track Loaded</div>
+          }
+        </footer>
+      }
+    </section>
+      <!-- For the Sidebar / Controls to be on right, place the code chunk here. MKA-->
   </main>
 </div>
