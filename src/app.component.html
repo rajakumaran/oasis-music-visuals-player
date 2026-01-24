@@ -1,117 +1,32 @@
-<div [class]="effectiveTheme().base + ' ' + effectiveTheme().text + ' min-h-screen flex flex-col p-4 sm:p-6 lg:p-8 transition-colors duration-500'">
-
-  <!-- Header -->
-  <header class="flex-shrink-0 flex items-center justify-between mb-4">
-    <h1 class="text-2xl sm:text-3xl font-bold tracking-wider" [class]="effectiveTheme().accent">
-      <i class="fa-solid fa-music fa-wand-magic-sparkles fa-?"></i>AUDIO OASIS Version 3 with 3D styles  & 10-Band Equalizer!
+<div class="min-h-screen bg-gray-950 text-gray-200 flex flex-col" [class]="effectiveTheme().base">
+  <header class="p-4 flex justify-between items-center border-b border-gray-800" [class]="effectiveTheme().text">
+    <h1 class="text-3xl font-bold" [class]="effectiveTheme().accent">
+      <i class="fa-solid fa-wave-square mr-2"></i>AUDIO OASIS
     </h1>
-    <div class="hidden md:block text-xs sm:text-sm font-sans tracking-wider" [class]="effectiveTheme().accent">Built by Muthukumaran Azhagesan (Kumar). Check his <a href="https://linktr.ee/muthukumaran.azhagesan" target="_blank" class="underline">Linktree</a></div>
+    <p class="text-sm hidden md:block">
+      Built by Muthukumaran Azhagesan (Kumar). Check his
+      <a href="https://linktr.ee/muthukumaran.azhagesan" target="_blank" class="hover:underline" [class]="effectiveTheme().accent">Linktree</a>
+    </p>
     <div class="flex items-center gap-4">
-      <button (click)="toggleAudioSource()"
-              [class]="'cursor-pointer p-2 rounded-md ' + effectiveTheme().button + ' ' + effectiveTheme().buttonHover"
+       <button (click)="toggleAudioSource()" 
+              [class]="'btn btn-sm btn-ghost btn-circle ' + effectiveTheme().buttonHover" 
               [title]="audioSource() === 'file' ? 'Switch to Microphone Input' : 'Switch to File Input'">
         <i class="fa-solid" [class]="audioSource() === 'file' ? 'fa-microphone' : 'fa-music'"></i>
       </button>
-      <label [class]="'cursor-pointer p-2 rounded-md ' + effectiveTheme().button + ' ' + effectiveTheme().buttonHover" title="Set Visualizer Background">
+      <label [class]="'btn btn-sm btn-ghost btn-circle ' + effectiveTheme().buttonHover" title="Set Visualizer Background">
         <i class="fa-solid fa-image"></i>
         <input type="file" (change)="onBgImageChange($event)" class="hidden" accept="image/*">
       </label>
-      <div class="flex flex-col items-end">
-        <div class="relative" title="Select a visual theme">
-          <select (change)="selectTheme($any($event.target).value)"
-                  [value]="selectedThemeIndex()"
-                  [disabled]="isHolidayThemeOn()"
-                  [class]="'appearance-none rounded-md py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 ' + effectiveTheme().button + ' ' + effectiveTheme().text">
-            @for (theme of themes; track theme.name; let i = $index) {
-              <option [value]="i">{{ theme.name }}</option>
-            }
-          </select>
-          <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-        </div>
-        @if (isHolidayAvailable()) {
-          <div class="flex items-center gap-2 mt-2 text-xs">
-            <span [class]="isHolidayThemeOn() ? effectiveTheme().accent : ''">
-              <i class="fa-solid fa-gifts mr-1"></i> Holiday Mode
-            </span>
-            <label class="relative inline-flex items-center cursor-pointer" [title]="'Toggle ' + detectedHoliday()?.name + ' Theme'">
-              <input type="checkbox" [checked]="isHolidayThemeOn()" (change)="toggleHolidayTheme($event)" class="sr-only peer">
-              <div class="w-9 h-5 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
-            </label>
-          </div>
-        }
-      </div>
     </div>
   </header>
 
-  <!-- Main Content -->
-  <main class="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-6 h-full min-h-0">
-
-    <!-- Playlist Section -->
-    <div class="lg-col-span-1 bg-black/20 p-4 rounded-lg flex flex-col min-h-[300px] lg:min-h-0">
-      <h2 class="text-xl font-semibold mb-3 border-b border-white/10 pb-2">Playlist</h2>
-      @if (audioSource() === 'file') {
-        <label class="mb-4 w-full text-center px-4 py-3 rounded-md cursor-pointer transition-colors" [class]="effectiveTheme().button + ' ' + effectiveTheme().buttonHover" title="Choose one or more audio files, (your music files are not uploaded to any server and are only processed locally in your browser).">
-            <i class="fa-solid fa-upload mr-2"></i>
-            <span>Choose Music files to play(Max 10)</span>
-            <input type="file" (change)="onFileChange($event)" multiple accept="audio/*,video/mp4" class="hidden">
-        </label>
-      }
-      <div class="flex-grow overflow-y-auto pr-2">
-        @if (audioSource() === 'microphone') {
-          <div class="text-center text-gray-400 h-full flex flex-col items-center justify-center">
-             <i class="fa-solid fa-microphone-lines text-4xl mb-2" [class]="effectiveTheme().accent"></i>
-             <p>Visualizing microphone...</p>
-             @if (audioService.isMicrophonePermissionGranted() === false) {
-              <p class="text-xs text-red-400 mt-2">Permission denied. Please allow microphone access in browser settings.</p>
-             }
-          </div>
-        } @else {
-          @if (playlist().length === 0) {
-            <div class="text-center text-gray-400 h-full flex flex-col items-center justify-center">
-              <i class="fa-solid fa-music text-4xl mb-2"></i>
-              <p>Upload audio files to begin.</p>
-            </div>
-          } @else {
-            <ul>
-              @for (track of playlist(); track track.url; let i = $index) {
-                <li
-                  draggable="true"
-                  (dragstart)="onDragStart(i)"
-                  (dragover)="onDragOver($event)"
-                  (drop)="onDrop($event, i)"
-                  (dragend)="onDragEnd()"
-                  (click)="audioService.selectTrack(i)"
-                  class="flex items-center p-2 rounded-md cursor-pointer transition-all duration-150"
-                  [class]="currentTrackIndex() === i ? effectiveTheme().highlight : effectiveTheme().buttonHover"
-                  [class.opacity-50]="draggedTrackIndex() === i"
-                  [title]="'Play ' + track.name"
-                >
-                  @if (currentTrackIndex() === i && isPlaying()) {
-                    <i class="fa-solid fa-volume-high w-6 text-sm" [class]="effectiveTheme().accent"></i>
-                  } @else {
-                    <i class="fa-solid fa-play w-6 text-sm text-gray-500"></i>
-                  }
-                  <span class="ml-2 truncate" [title]="track.name">{{ track.name }}</span>
-                </li>
-              }
-            </ul>
-          }
-        }
-      </div>
-    </div>
-
-    <!-- Equalizer Section -->
-    <div id="visualizer-section" class="lg:col-span-2 bg-black/20 p-4 sm:p-6 rounded-lg flex flex-col justify-between">
-      <div class="flex justify-between items-center border-b border-white/10 pb-2 mb-3">
-        <h2 class="text-xl font-semibold">10-Band Graphic Equalizer</h2>
-      </div>
-      
-      <!-- Visualizer Display -->
-      <div id="visualizer-display-wrapper" class="w-full h-48 sm:h-64 rounded-lg relative overflow-hidden bg-cover bg-center transition-all duration-500" [class]="holidayDecorationClass()" [class.bg-christmas-default]="!backgroundImageUrl()" [style.background-image]="backgroundImageUrl() ? 'url(' + backgroundImageUrl()! + ')' : null">
-        <app-fullscreen-toggle targetElementId="visualizer-section"></app-fullscreen-toggle>
+  <main class="flex-1 flex flex-col md:flex-row min-h-0">
+    <!-- Visualizer area -->
+    <section id="visualizer-section" class="flex-1 relative flex flex-col min-h-0">
+      <div id="visualizer-display-wrapper" class="relative flex-1 bg-cover bg-center" [style.background-image]="backgroundImageUrl() ? 'url(' + backgroundImageUrl()! + ')' : null">
+        <app-fullscreen-toggle targetElementId="visualizer-display-wrapper"></app-fullscreen-toggle>
         <div [class]="'absolute inset-0 transition-opacity ' + effectiveTheme().display"></div>
         
-        <!-- NEW: Crystal case overlay for enhanced glass-box theme -->
         @if (effectiveTheme().type === 'glass-box') {
           <div class="crystal-case-overlay"></div>
         }
@@ -120,8 +35,8 @@
         <div class="visualizer-content-host relative w-full h-full" [style.filter]="isKaleidoscope() && effectiveTheme().type !== 'led' ? 'hue-rotate(' + kaleidoscopeHueShift() + 'deg)' : 'none'">
             @switch (effectiveTheme().type) {
               @case ('webgl') {
-                <app-webgl-visualizer
-                  [bars]="visualizerBars()"
+                <app-webgl-visualizer 
+                  [bars]="visualizerBars()" 
                   [theme]="effectiveTheme()"
                   [isPlaying]="isPlaying()"
                   [beat]="beat()"
@@ -267,17 +182,123 @@
               }
             }
         </div>
+
         @if (showOpportunisticTicker()) {
-          <div class="opportunistic-ticker absolute top-1/4 -translate-y-3/4 w-full h-10 bg-black/60 backdrop-blur-sm flex items-center overflow-hidden">
-            <p class="whitespace-nowrap text-md font-semibold text-white/90 animate-left">
-              {{ opportunisticTickerMessage() }}
-            </p>
+          <div class="absolute bottom-4 left-0 right-0 text-center text-sm opacity-70 animate-pulse">
+            {{ opportunisticTickerMessage() }}
           </div>
         }
       </div>
-      <!-- Faders & Controls -->
-      <div id="controls-container" [class.active]="fullscreenControlsActive()">
-        <div class="grid grid-cols-10 gap-x-2 sm:gap-x-3">
+
+      <!-- Player controls -->
+      @if (audioSource() === 'file') {
+        <footer class="flex-shrink-0 bg-gradient-to-t from-black/80 to-transparent p-6 w-full">
+          @if (currentTrack(); as track) {
+            <div class="text-center mb-4">
+              <h3 class="font-medium truncate" [title]="track.name">{{ track.name }}</h3>
+              <div class="w-full h-5 relative overflow-hidden mt-1 text-sm">
+                <p class="absolute whitespace-nowrap will-change-transform" [class]="effectiveTheme().accent + ' ' + animationClass()">
+                  {{ currentTickerMessage() }}
+                </p>
+              </div>
+            </div>
+
+            <div class="flex justify-center items-center gap-6">
+              <button (click)="audioService.previous()" [disabled]="playlist().length < 2" class="btn btn-circle btn-ghost" title="Previous Track">
+                <i class="fa-solid fa-backward-step"></i>
+              </button>
+              <button (click)="onPlayPauseClick()" [disabled]="!currentTrack()" class="btn btn-circle btn-primary btn-lg" [title]="isPlaying() ? 'Pause' : 'Play'">
+                <i class="fa-solid text-2xl" [class.fa-play]="!isPlaying()" [class.fa-pause]="isPlaying()"></i>
+              </button>
+              <button (click)="audioService.next()" [disabled]="playlist().length < 2" class="btn btn-circle btn-ghost" title="Next Track">
+                <i class="fa-solid fa-forward-step"></i>
+              </button>
+            </div>
+
+            <div class="flex items-center gap-4 mt-4">
+              <span class="text-sm font-mono">{{ formatTime(currentTime()) }}</span>
+              <input type="range" min="0" [max]="duration()" [value]="currentTime()" (input)="onSeek($event)" class="range range-primary range-sm flex-1" />
+              <span class="text-sm font-mono">{{ formatTime(duration()) }}</span>
+            </div>
+          } @else {
+            <div class="text-center text-gray-400 h-24 flex items-center justify-center">No Track Loaded</div>
+          }
+        </footer>
+      }
+    </section>
+    <!-- Sidebar / Controls -->
+    <aside class="w-full md:w-80 bg-gray-900/80 backdrop-blur-sm border-r border-gray-800 p-6 overflow-y-auto">
+      <h2 class="text-xl font-semibold mb-6">Controls</h2>
+
+      <!-- Theme selector -->
+      <div class="mb-6 bg-gray-900/80">
+        <label class="block text-sm mb-2">Theme</label>
+        <select [value]="selectedThemeIndex()" (change)="selectTheme($any($event.target).value)" class="select select-bordered text-sm mb-2 w-full" [disabled]="isHolidayThemeOn()">
+          @for (theme of themes; track theme.name; let i = $index) {
+            <option [value]="i" class="block text-sm mb-2">{{ theme.name }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Holiday toggle -->
+      @if (isHolidayAvailable()) {
+        <div class="mb-6 form-control">
+           <label class="label cursor-pointer">
+            <span class="label-text">
+              <i class="fa-solid fa-gifts mr-2" [class]="isHolidayThemeOn() ? effectiveTheme().accent : ''"></i>
+              {{ detectedHoliday()?.name }} Mode
+            </span>
+            <input type="checkbox" [checked]="isHolidayThemeOn()" (change)="toggleHolidayTheme($event)" class="toggle toggle-primary" />
+          </label>
+        </div>
+      }
+
+       <!-- Playlist -->
+      <div class="mb-8">
+        <h3 class="text-lg font-medium mb-3">Playlist</h3>
+        @if (audioSource() === 'file') {
+          <label class="w-full">
+            <span class="mb-2 block text-center text-sm">Upload Music (Max 10)</span>
+            <input type="file" multiple accept="audio/*,video/mp4" (change)="onFileChange($event)" class="file-input file-input-bordered file-input-sm w-full" />
+          </label>
+        }
+        @if (audioSource() === 'microphone') {
+          <div class="alert alert-info text-sm">
+            <i class="fa-solid fa-microphone-lines"></i>
+            <span>Visualizing microphone...</span>
+            @if (audioService.isMicrophonePermissionGranted() === false) {
+              <p class="text-error mt-2 text-xs">Permission denied.</p>
+            }
+          </div>
+        }
+        @if (playlist().length > 0 && audioSource() !== 'microphone') {
+          <ul class="menu bg-base-200/50 rounded-box mt-4 text-sm">
+            @for (track of playlist(); track track.url; let i = $index) {
+              <li
+                draggable="true"
+                (dragstart)="onDragStart(i)"
+                (dragover)="onDragOver($event)"
+                (drop)="onDrop($event, i)"
+                (dragend)="onDragEnd()"
+                [class.bg-primary]="currentTrackIndex() === i"
+                [class.text-primary-content]="currentTrackIndex() === i"
+                [class.opacity-50]="draggedTrackIndex() === i"
+              >
+                <a (click)="audioService.selectTrack(i)">
+                   @if (currentTrackIndex() === i && isPlaying()) { <i class="fa-solid fa-volume-high w-4"></i> } @else { <i class="fa-solid fa-play w-4"></i> }
+                  <span class="truncate">{{ track.name }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+
+      <!-- EQ Sliders -->
+      <div class="mb-6">
+        <h3 class="text-lg font-medium mb-3">10-Band Graphic Equalizer</h3>
+        <div class="flex justify-between gap-2">
           @for(gain of gainValues(); track $index) {
             <div class="flex flex-col items-center gap-2">
                <div class="h-24 flex items-center justify-center" [title]="bandFrequencies[$index] + ' Hz Band'">
@@ -287,193 +308,124 @@
             </div>
           }
         </div>
+      </div>
+
+       <!-- Presets, Sensitivity, etc. -->
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm mb-1">EQ Presets</label>
+          <div class="flex gap-2">
+            <select (change)="applyPreset($event)" class="select select-sm select-bordered flex-1">
+              <option value="" disabled [selected]="!selectedPreset()">Load Preset...</option>
+              @for (preset of presets(); track preset.name) {
+                <option [value]="preset.name" [selected]="selectedPreset()?.name === preset.name">{{ preset.name }}</option>
+              }
+            </select>
+            <button (click)="deleteSelectedPreset()" [disabled]="!selectedPreset()" class="btn btn-error btn-sm">Delete</button>
+          </div>
+          <div class="flex gap-2 mt-2">
+            <input type="text" [value]="newPresetName()" (input)="newPresetName.set($any($event.target).value)" placeholder="New preset name" class="input input-sm input-bordered flex-1" />
+            <button (click)="savePreset()" [disabled]="!newPresetName().trim()" class="btn btn-primary btn-sm">Save</button>
+          </div>
+        </div>
         
         <!-- Advanced Controls -->
-        <div class="mt-4 text-sm border-t border-white/10 pt-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- Synergy Drive -->
-            <div class="flex flex-col gap-1">
-              <label class="font-semibold">Synergy Drive</label>
-              <div class="flex items-center rounded-md overflow-hidden h-full" [class]="effectiveTheme().button" title="Smart mode adapts to the music. Or, pick a specific personality.">
-                  <button (click)="setSynergyDriveMode('smart')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="synergyDriveMode() === 'smart' ? effectiveTheme().highlight : effectiveTheme().buttonHover">Smart</button>
-                  <button (click)="setSynergyDriveMode('atmosphere')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="synergyDriveMode() === 'atmosphere' ? effectiveTheme().highlight : effectiveTheme().buttonHover">Atmosphere</button>
-                  <button (click)="setSynergyDriveMode('rhythm')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="synergyDriveMode() === 'rhythm' ? effectiveTheme().highlight : effectiveTheme().buttonHover">Rhythm</button>
-                  <button (click)="setSynergyDriveMode('transient')" class="flex-1 py-1 px-2 transition-colors text-xs h-full" [class]="synergyDriveMode() === 'transient' ? effectiveTheme().highlight : effectiveTheme().buttonHover">Transient</button>
-              </div>
-            </div>
-             <!-- EQ Presets -->
-            <!-- Sensitivity Control -->
-            <div class="flex flex-col gap-1">
-                <label for="sensitivity-slider" class="font-semibold">Sensitivity: {{ sensitivity().toFixed(1) }}</label>
-                <input type="range" id="sensitivity-slider" min="0.5" max="5" step="0.1" [value]="sensitivity()" (input)="onSensitivityChange($event)" [style.--thumb-bg]="effectiveTheme().sliderThumb" [style.--track-bg]="effectiveTheme().sliderTrack" title="Adjust visualizer sensitivity to the audio">
-            </div>
-            <div class="flex flex-col gap-1">
-                <label for="bar-count-slider" class="font-semibold">Bar Density: {{ barCount() }}</label>
-                <input type="range" id="bar-count-slider" min="16" max="256" step="4" [value]="barCount()" (input)="onBarCountChange($event)" [style.--thumb-bg]="effectiveTheme().sliderThumb" [style.--track-bg]="effectiveTheme().sliderTrack" title="Adjust the number of visualizer bars">
-            </div>
-             <!-- Kaleidoscope Control -->
-               <div class="flex flex-col gap-1">
-                  <label for="bar-count-slider" class="font-semibold">Bar Count: {{ barCount() }}</label>
-                <input type="range" id="bar-count-slider" min="16" max="256" step="16" [value]="barCount()" (input)="onBarCountChange($event)" [style.--thumb-bg]="effectiveTheme().sliderThumb" [style.--track-bg]="effectiveTheme().sliderTrack" title="Adjust the number of visualizer bars">
+        <h3 class="text-lg font-medium pt-4 border-t border-gray-700">Visualizer Engine</h3>
 
-                <!-- <input type="range" id="bar-width-slider" min="10" max="100" step="5" [value]="barWidth()" (input)="onBarWidthChange($event)" [style.--thumb-bg]="effectiveTheme().sliderThumb" [style.--track-bg]="effectiveTheme().sliderTrack" title="Adjust the width of the visualizer bars"> -->
-                </div>
-            <div class="flex flex-col gap-2 justify-end">
-              <button (click)="toggleKaleidoscope()" class="px-2 py-2 rounded-md transition-colors w-full h-full text-xs" [class]="(isKaleidoscope() ? effectiveTheme().highlight : effectiveTheme().button) + ' ' + effectiveTheme().buttonHover" title="Toggle a psychedelic color cycling effect">
-                  <i class="fa-solid fa-palette mr-1"></i> Kaleidoscope {{ isKaleidoscope() ? "ON" : "OFF" }}
-              </button>
-              <div class="flex items-center gap-2">
-                  <button (click)="toggleStyleFusion()" class="flex-grow px-2 py-2 rounded-md transition-colors w-full h-full text-xs" [class]="(isStyleFusionOn() ? effectiveTheme().highlight : effectiveTheme().button) + ' ' + effectiveTheme().buttonHover" title="Automatically rotate through themes">
-                      <i class="fa-solid fa-blender mr-1"></i> Style Fusion {{ isStyleFusionOn() ? "ON" : "OFF" }}
-                  </button>
-                  @if (isStyleFusionOn()) {
-                      <div class="relative" title="Set Style Fusion interval">
-                          <select (change)="setFusionInterval($event)" [value]="fusionInterval()" [class]="'appearance-none rounded-md py-2 pl-2 pr-7 text-xs h-full ' + effectiveTheme().button + ' ' + effectiveTheme().text">
-                              <option value="10000">10s</option>
-                              <option value="15000">15s</option>
-                              <option value="30000">30s</option>
-                              <option value="60000">60s</option>
-                          </select>
-                          <i class="fa-solid fa-chevron-down absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-xs"></i>
-                      </div>
-                  }
-              </div>
-              <div class="flex flex-col gap-1">
-                <label for="bar-spacing-slider" class="font-semibold">Bar Spacing: {{ barSpacing() }}px</label>
-                <input type="range" id="bar-spacing-slider" min="0" max="10" step="1" [value]="barSpacing()" (input)="onBarSpacingChange($event)" [style.--thumb-bg]="effectiveTheme().sliderThumb" [style.--track-bg]="effectiveTheme().sliderTrack" title="Adjust the space between visualizer bars"></div>
+        <div class="form-control">
+           <label class="label"><span class="label-text">Synergy Drive</span></label>
+           <div class="join">
+              <button (click)="setSynergyDriveMode('smart')" class="btn btn-sm join-item flex-1" [class.btn-active]="synergyDriveMode() === 'smart'">Smart</button>
+              <button (click)="setSynergyDriveMode('atmosphere')" class="btn btn-sm join-item flex-1" [class.btn-active]="synergyDriveMode() === 'atmosphere'">Atmosphere</button>
+              <button (click)="setSynergyDriveMode('rhythm')" class="btn btn-sm join-item flex-1" [class.btn-active]="synergyDriveMode() === 'rhythm'">Rhythm</button>
+              <button (click)="setSynergyDriveMode('transient')" class="btn btn-sm join-item flex-1" [class.btn-active]="synergyDriveMode() === 'transient'">Transient</button>
             </div>
-            <!-- EQ Presets -->
-            <div class="flex flex-col gap-1 md:col-span-2 lg:col-span-4">
-              <label class="font-semibold">EQ Presets</label>
-              <div class="grid grid-cols-3 gap-2">
-                <div class="relative col-span-2">
-                  <select [class]="'w-full appearance-none rounded-md py-1 pl-2 pr-7 text-xs ' + effectiveTheme().button + ' ' + effectiveTheme().text" (change)="applyPreset($event)" title="Load a saved EQ preset">
-                    <option value="" disabled [selected]="!selectedPreset()">Load Preset...</option>
-                    @for(preset of presets(); track preset.name) { <option [value]="preset.name" [selected]="selectedPreset()?.name === preset.name">{{ preset.name }}</option> }
-                  </select>
-                  <i class="fa-solid fa-chevron-down absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-xs"></i>
-                </div>
-                <button (click)="deleteSelectedPreset()" [disabled]="!selectedPreset()" [class]="effectiveTheme().button + ' ' + effectiveTheme().buttonHover + ' text-xs rounded-md disabled:opacity-50 disabled:cursor-not-allowed'">Delete</button>
-              </div>
-              <div class="grid grid-cols-3 gap-2 mt-2">
-                <input type="text" [value]="newPresetName()" (input)="newPresetName.set($any($event.target).value)" placeholder="New preset name..." [class]="'col-span-2 text-xs rounded-md p-1 ' + effectiveTheme().base + ' border border-white/20' + ' placeholder:text-gray-400 focus:ring-1 ' + effectiveTheme().accent">
-                <button (click)="savePreset()" [disabled]="!newPresetName().trim()" [class]="effectiveTheme().button + ' ' + effectiveTheme().buttonHover + ' text-xs rounded-md disabled:opacity-50'">Save</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Light Source Controls -->
-          @if (isLightingControlVisible()) {
-            <div class="flex flex-col gap-2 mt-4">
-                <label class="font-semibold">Light Source</label>
-                <div class="grid grid-cols-7 rounded-md overflow-hidden text-xs text-center" [class]="effectiveTheme().button">
-                  <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'none' ? effectiveTheme().highlight : effectiveTheme().buttonHover)" title="Turn off lighting effect"><input type="radio" name="light-source" [checked]="lightSourcePosition() === 'none'" (change)="setLightSource('none')" class="sr-only">Off</label>
-                  <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'top-left' ? effectiveTheme().highlight : effectiveTheme().buttonHover)" title="Light from Top-Left"><input type="radio" name="light-source" [checked]="lightSourcePosition() === 'top-left'" (change)="setLightSource('top-left')" class="sr-only">TL</label>
-                  <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'top-right' ? effectiveTheme().highlight : effectiveTheme().buttonHover)" title="Light from Top-Right"><input type="radio" name="light-source" [checked]="lightSourcePosition() === 'top-right'" (change)="setLightSource('top-right')" class="sr-only">TR</label>
-                  <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'bottom-left' ? effectiveTheme().highlight : effectiveTheme().buttonHover)" title="Light from Bottom-Left"><input type="radio" name="light-source" [checked]="lightSourcePosition() === 'bottom-left'" (change)="setLightSource('bottom-left')" class="sr-only">BL</label>
-                  <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'bottom-right' ? effectiveTheme().highlight : effectiveTheme().buttonHover)" title="Light from Bottom-Right"><input type="radio" name="light-source" [checked]="lightSourcePosition() === 'bottom-right'" (change)="setLightSource('bottom-right')" class="sr-only">BR</label>
-                  <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'center-stage' ? effectiveTheme().highlight : effectiveTheme().buttonHover)" title="Spotlight from the center"><input type="radio" name="light-source" [checked]="lightSourcePosition() === 'center-stage'" (change)="setLightSource('center-stage')" class="sr-only">CS</label>
-                  <label class="cursor-pointer py-1 px-2 transition-colors" [class]="(lightSourcePosition() === 'top-center' ? effectiveTheme().highlight : effectiveTheme().buttonHover)" title="Spotlight from Top-Center"><input type="radio" name="light-source" [checked]="lightSourcePosition() === 'top-center'" (change)="setLightSource('top-center')" class="sr-only">TC</label>
-                </div>
-              </div>
-          }
-          
-          <div class="flex items-center gap-4 mt-4 pt-4 border-t border-white/10">
-            <label class="flex items-center gap-2 cursor-pointer text-xs" title="Smoothly fade between tracks">
-              <input type="checkbox" [checked]="audioService.isCrossfadeEnabled()" (change)="toggleCrossfade($event)" class="h-4 w-4 rounded text-blue-500 focus:ring-blue-500">
-              Crossfade Tracks
-            </label>
-          </div>
-
-          <!-- LED Specific Controls -->
-          @if(effectiveTheme().type === 'led') {
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-white/10">
-              <div class="flex flex-col items-center gap-1">
-                <label class="font-semibold text-xs">Segment Width: {{ ledSegmentWidth() }}px</label>
-                <div class="flex items-center" title="Adjust the width of LED segments">
-                  <button (click)="decrementLedWidth()" class="px-3 py-1 rounded-l-md" [class]="effectiveTheme().button + ' ' + effectiveTheme().buttonHover"><i class="fa-solid fa-minus"></i></button>
-                  <button (click)="incrementLedWidth()" class="px-3 py-1 rounded-r-md" [class]="effectiveTheme().button + ' ' + effectiveTheme().buttonHover"><i class="fa-solid fa-plus"></i></button>
-                </div>
-              </div>
-               <div class="flex flex-col items-center gap-1">
-                <label class="font-semibold text-xs">Segment Height: {{ ledSegmentHeight() }}px</label>
-                <div class="flex items-center" title="Adjust the height of LED segments">
-                  <button (click)="decrementLedHeight()" class="px-3 py-1 rounded-l-md" [class]="effectiveTheme().button + ' ' + effectiveTheme().buttonHover"><i class="fa-solid fa-minus"></i></button>
-                  <button (click)="incrementLedHeight()" class="px-3 py-1 rounded-r-md" [class]="effectiveTheme().button + ' ' + effectiveTheme().buttonHover"><i class="fa-solid fa-plus"></i></button>
-                </div>
-              </div>
-            </div>
-          }
         </div>
-        <button id="fullscreen-controls-close-btn" (click)="toggleFullscreenControls()">
-          <i class="fa-solid fa-xmark mr-2"></i> Close
-        </button>
-      </div>
-      <button id="fullscreen-controls-toggle-btn" (click)="toggleFullscreenControls()" title="Show Fullscreen Controls">
-        <i class="fa-solid fa-sliders"></i>
-      </button>
-    </div>
-  </main>
-  
-  <!-- Player Controls -->
-  @if(audioSource() === 'file') {
-    <footer class="flex-shrink-0 bg-black/20 p-4 rounded-lg mt-6">
-      <div class="flex flex-col md:flex-row items-center gap-4 md:gap-0">
-          <div class="w-full md:w-1/3 flex items-center">
-              @if (currentTrack(); as track) {
-                <div>
-                  <p class="font-bold truncate" [title]="track.name">{{ track.name }}</p>
-                  <p class="text-sm text-gray-400">Audio Oasis Player</p>
-                  <div class="w-full h-5 relative overflow-hidden mt-1 text-sm">
-                      <p class="absolute whitespace-nowrap will-change-transform" [class]="effectiveTheme().accent + ' ' + animationClass()">
-                          {{ currentTickerMessage() }}
-                      </p>
-                  </div>
-                </div>
-              } @else {
-                <div class="h-12 flex flex-col justify-center">
-                  <p class="font-bold">No Track Loaded</p>
-                </div>
-              }
+
+        <div>
+          <label class="block text-sm mb-1">Visualization Mode</label>
+          <select (change)="setVisualizationMode($any($event.target).value)" class="select select-sm select-bordered w-full">
+            <option value="basic">Basic</option>
+            <option value="beat-poly">Beat + Poly</option>
+            <option value="stft-fractal">STFT + Fractal</option>
+            <option value="mfcc-ford">MFCC + Ford</option>
+            <option value="wavelet-harmonic">Wavelet + Harmonic</option>
+          </select>
+        </div>
+
+         <div>
+          <label class="block text-sm mb-1">Response Curve (Basic Mode)</label>
+          <select (change)="setResponseCurve($any($event.target).value)" class="select select-sm select-bordered w-full">
+            <option value="linear">Linear</option>
+            <option value="polynomial">Punchy</option>
+            <option value="fractal">Celestial</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm mb-1">Sensitivity: {{ sensitivity().toFixed(1) }}</label>
+          <input type="range" min="0.5" max="5" step="0.1" [value]="sensitivity()" (input)="onSensitivityChange($event)" class="range range-primary range-sm" />
+        </div>
+        
+        <div>
+          <label class="block text-sm mb-1">Bar Density: {{ barCount() }}</label>
+          <input type="range" min="16" max="128" step="4" [value]="barCount()" (input)="onBarCountChange($event)" class="range range-primary range-sm" />
+        </div>
+
+        <div>
+          <label class="block text-sm mb-1">Bar Spacing: {{ barSpacing() }}px</label>
+          <input type="range" min="0" max="10" step="0.5" [value]="barSpacing()" (input)="onBarSpacingChange($event)" class="range range-primary range-sm" />
+        </div>
+        
+        <div class="form-control">
+          <label class="label cursor-pointer">
+            <span class="block text-sm mb-1">Kaleidoscope {{ isKaleidoscope() ? 'ON' : 'OFF' }}</span>
+            <input type="checkbox" class="toggle toggle-accent text-sm mb-1" [checked]="isKaleidoscope()" (change)="toggleKaleidoscope()" />
+          </label>
+        </div>
+
+        @if (isLightingControlVisible()) {
+          <div>
+            <label class="block text-sm mb-1">Light Source</label>
+            <select (change)="setLightSource($any($event.target).value)" [value]="lightSourcePosition()" class="select select-sm select-bordered w-full block text-sm mb-1">
+              <option value="none">Off</option>
+              <option value="top-left">Top-Left</option>
+              <option value="top-right">Top-Right</option>
+              <option value="bottom-left">Bottom-Left</option>
+              <option value="bottom-right">Bottom-Right</option>
+              <option value="center-stage">Center Stage</option>
+              <option value="top-center">Top Center</option>
+            </select>
           </div>
-          <div class="w-full md:w-1/3 flex flex-col items-center px-4">
-              <div class="flex items-center gap-6 text-2xl">
-                  <button (click)="audioService.previous()" [disabled]="playlist().length < 2" class="disabled:opacity-50 disabled:cursor-not-allowed" title="Previous Track"><i class="fa-solid fa-backward-step"></i></button>
-                  <button (click)="onPlayPauseClick()" [disabled]="!currentTrack()" class="w-12 h-12 rounded-full flex items-center justify-center text-3xl disabled:opacity-50 disabled:cursor-not-allowed" [class]="effectiveTheme().button + ' ' + effectiveTheme().buttonHover" [title]="isPlaying() ? 'Pause' : 'Play'"><i class="fa-solid" [class]="isPlaying() ? 'fa-pause' : 'fa-play'"></i></button>
-                  <button (click)="audioService.next()" [disabled]="playlist().length < 2" class="disabled:opacity-50 disabled:cursor-not-allowed" title="Next Track"><i class="fa-solid fa-forward-step"></i></button>
+        }
+        
+         <div class="form-control">
+          <label class="label cursor-pointer">
+            <span class="text-sm mb-1">Crossfade Tracks</span>
+            <input type="checkbox" class="toggle toggle-success" [checked]="audioService.isCrossfadeEnabled()" (change)="toggleCrossfade($event)" />
+          </label>
+        </div>
+
+        @if (effectiveTheme().type === 'led') {
+          <div class="space-y-3 pt-4 border-t border-gray-700">
+            <h3 class="text-md font-medium">LED Controls</h3>
+            <div>
+              <label class="block text-sm mb-1">Segment Width: {{ ledSegmentWidth() }}px</label>
+              <div class="join">
+                <button (click)="decrementLedWidth()" class="btn btn-sm join-item">-</button>
+                <button (click)="incrementLedWidth()" class="btn btn-sm join-item">+</button>
               </div>
-              <div class="w-full flex items-center gap-2 text-xs mt-2">
-                  <span>{{ formatTime(currentTime()) }}</span>
-                  <input type="range" class="w-full" [value]="currentTime()" (input)="onSeek($event)" min="0" [max]="duration() || 0" step="0.1" [style.--thumb-bg]="effectiveTheme().sliderThumb" [style.--track-bg]="effectiveTheme().sliderTrack" title="Seek through track">
-                  <span>{{ formatTime(duration()) }}</span>
+            </div>
+            <div>
+              <label class="block text-sm mb-1">Segment Height: {{ ledSegmentHeight() }}px</label>
+              <div class="join">
+                <button (click)="decrementLedHeight()" class="btn btn-sm join-item">-</button>
+                <button (click)="incrementLedHeight()" class="btn btn-sm join-item">+</button>
               </div>
-          </div>
-          <div class="w-full md:w-1/3 flex items-center justify-center md:justify-end gap-3 pr-2">
-            <div class="flex flex-wrap justify-center items-center gap-4 text-sm">
-              <div class="flex items-center gap-2">
-                <label class="relative inline-flex items-center cursor-pointer" [class.opacity-50]="isStyleFusionOn()" [class.cursor-not-allowed]="isStyleFusionOn()" title="Automatically switch themes at a set interval. Note that if this feature is enabled, then you cannot use the auto-switch slider">
-                  <input type="checkbox" [checked]="isAutoSwitching()" (change)="toggleAutoSwitch()" [disabled]="isStyleFusionOn()" class="sr-only peer">
-                  <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-                </label>
-                <i class="fa-solid fa-wand-magic-sparkles" [class]="isAutoSwitching() ? effectiveTheme().accent : ''"></i>
-              </div>
-              @if (isAutoSwitching()) {
-                <div class="flex items-center gap-4">
-                  <div class="relative" title="Set auto-switch interval">
-                    <select (change)="setSwitchInterval($event)" [value]="switchInterval()" [class]="'appearance-none rounded-md py-1 pl-2 pr-7 text-xs ' + effectiveTheme().button + ' ' + effectiveTheme().text">
-                      <option value="10000">10s</option><option value="15000">15s</option><option value="30000">30s</option><option value="60000">60s</option><option value="300000">5 minutes</option>
-                    </select>
-                    <i class="fa-solid fa-chevron-down absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-xs"></i>
-                  </div>
-                  <div class="flex gap-3 text-xs" title="Set auto-switch mode">
-                    <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="switch-mode" [checked]="switchMode() === 'sequential'" (change)="setSwitchMode('sequential')" class="h-3 w-3">Seq</label>
-                    <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="switch-mode" [checked]="switchMode() === 'random'" (change)="setSwitchMode('random')" class="h-3 w-3">Rand</label>
-                  </div>
-                </div>
-              }
             </div>
           </div>
+        }
       </div>
-    </footer>
-  }
+    </aside>    
+  </main>
 </div>

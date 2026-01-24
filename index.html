@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="google-adsense-account" content="ca-pub-9513364039433406">
   <title>Audio Oasis Equalizer</title>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.2/dist/full.min.css" rel="stylesheet" type="text/css" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <style>
@@ -33,34 +34,11 @@
     input[type=range]:focus {
         outline: none;
     }
-    /* Track */
-    input[type=range]::-webkit-slider-runnable-track {
-        height: 4px;
-        border-radius: 2px;
-        background: var(--track-bg, #4b5563);
-    }
-    input[type=range]::-moz-range-track {
-        height: 4px;
-        border-radius: 2px;
-        background: var(--track-bg, #4b5563);
-    }
-    /* Thumb */
-    input[type=range]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        margin-top: -6px; /* Position thumb relative to track */
-        height: 16px;
-        width: 16px;
-        border-radius: 2px;
-        border: 1px solid rgba(0,0,0,0.5);
-        background: var(--thumb-bg, #6b7280);
-    }
-    input[type=range]::-moz-range-thumb {
-        height: 16px;
-        width: 16px;
-        border-radius: 2px;
-        border: 1px solid rgba(0,0,0,0.5);
-        background: var(--thumb-bg, #6b7280);
+    /* DaisyUI overrides for vertical range */
+    input[type=range].vertical {
+      writing-mode: bt-lr;
+      -webkit-appearance: slider-vertical;
+      padding: 0 5px;
     }
   </style>
 <script type="importmap">
@@ -78,7 +56,9 @@
     "@angular/common": "https://next.esm.sh/@angular/common@^21.0.1?external=rxjs",
     "@google/genai": "https://esm.sh/@google/genai",
     "three": "https://esm.sh/three@0.164.1",
-    "three/examples/jsm/controls/OrbitControls.js": "https://esm.sh/three@0.164.1/examples/jsm/controls/OrbitControls.js"
+    "three/examples/jsm/controls/OrbitControls.js": "https://esm.sh/three@0.164.1/examples/jsm/controls/OrbitControls.js",
+    "three/examples/jsm/objects/Reflector.js": "https://esm.sh/three@0.164.1/examples/jsm/objects/Reflector.js",
+    "@vercel/analytics": "https://esm.sh/@vercel/analytics@^1.6.1?external=rxjs"
   }
 }
 </script>

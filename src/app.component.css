@@ -385,3 +385,9 @@ body.fullscreen-ios-body { overflow: hidden; }
     border-right: 1px solid rgba(255, 255, 255, 0.1);
     color: white; cursor: pointer;
 }
+
+.ford-circle {
+  fill: currentColor;
+  opacity: 0.7;
+  transition: r 75ms ease-out, cy 75ms ease-out;
+}
