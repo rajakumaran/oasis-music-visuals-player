@@ -5,7 +5,6 @@ import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 import { EqualizerTheme } from '../models/equalizer-theme.model';
 
 type MusicProfile = 'atmosphere' | 'rhythm' | 'transient';
-
 @Component({
   selector: 'app-webgl-visualizer',
   standalone: true,
