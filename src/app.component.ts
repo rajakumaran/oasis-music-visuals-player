@@ -11,7 +11,8 @@ import { inject as vercelAnalytics } from '@vercel/analytics';
 type LightSourcePosition = 'none' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center-stage' | 'top-center';
 type SynergyDriveMode = 'atmosphere' | 'rhythm' | 'transient';
 type SynergyDriveSetting = SynergyDriveMode | 'smart';
-type VisualizationMode = 'basic' | 'beat-poly' | 'stft-fractal' | 'mfcc-ford' | 'wavelet-harmonic';
+type Algorithm = 'basic' | 'stft-fractal' | 'wavelet-harmonic';
+type VisualizerEngine = 'synergy' | 'algorithm';
 
 interface AuraRing { id: number; radius: number; opacity: number; thickness: number; hue: number; }
 interface AuraParticle { id: number; x: number; y: number; opacity: number; size: number; }
@@ -40,17 +41,24 @@ export class AppComponent implements OnInit, OnDestroy {
   beat = this.audioService.beat;
   transient = this.audioService.transient;
 
+  // --- Visualizer Engine State ---
+  visualizerEngine = signal<VisualizerEngine>('synergy');
+  
+  // Synergy Drive Engine State
   synergyDriveMode = signal<SynergyDriveSetting>('smart');
   effectiveSynergyDriveMode = computed(() => {
     const mode = this.synergyDriveMode();
     return mode === 'smart' ? this.audioService.detectedMusicProfile() : mode;
   });
+
+  // Algorithm Lab Engine State
+  selectedAlgorithm = signal<Algorithm>('basic');
+  responseCurve = signal<'linear' | 'polynomial' | 'fractal'>('polynomial');
+  
   private lastBeatTimestamp = 0;
   private lastTransientTimestamp = 0;
   
-  // --- New Visualization Controls ---
-  visualizationMode = signal<VisualizationMode>('basic');
-  responseCurve = signal<'linear' | 'polynomial' | 'fractal'>('polynomial');
+
   private dataBuffers: Uint8Array[] = [];
   private readonly BUFFER_HISTORY_SIZE = 3;
 
@@ -142,6 +150,7 @@ export class AppComponent implements OnInit, OnDestroy {
     effect(() => this.isAutoSwitching() ? this.startAutoSwitching() : this.stopAutoSwitching());
     effect(() => (this.isKaleidoscope() && (this.isPlaying() || this.audioSource() === 'microphone')) ? this.startKaleidoscope() : this.stopKaleidoscope());
     effect(() => this.isStyleFusionOn() ? this.startStyleFusion() : this.stopStyleFusion());
+    this._reimplementUnchanged();
   }
 
   ngOnInit(): void {
@@ -214,8 +223,7 @@ export class AppComponent implements OnInit, OnDestroy {
     const beatInfo = this.beat();
     const transientInfo = this.transient();
     const bars = this.barCount();
-    const vizMode = this.visualizationMode();
-    const responseCurveType = this.responseCurve();
+    const engine = this.visualizerEngine();
 
     const output = new Array(bars);
     const logLength = Math.log(data.length);
@@ -223,86 +231,103 @@ export class AppComponent implements OnInit, OnDestroy {
     
     const avgData = this.averageDataBuffers(data);
 
-    let beatKick = 0;
-    if (beatInfo.timestamp > this.lastBeatTimestamp) {
-      this.lastBeatTimestamp = beatInfo.timestamp;
-      beatKick = Math.min(1, beatInfo.strength * 0.6);
-    }
-    let transientSpike = 0, transientJitter = 0;
-    if (transientInfo.timestamp > this.lastTransientTimestamp) {
-      this.lastTransientTimestamp = transientInfo.timestamp;
-      transientSpike = Math.min(1, transientInfo.intensity * 1.5);
-      transientJitter = transientInfo.intensity * 0.2;
-    }
-    
-    for (let i = 0; i < bars; i++) {
-        let index = Math.floor(Math.exp(((i + 1) / bars) * logLength));
-        if (index <= lastIndex) index = lastIndex + 1;
-        index = Math.min(index, data.length);
-        
-        let slice = data.slice(lastIndex, index);
-        if (vizMode === 'stft-fractal' || vizMode === 'wavelet-harmonic') {
-          slice = avgData.slice(lastIndex, index);
-        }
-        
+    if (engine === 'synergy') {
+      // --- SYNERGY DRIVE ENGINE ---
+      const driveMode = this.effectiveSynergyDriveMode();
+      const beatInfo = this.beat();
+      const transientInfo = this.transient();
+      let lastIndex = 0;
+
+      let beatKick = 0;
+      if (beatInfo.timestamp > this.lastBeatTimestamp) {
+        this.lastBeatTimestamp = beatInfo.timestamp;
+        beatKick = Math.min(1, beatInfo.strength * 0.6);
+      }
+      let transientSpike = 0, transientJitter = 0;
+      if (transientInfo.timestamp > this.lastTransientTimestamp) {
+        this.lastTransientTimestamp = transientInfo.timestamp;
+        transientSpike = Math.min(1, transientInfo.intensity * 1.5);
+        transientJitter = transientInfo.intensity * 0.2;
+      }
+
+      for (let i = 0; i < bars; i++) {
+        const index = Math.max(lastIndex + 1, Math.floor(Math.exp(((i + 1) / bars) * logLength)));
+        const slice = data.slice(lastIndex, index);
         let normalizedValue = slice.length > 0 ? (Math.max(...slice) / 255) * sensitivityValue : 0;
-        normalizedValue = Math.max(0, Math.min(1, normalizedValue));
-
-        // --- 1. Apply base visualization algorithm ---
-        switch (vizMode) {
-          case 'beat-poly':
-            if (i > 0 && i < bars - 1) {
-              const prev = output[i - 1] || normalizedValue;
-              const next = data[Math.min(index + 1, data.length - 1)] / 255 * sensitivityValue;
-              normalizedValue = (prev + normalizedValue + next) / 3;
-            }
-            break;
-          case 'stft-fractal':
-            const fractalDepth = Math.floor(normalizedValue * 5);
-            for (let d = 1; d <= fractalDepth; d++) {
-              normalizedValue += Math.sin(i * d / bars * Math.PI) * (normalizedValue / (d * 3));
-            }
-            break;
-          case 'mfcc-ford':
-            const melIndex = Math.floor(Math.pow(i / bars, 1.5) * data.length);
-            normalizedValue = data[melIndex] / 255 * sensitivityValue;
-            break;
-          case 'wavelet-harmonic':
-            for (let h = 2; h <= 4; h++) {
-              const harmIndex = Math.min(data.length - 1, i * h);
-              normalizedValue += Math.sin(harmIndex / bars * Math.PI) * (avgData[harmIndex] / 255 / (h * 2));
-            }
-            break;
-          case 'basic':
-          default:
-            if (responseCurveType === 'polynomial') normalizedValue = Math.pow(normalizedValue, 2);
-            else if (responseCurveType === 'fractal') {
-              const modulation = 0.7 + 0.3 * Math.abs(Math.sin((i / bars) * Math.PI * 4));
-              normalizedValue = Math.pow(normalizedValue, 1.2) * modulation;
-            }
-        }
-
-        // --- 2. Apply Synergy Drive enhancements ---
+        
         const barProgress = i / (bars - 1);
         normalizedValue += beatKick * (1 - barProgress);
         normalizedValue += transientSpike * barProgress;
         if (driveMode === 'transient' && i > bars / 2) {
           normalizedValue += (Math.random() - 0.5) * transientJitter * barProgress;
         }
+
+        const currentValue = this.smoothedBars[i] || 0;
+        if (normalizedValue >= currentValue) {
+          this.smoothedBars[i] = normalizedValue;
+        } else {
+          let finalDecay = baseDecay;
+          if (driveMode === 'atmosphere') finalDecay = Math.min(0.995, baseDecay + 0.03);
+          if (i < bars * 0.15) finalDecay = Math.min(0.99, baseDecay + 0.02);
+          else if (i > bars * 0.7) finalDecay = Math.max(0.85, baseDecay - 0.08);
+          this.smoothedBars[i] = currentValue * finalDecay;
+        }
+        output[i] = Math.min(1, Math.max(0, this.smoothedBars[i]));
+        lastIndex = index;
+      }
+
+    } else {
+      // --- ALGORITHM LAB ENGINE ---
+      const selectedAlgo = this.selectedAlgorithm();
+      const avgData = this.averageDataBuffers(data);
+      let lastIndex = 0;
+
+      for (let i = 0; i < bars; i++) {
+        let index = Math.max(lastIndex + 1, Math.floor(Math.exp(((i + 1) / bars) * logLength)));
+        let slice = data.slice(lastIndex, index);
+        let normalizedValue = slice.length > 0 ? (Math.max(...slice) / 255) * sensitivityValue : 0;
+        
+        switch (selectedAlgo) {
+          case 'stft-fractal': {
+            const avgSlice = avgData.slice(lastIndex, index);
+            normalizedValue = avgSlice.length > 0 ? (Math.max(...avgSlice) / 255) * sensitivityValue : 0;
+            const fractalDepth = Math.floor(normalizedValue * 5);
+            for (let d = 1; d <= fractalDepth; d++) {
+              normalizedValue += Math.sin(i * d / bars * Math.PI) * (normalizedValue / (d * 3));
+            }
+            break;
+          }
+          case 'wavelet-harmonic': {
+            const avgSlice = avgData.slice(lastIndex, index);
+            normalizedValue = avgSlice.length > 0 ? (Math.max(...avgSlice) / 255) * sensitivityValue : 0;
+            for (let h = 2; h <= 4; h++) {
+              const harmIndex = Math.min(avgData.length - 1, index * h);
+              normalizedValue += Math.sin(i * h) * (avgData[harmIndex] / 255 / (h * 4));
+            }
+            break;
+          }
+          case 'basic':
+          default: {
+            const curve = this.responseCurve();
+            if (curve === 'polynomial') normalizedValue = Math.pow(normalizedValue, 2);
+            else if (curve === 'fractal') {
+              const modulation = 0.7 + 0.3 * Math.abs(Math.sin((i / bars) * Math.PI * 4));
+              normalizedValue = Math.pow(normalizedValue, 1.2) * modulation;
+            }
+            break;
+          }
+        }
         
         // --- 3. Apply smoothing and decay ---
-        const currentValue = this.smoothedBars[i];
+        const currentValue = this.smoothedBars[i] || 0;
         if (normalizedValue >= currentValue) {
-            this.smoothedBars[i] = normalizedValue;
+          this.smoothedBars[i] = normalizedValue;
         } else {
-            let finalDecay = baseDecay;
-            if (driveMode === 'atmosphere') finalDecay = Math.min(0.995, baseDecay + 0.03);
-            if (i < bars * 0.15) finalDecay = Math.min(0.99, baseDecay + 0.02);
-            else if (i > bars * 0.7) finalDecay = Math.max(0.85, baseDecay - 0.08);
-            this.smoothedBars[i] = currentValue * finalDecay;
+          this.smoothedBars[i] = currentValue * baseDecay;
         }
-        output[i] = Math.min(1, this.smoothedBars[i]);
+        output[i] = Math.min(1, Math.max(0, this.smoothedBars[i]));
         lastIndex = index;
+      }
     }
     return output;
   });
@@ -320,6 +345,34 @@ export class AppComponent implements OnInit, OnDestroy {
       cy: viewboxHeight - Math.max(0.5, height * viewboxHeight),
       r: Math.max(0.5, height * maxRadius),
     }));
+  });
+
+  fordCircles = computed(() => {
+    const bars = this.visualizerBars();
+    const count = Math.min(32, this.barCount()); // Limit circles for clarity
+    const viewboxWidth = 320;
+    const viewboxHeight = 160;
+    const beatInfo = this.beat();
+    let beatPulse = 1.0;
+    if (beatInfo.timestamp > this.lastBeatTimestamp) {
+      beatPulse = 1.0 + beatInfo.strength * 0.2;
+    }
+
+    const circles = [];
+    for (let i = 0; i < count; i++) {
+      const barIndex = Math.floor(i / count * bars.length);
+      const radius = bars[barIndex] * (viewboxHeight / 4) * beatPulse;
+      const x = (i / (count - 1)) * viewboxWidth;
+      const y = viewboxHeight - radius;
+      circles.push({ 
+        id: `ford-${i}`, 
+        cx: x, 
+        cy: y, 
+        r: Math.max(1, radius),
+        opacity: 0.5 + bars[barIndex] * 0.5
+      });
+    }
+    return circles;
   });
 
   ledBars = computed(() => {
@@ -496,6 +549,7 @@ bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k
 
 themes: EqualizerTheme[] = [
     { name: 'VoxelScape', type: 'webgl', base: 'bg-gray-900', display: '#111827', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: '#a78bfa', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-violet-500/50' },
+    { name: 'Geometric Harmony', type: 'ford-circles', base: 'bg-gray-900', display: 'bg-black/50', bar: '', sliderTrack: 'bg-sky-800/60', sliderThumb: 'bg-rose-400', text: 'text-sky-200', accent: 'text-rose-300', button: 'bg-sky-900/70', buttonHover: 'hover:bg-sky-800/70', highlight: 'bg-rose-500/50' },
     { name: 'Mukyo', type: 'shadow', base: 'bg-zinc-950', display: 'bg-zinc-900/80 backdrop-blur-sm border border-zinc-800', bar: 'bg-gradient-to-t from-cyan-900 via-cyan-500 to-white shadow-[0_0_15px_rgba(34,211,238,0.6)] rounded-t-[2px]', sliderTrack: 'bg-zinc-800', sliderThumb: 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]', text: 'text-zinc-300', accent: 'text-cyan-400', button: 'bg-zinc-800 border border-zinc-700', buttonHover: 'hover:bg-zinc-700', highlight: 'bg-zinc-800' },
     { name: 'Muknics', type: 'shadow', base: 'bg-[#1c1917]', display: 'bg-black/60 border-t border-orange-900/30', bar: 'bg-gradient-to-t from-orange-900 via-amber-500 to-yellow-100 shadow-[inset_2px_0_4px_rgba(0,0,0,0.6),0_0_12px_rgba(245,158,11,0.4)] rounded-t-sm', sliderTrack: 'bg-stone-800', sliderThumb: 'bg-amber-500 border-2 border-orange-900', text: 'text-stone-300', accent: 'text-amber-400', button: 'bg-stone-800', buttonHover: 'hover:bg-stone-700', highlight: 'bg-stone-700/50' },    // Updated Borderless LED: Ensuring truly rectangular, no borders, no shadows, no rounding for a clean stereo-system look
     { name: 'Borderless LED Rectangular', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-gray-700 border-none shadow-none rounded-none', sliderTrack: 'bg-gray-600 border-none shadow-none rounded-none', sliderThumb: 'bg-gray-400 border-none shadow-none rounded-none', text: 'text-gray-300', accent: 'text-green-400', button: 'bg-gray-700 border-none shadow-none rounded-none', buttonHover: 'hover:bg-gray-600', highlight: 'bg-green-600/50 border-none shadow-none rounded-none' },
@@ -540,6 +594,9 @@ themes: EqualizerTheme[] = [
     { name: 'Matrix', type: 'shadow', base: 'bg-black', display: 'bg-black/80', bar: 'bg-gradient-to-t from-emerald-700 to-green-400 shadow-[0_0_10px_#4ade80,-1px_0_4px_rgba(0,0,0,0.7)]', sliderTrack: 'bg-gray-800', sliderThumb: 'bg-green-500', text: 'text-green-400 font-mono', accent: 'text-green-300', button: 'bg-gray-900 border border-green-700', buttonHover: 'hover:bg-gray-800', highlight: 'bg-green-600/50' },
     { name: 'Cosmic Rift 2.0', type: '3d', base: 'cosmic-rift-bg', display: 'bg-black/40', bar: 'bg-gradient-to-t from-fuchsia-500 via-pink-400 to-cyan-300 shadow-[0_0_10px_#a855f7]', sliderTrack: 'bg-purple-800/50', sliderThumb: 'bg-fuchsia-500', text: 'text-purple-300', accent: 'text-cyan-300', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-fuchsia-500/50' },
     { name: 'Celestial Sphere', type: 'fractal', base: 'bg-gradient-to-br from-gray-900 via-blue-900 to-black', display: 'bg-black/40', bar: '', sliderTrack: 'bg-blue-800/50', sliderThumb: 'bg-sky-500', text: 'text-sky-300', accent: 'text-cyan-300', button: 'bg-blue-900/70', buttonHover: 'hover:bg-blue-800/70', highlight: 'bg-sky-500/50' },
+   { name: 'Aura Bloom', type: 'aura', base: 'bg-black', display: 'bg-black/50', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: 'text-sky-300', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-sky-500/50' },
+    { name: 'Rhythmic Glyphs', type: 'glyphs', base: 'bg-slate-900', display: 'bg-black/60', bar: '', sliderTrack: 'bg-teal-800/50', sliderThumb: 'bg-emerald-400', text: 'text-teal-200', accent: 'text-emerald-300', button: 'bg-teal-900/60', buttonHover: 'hover:bg-teal-800/60', highlight: 'bg-emerald-500/50' },
+    { name: 'Liquify', type: 'liquid', base: 'bg-gray-800', display: 'bg-black/70', bar: '', sliderTrack: 'bg-slate-600', sliderThumb: 'bg-white', text: 'text-slate-200', accent: 'text-cyan-300', button: 'bg-slate-700', buttonHover: 'hover:bg-slate-600', highlight: 'bg-cyan-500/50' },
     { name: 'Molten Core', type: 'glossy', base: 'bg-stone-900', display: 'bg-black/60', bar: 'bg-gradient-to-t from-red-700 via-orange-500 to-yellow-400 shadow-[0_0_8px_#fb923c]', sliderTrack: 'bg-red-900/50', sliderThumb: 'bg-amber-400', text: 'text-amber-300', accent: 'text-orange-400', button: 'bg-orange-800/50', buttonHover: 'hover:bg-orange-700/50', highlight: 'bg-yellow-500/50' },
     { name: 'Ocean Floor', type: 'glass', base: 'bg-gradient-to-t from-blue-900 to-teal-900', display: 'bg-black/30', bar: 'rounded-t-md', sliderTrack: 'bg-cyan-800/50', sliderThumb: 'bg-teal-300', text: 'text-cyan-200', accent: 'text-teal-300', button: 'bg-cyan-900/60', buttonHover: 'hover:bg-cyan-800/60', highlight: 'bg-teal-600/50' },
     { name: 'Aquamarine Dream', type: 'glossy', base: 'bg-gradient-to-br from-green-900 via-cyan-800 to-teal-900', display: 'bg-black/30', bar: 'bg-gradient-to-t from-emerald-400 to-cyan-200 shadow-[0_0_8px_#67e8f9]', sliderTrack: 'bg-teal-800/60', sliderThumb: 'bg-emerald-300', text: 'text-cyan-200', accent: 'text-emerald-300', button: 'bg-cyan-900/60', buttonHover: 'hover:bg-cyan-800/60', highlight: 'bg-emerald-600/50' },
@@ -568,7 +625,10 @@ themes: EqualizerTheme[] = [
     { name: 'Marantz Concave Gold', type: 'concave', base: 'bg-amber-100', display: 'bg-black/80', bar: 'bg-gradient-to-t from-amber-700 to-amber-500 shadow-[0_0_8px_#fbbf24] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-amber-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },
     { name: 'Classic LED Neon Blue', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-blue-700 shadow-[0_0_6px_#3b82f6]', sliderTrack: 'bg-blue-600', sliderThumb: 'bg-blue-400', text: 'text-blue-300', accent: 'text-blue-400', button: 'bg-blue-700', buttonHover: 'hover:bg-blue-600', highlight: 'bg-blue-600/50' },
     { name: 'Pioneer Convex Fuchsia', type: 'convex', base: 'bg-slate-200', display: 'bg-fuchsia-900/80', bar: 'bg-gradient-to-t from-fuchsia-600 to-fuchsia-400 shadow-[0_0_8px_#d946ef] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-fuchsia-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
-    { name: 'Marantz Retro Green', type: 'shadow', base: 'bg-amber-100', display: 'bg-black/80', bar: 'bg-gradient-to-t from-green-700 to-green-500 shadow-[0_0_8px_#22c55e,-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-green-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },        
+    { name: 'Marantz Retro Green', type: 'shadow', base: 'bg-amber-100', display: 'bg-black/80', bar: 'bg-gradient-to-t from-green-700 to-green-500 shadow-[0_0_8px_#22c55e,-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-green-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },  
+    { name: '2030: Neural Network', type: 'neural', base: 'bg-black', display: 'bg-black/80', bar: '', sliderTrack: 'bg-gray-800', sliderThumb: 'bg-cyan-400', text: 'text-cyan-300 font-mono', accent: 'text-lime-300', button: 'bg-gray-900 border border-cyan-700', buttonHover: 'hover:bg-gray-800', highlight: 'bg-cyan-600/50' },
+    { name: '2040: Energy Field', type: 'plasma', base: 'bg-gradient-to-br from-indigo-900 to-black', display: 'bg-black/50', bar: '', sliderTrack: 'bg-purple-800/50', sliderThumb: 'bg-fuchsia-500', text: 'text-purple-300', accent: 'text-fuchsia-400', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-fuchsia-500/50' },
+    { name: '2050: Hyperlane', type: 'hyperlane', base: 'bg-black', display: 'bg-black/90', bar: '', sliderTrack: 'bg-blue-800/50', sliderThumb: 'bg-white', text: 'text-blue-200', accent: 'text-white', button: 'bg-blue-900/70', buttonHover: 'hover:bg-blue-800/70', highlight: 'bg-blue-500/50' },      
   ];
 
   selectedTheme: WritableSignal<EqualizerTheme> = signal(this.themes[0]);
@@ -598,7 +658,7 @@ themes: EqualizerTheme[] = [
   setSwitchMode(mode: 'sequential' | 'random') { this.switchMode.set(mode); }
   toggleHolidayTheme(event: Event) { this.holidayService.setHolidayThemeEnabled((event.target as HTMLInputElement).checked); }
   setSynergyDriveMode(mode: SynergyDriveSetting) { this.synergyDriveMode.set(mode); }
-  setVisualizationMode(mode: VisualizationMode) { this.visualizationMode.set(mode); }
+  setSelectedAlgorithm(algo: Algorithm) { this.selectedAlgorithm.set(algo); }
   setResponseCurve(curve: 'linear' | 'polynomial' | 'fractal') { this.responseCurve.set(curve); }
 
   private startAutoSwitching(): void {
@@ -683,10 +743,91 @@ themes: EqualizerTheme[] = [
 
   onDragStart(index: number) { this.draggedTrackIndex.set(index); }
   onDragOver(event: DragEvent) { event.preventDefault(); }
-  onDrop(event: DragEvent, dropIndex: number) { /* ... same as before ... */ }
+  onDrop(event: DragEvent, dropIndex: number) {
+    event.preventDefault();
+    const startIndex = this.draggedTrackIndex();
+    if (startIndex === null || startIndex === dropIndex) return;
+    
+    this.playlist.update(list => {
+      const newList = [...list];
+      const [removed] = newList.splice(startIndex, 1);
+      newList.splice(dropIndex, 0, removed);
+      return newList;
+    });
+    
+    const currentIdx = this.currentTrackIndex();
+    if (currentIdx === startIndex) this.currentTrackIndex.set(dropIndex);
+    else if (currentIdx !== null && startIndex < currentIdx && dropIndex >= currentIdx) this.currentTrackIndex.update(i => i! - 1);
+    else if (currentIdx !== null && startIndex > currentIdx && dropIndex <= currentIdx) this.currentTrackIndex.update(i => i! + 1);
+    
+    this.draggedTrackIndex.set(null);
+  } 
   onDragEnd() { this.draggedTrackIndex.set(null); }
   
-  // Re-implementing unchanged methods from original file
- 
+  private _reimplementUnchanged() {
+      this.startAutoSwitching = () => {
+        this.stopAutoSwitching();
+        this.themeSwitchIntervalId = setInterval(() => this.selectNextTheme(), this.switchInterval());
+      };
+      this.stopAutoSwitching = () => { if (this.themeSwitchIntervalId) { clearInterval(this.themeSwitchIntervalId); this.themeSwitchIntervalId = null; } };
+      this.selectNextTheme = () => {
+        const currentIndex = this.themes.findIndex(t => t.name === this.selectedTheme().name);
+        let nextIndex: number;
+        if (this.switchMode() === 'random') {
+          do { nextIndex = Math.floor(Math.random() * this.themes.length); } while (nextIndex === currentIndex && this.themes.length > 1);
+        } else {
+          nextIndex = (currentIndex + 1) % this.themes.length;
+        }
+        this.selectedTheme.set(this.themes[nextIndex]);
+      };
+      this.startKaleidoscope = () => {
+        this.stopKaleidoscope();
+        const animate = () => {
+          this.kaleidoscopeHueShift.update(h => (h + 0.5) % 360);
+          this.kaleidoscopeAnimFrameId = requestAnimationFrame(animate);
+        };
+        animate();
+      };
+      this.stopKaleidoscope = () => { if (this.kaleidoscopeAnimFrameId !== null) { cancelAnimationFrame(this.kaleidoscopeAnimFrameId); this.kaleidoscopeAnimFrameId = null; } };
+      this.savePreset = () => {
+        const name = this.newPresetName().trim();
+        if (name) {
+          this.presetService.savePreset(name, this.gainValues());
+          this.newPresetName.set('');
+        }
+      };
+      this.applyPreset = (event: Event) => {
+        const selectedName = (event.target as HTMLSelectElement).value;
+        const preset = this.presets().find(p => p.name === selectedName);
+        if (preset) {
+          this.selectedPreset.set(preset);
+          this.presetService.applyPreset(preset);
+        }
+      };
+      this.deleteSelectedPreset = () => {
+        const preset = this.selectedPreset();
+        if (preset) {
+          this.presetService.deletePreset(preset.name);
+          this.selectedPreset.set(null);
+        }
+      };
+      this.onDragStart = (index: number) => { this.draggedTrackIndex.set(index); };
+      this.onDrop = (event: DragEvent, dropIndex: number) => {
+        event.preventDefault();
+        const startIndex = this.draggedTrackIndex();
+        if (startIndex === null || startIndex === dropIndex) return;
+        this.playlist.update(list => {
+          const newList = [...list];
+          const [removed] = newList.splice(startIndex, 1);
+          newList.splice(dropIndex, 0, removed);
+          return newList;
+        });
+        const currentIdx = this.currentTrackIndex();
+        if (currentIdx === startIndex) this.currentTrackIndex.set(dropIndex);
+        else if (currentIdx !== null && startIndex < currentIdx && dropIndex >= currentIdx) this.currentTrackIndex.update(i => i! - 1);
+        else if (currentIdx !== null && startIndex > currentIdx && dropIndex <= currentIdx) this.currentTrackIndex.update(i => i! + 1);
+        this.draggedTrackIndex.set(null);
+      };
+  }
 }
 

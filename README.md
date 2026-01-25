@@ -1,6 +1,17 @@
 # oasis-music-visuals-player
 
-# January/25th/2026:
+# January/25th/2026 #2:
+Here are all the necessary modifications to fully implement the new Visualizer Engines architecture.
+Summary of Changes:
+audio.service.ts: The smoothingTimeConstant has been reduced. This makes the raw frequency data react more quickly to changes in the music, providing the "live" and "punchy" feel you're looking for, especially in the new Algorithm Lab.
+app.component.ts: This is the core of the change.
+I've introduced a new state visualizerEngine to switch between 'synergy' and 'algorithm'.
+The main visualizerBars calculation is now split. If the engine is 'synergy', it uses the familiar, intelligent Synergy Drive logic. If the engine is 'algorithm', it completely bypasses Synergy Drive and uses the raw, high-impact algorithms from your research, restoring the direct, powerful "dancing" effect.
+app.component.html: The UI has been updated to reflect the new engine architecture. You'll see a new "Master Engine" switch. Toggling it will conditionally display the controls for either the "Synergy Drive" or the "Algorithm Lab," making the system's logic clear and pluggable.
+app.component.css: A simple fade-in animation has been added to make switching between engine control panels feel smooth and polished.
+This new structure cleanly separates the two approaches, eliminates the conflicting signals, and gives you the powerful, direct visualization you wanted while preserving the refined intelligence of the Synergy Drive as a distinct option.
+
+# January/25th/2026 #1:
 Many refinements, and restructuring the UI form element positionings. It can be pushed to Production fine. There is a known defect where the Control Centers are pushed away while displaying LEDs
 
 # January/24th/2026:

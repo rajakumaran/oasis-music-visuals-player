@@ -127,7 +127,7 @@ export class AudioService {
     this.mediaElementSourceNode = this.audioContext.createMediaElementSource(this.audioElement);
     this.analyserNode = this.audioContext.createAnalyser();
     this.analyserNode.fftSize = FFT_SIZE;
-    this.analyserNode.smoothingTimeConstant = 0.75; // Add some smoothing
+    this.analyserNode.smoothingTimeConstant = 0.6; // Tuned for better responsiveness
     this.masterGainNode = this.audioContext.createGain();
     
     let lastNode: AudioNode = this.mediaElementSourceNode;
@@ -438,6 +438,7 @@ export class AudioService {
         this.visualize(); 
       }
   }
+
   private stopVisualization() {
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);

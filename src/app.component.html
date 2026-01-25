@@ -30,7 +30,7 @@
       <!-- Theme selector -->
       <div class="mb-6 bg-gray-900/80">
         <label class="block text-sm mb-2">Theme</label>
-        <select [value]="selectedThemeIndex()" (change)="selectTheme($any($event.target).value)" class="select select-bordered text-sm mb-2 w-full  text-gray-300 bg-gray-800" [disabled]="isHolidayThemeOn()">
+        <select [value]="selectedThemeIndex()" (change)="selectTheme($any($event.target).value)" class="select select-bordered text-sm mb-2 w-full  text-gray-300 bg-gray-800" [disabled]="isHolidayThemeOn()" title="Select a visual theme">
           @for (theme of themes; track theme.name; let i = $index) {
             <option [value]="i" class="block text-sm mb-2 text-gray-300 bg-gray-800">{{ theme.name }}</option>
           }
@@ -175,38 +175,49 @@
                 </div>
 
         <div class="form-control">
-           <label class="label"><span class="label-text">Synergy Drive</span></label>
-           <div class="join" title="Synergy Drive automatically analyzes the music to apply dynamic visual effects.">
-              <button (click)="setSynergyDriveMode('smart')" class="btn btn-sm join-item flex-1" [class.btn-active]="synergyDriveMode() === 'smart'" title="Smart Mode: Automatically switches between Rhythm, Atmosphere, and Transient based on the music.">Smart</button>
-              <button (click)="setSynergyDriveMode('atmosphere')" class="btn btn-sm join-item flex-1" [class.btn-active]="synergyDriveMode() === 'atmosphere'" title="Atmosphere Mode: Creates smooth, flowing visuals ideal for ambient music.">Atmosphere</button>
-              <button (click)="setSynergyDriveMode('rhythm')" class="btn btn-sm join-item flex-1" [class.btn-active]="synergyDriveMode() === 'rhythm'" title="Rhythm Mode: Emphasizes the bass and beat for rhythmic music.">Rhythm</button>
-              <button (click)="setSynergyDriveMode('transient')" class="btn btn-sm join-item flex-1" [class.btn-active]="synergyDriveMode() === 'transient'" title="Transient Mode: Reacts sharply to high-frequency sounds like cymbals and snares.">Transient</button>
+            <label class="label"><span class="label-text">Master Engine</span></label>
+           <div class="join">
+              <button (click)="visualizerEngine.set('synergy')" class="btn btn-sm join-item flex-1" [class.btn-active]="visualizerEngine() === 'synergy'" title="Use the intelligent, adaptive Synergy Drive engine.">Synergy Drive</button>
+              <button (click)="visualizerEngine.set('algorithm')" class="btn btn-sm join-item flex-1" [class.btn-active]="visualizerEngine() === 'algorithm'" title="Use raw, high-impact algorithms from my research.">Algorithm Lab</button>
             </div>
         </div>
+        @if (visualizerEngine() === 'synergy') {
+          <div class="form-control animate-fade-in">
+             <label class="label"><span class="label-text">Synergy Drive Mode</span></label>
+             <div class="join" title="Synergy Drive automatically analyzes the music to apply dynamic visual effects.">
+                <button (click)="setSynergyDriveMode('smart')" class="btn btn-sm join-item flex-1" [class.btn-active]="synergyDriveMode() === 'smart'" title="Smart Mode: Automatically switches between Rhythm, Atmosphere, and Transient based on the music.">Smart</button>
+                <button (click)="setSynergyDriveMode('atmosphere')" class="btn btn-sm join-item flex-1" [class.btn-active]="synergyDriveMode() === 'atmosphere'" title="Atmosphere Mode: Creates smooth, flowing visuals ideal for ambient music.">Atmosphere</button>
+                <button (click)="setSynergyDriveMode('rhythm')" class="btn btn-sm join-item flex-1" [class.btn-active]="synergyDriveMode() === 'rhythm'" title="Rhythm Mode: Emphasizes the bass and beat for rhythmic music.">Rhythm</button>
+                <button (click)="setSynergyDriveMode('transient')" class="btn btn-sm join-item flex-1" [class.btn-active]="synergyDriveMode() === 'transient'" title="Transient Mode: Reacts sharply to high-frequency sounds like cymbals and snares.">Transient</button>
+              </div>
+          </div>
+        }
 
-        <div>
-          <label class="block text-sm mb-1">Visualization Mode</label>
-          <select (change)="setVisualizationMode($any($event.target).value)" [value]="visualizationMode()" class="select select-sm select-bordered w-full" title="Select the core algorithm for calculating visualizer data. 'MFCC + Ford' is best with the 'Geometric Harmony' theme.">
-            <option value="basic">Basic</option>
-            <option value="beat-poly">Beat + Poly</option>
-            <option value="stft-fractal">STFT + Fractal</option>
-            <option value="mfcc-ford">MFCC + Ford</option>
-            <option value="wavelet-harmonic">Wavelet + Harmonic</option>
-          </select>
-        </div>
+        @if (visualizerEngine() === 'algorithm') {
+          <div class="space-y-4 animate-fade-in">
+            <div>
+              <label class="block text-sm mb-1">Algorithm</label>
+              <select (change)="setSelectedAlgorithm($any($event.target).value)" [value]="selectedAlgorithm()" class="select select-sm select-bordered w-full block text-sm mb-2" title="Select a raw signal processing algorithm. Bypasses Synergy Drive.">
+                <option value="basic">Basic FFT + Curve</option>
+                <option value="stft-fractal">STFT + Fractal</option>
+                <option value="wavelet-harmonic">Wavelet + Harmonic</option>
+              </select>
+            </div>
 
-         <div>
-          <label class="block text-sm mb-1">Response Curve (Basic Mode)</label>
-          <select (change)="setResponseCurve($any($event.target).value)" 
-                  [value]="responseCurve()"
-                  [disabled]="visualizationMode() !== 'basic'"
-                  class="select select-sm select-bordered w-full disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Adjusts the visual response curve. Only active in 'Basic' visualization mode.">
-            <option value="linear">Linear</option>
-            <option value="polynomial">Punchy</option>
-            <option value="fractal">Celestial</option>
-          </select>
-        </div>
+             <div>
+              <label class="block text-sm mb-1">Response Curve</label>
+              <select (change)="setResponseCurve($any($event.target).value)" 
+                      [value]="responseCurve()"
+                      [disabled]="selectedAlgorithm() !== 'basic'"
+                      class="select select-sm select-bordered w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Shapes the output of the 'Basic FFT' algorithm.">
+                <option value="linear">Linear</option>
+                <option value="polynomial">Punchy</option>
+                <option value="fractal">Celestial</option>
+              </select>
+            </div>
+          </div>
+        }
 
         <div>
           <label class="block text-sm mb-1">Sensitivity: {{ sensitivity().toFixed(1) }}</label>
