@@ -75,7 +75,7 @@ input[type=range].vertical {
 }
 
 .led-on {
-  opacity: 0.95; /* Add slight translucency to on segments */
+  opacity: 1.0; /* Add slight translucency to on segments was 0.95 */
 }
 
 /* Add a pseudo-element to create the "glow" effect on lit LEDs */
@@ -87,7 +87,7 @@ input[type=range].vertical {
     right: 1px;
     bottom: 1px;
     /* The glow color is inherited from the parent's text color */
-    box-shadow: 0 0 5px 1px currentColor;
+    box-shadow: 0 0 5px 0.5px currentColor;
 }
 
 .led-green {
@@ -325,6 +325,13 @@ input[type=range].vertical {
 .liquify-surface {
   fill: #99f6e4; /* teal-200 */
 }
+
+.ford-circles-viz circle {
+  fill: #fb7185; /* rose-400 */
+  transition: r 75ms ease-out, opacity 75ms ease-out;
+  will-change: r, opacity;
+}
+
 
 /* --- Fullscreen Styles & iOS Fallback --- */
 #fullscreen-controls-toggle-btn, #fullscreen-controls-close-btn { display: none; }

@@ -70,16 +70,8 @@ export class PresetService {
   }
 
   applyPreset(preset: Preset): void {
-    // Ensure preset has the correct number of bands before applying
-    if (preset.gains.length === this.audioService.gainValues().length) {
-      preset.gains.forEach((gain, index) => {
-        this.audioService.changeGain(index, gain);
-      });
-    } else {
-      console.warn(`Preset "${preset.name}" has an incorrect number of bands. Applying a flat EQ instead.`);
-      this.audioService.gainValues().forEach((_, index) => {
-        this.audioService.changeGain(index, 0);
-      });
-    }
+    preset.gains.forEach((gain, index) => {
+      this.audioService.changeGain(index, gain);
+    });
   }
 }

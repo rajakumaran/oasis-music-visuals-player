@@ -1,5 +1,12 @@
 # oasis-music-visuals-player
 
+# January/25th/2026:
+Many refinements, and restructuring the UI form element positionings. It can be pushed to Production fine. There is a known defect where the Control Centers are pushed away while displaying LEDs
+
+# January/24th/2026:
+This is the latest version that probably has the music sync + music played to be in sync.
+Further detail below.
+
 # January/18th/2026:
 These are the hottest features of my music player so far (in this check-in). 3D style named VoxelScape, dynamic bar count increment/decrement, and 10 band equalizer all working great.
 Plus Around 50+ various themes
