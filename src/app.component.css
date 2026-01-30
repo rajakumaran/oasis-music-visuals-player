@@ -407,3 +407,9 @@ body.fullscreen-ios-body { overflow: hidden; }
   opacity: 0.7;
   transition: r 75ms ease-out, cy 75ms ease-out;
 }
+
+.canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}

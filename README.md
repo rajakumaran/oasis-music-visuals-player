@@ -1,5 +1,9 @@
 # oasis-music-visuals-player
 
+# January/30th/2026:
+This is the latest code push that has themes built by Grok leveraging WebGL2. Not that impressive. Only difference is testing. All the tests were done on 40 inch screen. Mobiles testing pending. Hence this code push.
+Switch back to the version(git) prior to this if needed.
+
 # January/25th/2026 #2:
 Here are all the necessary modifications to fully implement the new Visualizer Engines architecture.
 Summary of Changes:

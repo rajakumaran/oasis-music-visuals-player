@@ -6,6 +6,7 @@ import { PresetService, Preset } from './services/preset.service';
 import { EqualizerTheme } from './models/equalizer-theme.model';
 import { FullscreenToggleComponent } from './fullscreen-toggle/fullscreen-toggle.component';
 import { WebglVisualizerComponent } from './webgl-visualizer/webgl-visualizer.component';
+import { WebglGrokVisualizerComponent } from './webgl-grok-visualizer/webgl-grok-visualizer.component';
 import { inject as vercelAnalytics } from '@vercel/analytics';
 
 type LightSourcePosition = 'none' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center-stage' | 'top-center';
@@ -20,7 +21,7 @@ interface AuraParticle { id: number; x: number; y: number; opacity: number; size
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FullscreenToggleComponent, WebglVisualizerComponent],
+  imports: [CommonModule, FullscreenToggleComponent, WebglVisualizerComponent, WebglGrokVisualizerComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -66,7 +67,11 @@ export class AppComponent implements OnInit, OnDestroy {
   sensitivity = signal(1.2);
   backgroundImageUrl = signal<string | null>(null);
   decayFactor = signal(0.94);
-  private readonly resizeListener = () => this.updateDecayFactor();
+  isMobile = signal(false);
+  private readonly resizeListener = () => {
+    this.updateDecayFactor();
+    this.isMobile.set(window.innerWidth < 768);
+  };
 
   barCount = signal(64);
   barSpacing = signal(0.5);
@@ -74,7 +79,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   tickerMessages: string[] = [
     'Welcome to the Audio Oasis Equalizer...',
-    'Tip: Try combining different Visualization Modes and Synergy Drive settings!',
+    'Tip: Try combining different Visualization Modes, Algo Lab, and Synergy Drive settings!',
     'Tip: Try Microphone Mode to visualize any sound in your room.',
     'By Mr. Muthukumaran Azhagesan ( Kumar ), https://linktr.ee/muthukumaran.azhagesan',
   ];
@@ -112,7 +117,7 @@ export class AppComponent implements OnInit, OnDestroy {
   detectedHoliday = this.holidayService.detectedHoliday;
   
   lightSourcePosition = signal<LightSourcePosition>('none');
-  isLightingControlVisible = computed(() => !['led', 'webgl'].includes(this.effectiveTheme().type));
+  isLightingControlVisible = computed(() => !['led', 'webgl', 'webgl-shader-plasma', 'webgl-shader-geometry', 'webgl-shader-particles', 'webgl-shader-holo', 'webgl-shader-fractal' ].includes(this.effectiveTheme().type));
   lightingOverlayStyle = computed(() => {
     const position = this.lightSourcePosition();
     if (position === 'none' || !this.isLightingControlVisible()) return 'transparent';
@@ -155,6 +160,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     vercelAnalytics();
+    this.isMobile.set(window.innerWidth < 768);
     this.updateDecayFactor();
     window.addEventListener('resize', this.resizeListener);
     this.setupTicker();
@@ -349,7 +355,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   fordCircles = computed(() => {
     const bars = this.visualizerBars();
-    const count = Math.min(32, this.barCount()); // Limit circles for clarity
+    const count = this.isMobile() ? 16 : Math.min(32, this.barCount()); // Adaptive count
     const viewboxWidth = 320;
     const viewboxHeight = 160;
     const beatInfo = this.beat();
@@ -549,9 +555,452 @@ bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k
 
 themes: EqualizerTheme[] = [
     { name: 'VoxelScape', type: 'webgl', base: 'bg-gray-900', display: '#111827', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: '#a78bfa', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-violet-500/50' },
+    { 
+    name: 'Ferrofluid Bass Blob', 
+    type: 'webgl-shader-ferrofluid', 
+    base: 'bg-black', 
+    display: 'bg-transparent', 
+    bar: '', 
+    sliderTrack: 'bg-purple-800/50', 
+    sliderThumb: 'bg-indigo-400', 
+    text: 'text-indigo-200', 
+    accent: 'text-purple-400', 
+    button: 'bg-purple-900/70', 
+    buttonHover: 'hover:bg-purple-800/70', 
+    highlight: 'bg-indigo-500/40',
+    fragmentShader: `#version 300 es
+precision highp float;
+
+uniform float u_time;
+uniform vec2 u_resolution;
+uniform vec3 u_lowMidHigh;
+uniform sampler2D u_fftTexture;
+
+in vec2 v_uv;
+out vec4 fragColor;
+
+float ferrofluid(vec2 p) {
+  float val = 0.0;
+  for (float i = 0.0; i < 5.0; i++) {
+    float freq = texture(u_fftTexture, vec2(i / 5.0, 0.5)).r * (1.0 + u_lowMidHigh.x * 2.0);
+    val += sin(length(p) * 20.0 - u_time * 0.5 + freq * 5.0) * freq;
+  }
+  return smoothstep(0.4, 0.6, val + u_lowMidHigh.y * 1.5);
+}
+
+void main() {
+  vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
+  uv *= 2.0 + u_lowMidHigh.x * 1.0; // Bass expands blob
+  float t = u_time * (0.2 + u_lowMidHigh.y * 0.5); // Mids speed up ripple
+  uv += sin(uv.y * 10.0 + t) * u_lowMidHigh.z * 0.1; // Highs add distortion
+  
+  float f = ferrofluid(uv);
+  vec3 col = mix(vec3(0.0, 0.0, 0.1), vec3(0.2, 0.5, 1.0), f);
+  col += vec3(1.0, 0.8, 0.2) * u_lowMidHigh.z * 0.8; // Highs add golden sparkles
+  col *= 0.8 + u_lowMidHigh.x * 1.2; // Overall bass glow
+  
+  fragColor = vec4(col, 1.0);
+}`
+  },
+  { 
+    name: 'Beat Explosion Particles', 
+    type: 'webgl-shader-explosion', 
+    base: 'bg-gray-900', 
+    display: 'bg-transparent', 
+    bar: '', 
+    sliderTrack: 'bg-red-800/50', 
+    sliderThumb: 'bg-orange-400', 
+    text: 'text-orange-200', 
+    accent: 'text-red-400', 
+    button: 'bg-red-900/70', 
+    buttonHover: 'hover:bg-red-800/70', 
+    highlight: 'bg-orange-500/40',
+    fragmentShader: `#version 300 es
+precision highp float;
+
+uniform float u_time;
+uniform vec2 u_resolution;
+uniform vec3 u_lowMidHigh;
+uniform sampler2D u_fftTexture;
+
+in vec2 v_uv;
+out vec4 fragColor;
+
+float particle(vec2 p, vec2 center, float radius, float intensity) {
+  float d = length(p - center);
+  return smoothstep(radius, radius * 0.7, d) * intensity * (1.0 + u_lowMidHigh.z * 3.0);
+}
+
+void main() {
+  vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
+  uv *= 1.2 + u_lowMidHigh.x * 1.5; // Bass scales explosion outward
+  
+  vec3 col = vec3(0.0);
+  float fftSum = 0.0;
+  for (float i = 0.0; i < 8.0; i++) {
+    fftSum += texture(u_fftTexture, vec2(i / 8.0, 0.5)).r;
+  }
+  fftSum /= 8.0;
+  
+  for (float i = 0.0; i < 12.0; i++) {
+    float angle = i * 3.14159 * 2.0 / 12.0 + u_time * 0.3;
+    vec2 pos = vec2(cos(angle), sin(angle)) * (0.3 + fftSum * u_lowMidHigh.y * 2.0); // Mids scatter particles
+    float radius = 0.03 + u_lowMidHigh.x * 0.15; // Bass grows particle size
+    col += vec3(1.0, 0.4, 0.1) * particle(uv, pos, radius, 1.0 - i/12.0);
+  }
+  
+  col += vec3(0.2, 0.1, 0.0) * u_lowMidHigh.z * 2.0; // Highs add ember glow
+  fragColor = vec4(col, 1.0);
+}`
+  },
+  { 
+    name: 'Distorted Spectrum Waves', 
+    type: 'webgl-shader-waves', 
+    base: 'bg-black', 
+    display: 'bg-transparent', 
+    bar: '', 
+    sliderTrack: 'bg-cyan-800/50', 
+    sliderThumb: 'bg-blue-400', 
+    text: 'text-blue-200', 
+    accent: 'text-cyan-300', 
+    button: 'bg-cyan-900/70', 
+    buttonHover: 'hover:bg-cyan-800/70', 
+    highlight: 'bg-blue-500/40',
+    fragmentShader: `#version 300 es
+precision highp float;
+
+uniform float u_time;
+uniform vec2 u_resolution;
+uniform vec3 u_lowMidHigh;
+uniform sampler2D u_fftTexture;
+
+in vec2 v_uv;
+out vec4 fragColor;
+
+void main() {
+  vec2 uv = gl_FragCoord.xy / u_resolution * 2.0 - 1.0;
+  uv *= 1.0 + u_lowMidHigh.x * 0.8; // Bass distorts scale
+  
+  float wave = 0.0;
+  for (float i = 0.0; i < 16.0; i++) {
+    float bin = texture(u_fftTexture, vec2(i / 16.0, 0.5)).r * (1.0 + u_lowMidHigh.y * 2.0);
+    wave += sin(uv.x * 8.0 * (i + 1.0) + u_time * 0.4 + bin * 12.0) * bin;
+  }
+  wave *= 0.08 + u_lowMidHigh.z * 0.1; // Highs amplify wave height
+  
+  uv.y += wave;
+  float spec = sin(length(uv) * 15.0 - u_time * 0.6) * 0.6 + 0.4;
+  vec3 col = mix(vec3(0.0, 0.4, 0.8), vec3(1.0, 0.9, 0.6), spec + wave * 2.0);
+  col *= 0.7 + u_lowMidHigh.x * 1.5; // Bass boosts overall glow
+  
+  fragColor = vec4(col, 1.0);
+}`
+  },
+  { 
+    name: 'Fractal Zoom Abyss', 
+    type: 'webgl-shader-fractal-zoom', 
+    base: 'bg-gray-900', 
+    display: 'bg-transparent', 
+    bar: '', 
+    sliderTrack: 'bg-emerald-800/50', 
+    sliderThumb: 'bg-lime-400', 
+    text: 'text-lime-200', 
+    accent: 'text-emerald-300', 
+    button: 'bg-emerald-900/70', 
+    buttonHover: 'hover:bg-emerald-800/70', 
+    highlight: 'bg-lime-500/40',
+    fragmentShader: `#version 300 es
+precision highp float;
+
+uniform float u_time;
+uniform vec2 u_resolution;
+uniform vec3 u_lowMidHigh;
+uniform sampler2D u_fftTexture;
+
+in vec2 v_uv;
+out vec4 fragColor;
+
+vec2 mandel(vec2 z, vec2 c) {
+  return vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
+}
+
+void main() {
+  vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
+  vec2 c = uv * (1.5 + u_lowMidHigh.x * 3.0); // Bass zooms deeper
+  vec2 z = vec2(0.0);
+  float iter = 0.0;
+  float maxIter = 60.0 + u_lowMidHigh.y * 80.0; // Mids add fractal complexity
+  
+  for (float i = 0.0; i < 200.0; i++) {
+    z = mandel(z, c + sin(u_time * 0.2 + texture(u_fftTexture, vec2(i/200.0, 0.5)).r) * u_lowMidHigh.z * 0.15); // Highs perturb edges
+    if (length(z) > 2.0) break;
+    iter++;
+  }
+  
+  float frac = iter / maxIter;
+  vec3 col = vec3(frac * 1.5, sin(frac * 3.14 + u_time * 0.3) * 0.8, cos(frac * 3.14)) * (1.0 + u_lowMidHigh.x * 1.5);
+  col += vec3(0.2, 0.5, 0.1) * u_lowMidHigh.z * 2.0; // Highs add green sparks
+  
+  fragColor = vec4(col, 1.0);
+}`
+  },
+  { 
+    name: 'Nebula Highs Sparkle', 
+    type: 'webgl-shader-nebula', 
+    base: 'bg-indigo-950', 
+    display: 'bg-transparent', 
+    bar: '', 
+    sliderTrack: 'bg-indigo-800/50', 
+    sliderThumb: 'bg-violet-400', 
+    text: 'text-violet-200', 
+    accent: 'text-indigo-300', 
+    button: 'bg-indigo-900/70', 
+    buttonHover: 'hover:bg-indigo-800/70', 
+    highlight: 'bg-violet-500/40',
+    fragmentShader: `#version 300 es
+precision highp float;
+
+uniform float u_time;
+uniform vec2 u_resolution;
+uniform vec3 u_lowMidHigh;
+uniform sampler2D u_fftTexture;
+
+in vec2 v_uv;
+out vec4 fragColor;
+
+float nebulaNoise(vec2 p) {
+  float v = 0.0;
+  for (float i = 0.0; i < 4.0; i++) {
+    float freq = texture(u_fftTexture, vec2(i / 4.0, 0.5)).r;
+    v += sin(p.x * 15.0 + u_time * 0.4 + freq * 5.0) + cos(p.y * 15.0 + u_time * 0.4 + freq * 5.0);
+  }
+  return v * 0.25 + 0.5 + u_lowMidHigh.z * 2.0; // Highs add sparkle intensity
+}
+
+void main() {
+  vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
+  uv *= 1.5 + u_lowMidHigh.x * 1.0; // Bass expands nebula
+  uv += sin(uv * 3.0 + u_time * (0.3 + u_lowMidHigh.y * 0.7)) * 0.1; // Mids distort clouds
+  
+  float noise = nebulaNoise(uv);
+  vec3 col = mix(vec3(0.1, 0.0, 0.3), vec3(0.6, 0.2, 1.0), noise);
+  col += vec3(1.0, 0.8, 0.4) * pow(u_lowMidHigh.z, 3.0) * 1.5; // Highs create bright star bursts
+  col *= 0.8 + u_lowMidHigh.x * 1.2; // Bass adds deep glow
+  
+  fragColor = vec4(col, 1.0);
+}`
+  },
+
+{ 
+  name: 'Grok: Pulsing Plasma Vortex', 
+  type: 'webgl-shader-plasma', 
+  base: 'bg-gray-900', 
+  display: 'bg-gray-900', 
+  bar: '', 
+  sliderTrack: 'bg-slate-800/50', 
+  sliderThumb: 'bg-purple-400', 
+  text: 'text-green-300', 
+  accent: 'text-violet-400', 
+  button: 'bg-slate-600/70', 
+  buttonHover: 'hover:bg-yellow-600/70', 
+  highlight: 'bg-gray-500/50',
+  fragmentShader: `#version 300 es
+precision highp float;
+uniform float u_time;
+uniform vec3 u_lowMidHigh;
+out vec4 fragColor;
+void main() {
+  vec3 col = vec3(
+    0.5 + u_lowMidHigh.x * 2.0,           // red channel = bass strength
+    0.5 + u_lowMidHigh.y * 2.0,           // green = mids
+    0.5 + u_lowMidHigh.z * 2.0            // blue = highs
+  );
+  col += sin(u_time * 0.2 - 0.4) * 0.1;         // subtle time pulse so we know it's animating
+  fragColor = vec4(col, 1.0);
+}`
+},
+
+{ 
+  name: 'Grok: Frequency-Displaced Geometry', 
+  type: 'webgl-shader-geometry', 
+  base: 'bg-indigo-950', 
+  display: 'bg-indigo-900/70', 
+  bar: '', 
+  sliderTrack: 'bg-indigo-800/50', 
+  sliderThumb: 'bg-cyan-500', 
+  text: 'text-cyan-200', 
+  accent: 'text-indigo-300', 
+  button: 'bg-indigo-900/60', 
+  buttonHover: 'hover:bg-indigo-800/60', 
+  highlight: 'bg-cyan-500/40',
+  fragmentShader: `#version 300 es
+precision highp float;
+
+uniform float u_time;
+uniform vec2 u_resolution;
+uniform sampler2D u_fftTexture;
+uniform vec3 u_lowMidHigh;
+
+in vec2 v_uv;
+out vec4 fragColor;
+
+float noise(vec2 p) {
+    return sin(p.x * 10.0 + u_time) * sin(p.y * 10.0 + u_time) * 0.5 + 0.5;
+}
+
+void main() {
+    vec2 uv = gl_FragCoord.xy / u_resolution;
+    float fftVal = texture(u_fftTexture, vec2(uv.x, 0.5)).r;
+    
+    uv.y += sin(uv.x * 20.0 + u_time * 0.1 - 0.4) * (0.1 + fftVal * u_lowMidHigh.x);
+    float displace = noise(uv + vec2(u_time * 0.1 - 0.4)) * (0.2 + u_lowMidHigh.y);
+    uv.x += displace;
+    
+    vec3 col = vec3(0.1, 0.3, 0.6) + vec3(fftVal, u_lowMidHigh.z, 0.0);
+    col *= smoothstep(0.0, 0.1, abs(uv.y - 0.5) + displace);
+    
+    fragColor = vec4(col, 1.0);
+}`
+},
+
+{ 
+  name: 'Grok: Spectral Fire Opal Particles', 
+  type: 'webgl-shader-particles', 
+  base: 'bg-rose-950', 
+  display: 'bg-rose-900/80', 
+  bar: '', 
+  sliderTrack: 'bg-rose-800/50', 
+  sliderThumb: 'bg-amber-400', 
+  text: 'text-amber-200', 
+  accent: 'text-rose-300', 
+  button: 'bg-rose-900/60', 
+  buttonHover: 'hover:bg-rose-800/60', 
+  highlight: 'bg-amber-500/40',
+  fragmentShader: `#version 300 es
+precision highp float;
+
+uniform float u_time;
+uniform vec2 u_resolution;
+uniform vec3 u_lowMidHigh;
+uniform sampler2D u_fftTexture;
+
+in vec2 v_uv;
+out vec4 fragColor;
+
+float particle(vec2 p, vec2 center, float radius) {
+    float d = length(p - center);
+    return smoothstep(radius, radius * 0.8, d) * (1.0 + u_lowMidHigh.z * 2.0);
+}
+
+void main() {
+    vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
+    uv *= 1.5 + u_lowMidHigh.x;
+    
+    float fftSum = 0.0;
+    for (float i = 0.0; i < 10.0; i++) {
+        fftSum += texture(u_fftTexture, vec2(i / 10.0, 0.5)).r;
+    }
+    fftSum /= 10.0;
+    
+    vec3 col = vec3(0.0);
+    for (float i = 0.0; i < 5.0; i++) {
+        vec2 pos = vec2(sin(u_time + i) * 0.5, cos(u_time + i) * 0.3);
+        pos += vec2(fftSum * sin(i), fftSum * cos(i)) * u_lowMidHigh.y;
+        col += vec3(1.0, 0.5, 0.2) * particle(uv, pos, 0.05 + u_lowMidHigh.x * 0.1);
+    }
+    
+    fragColor = vec4(col, 1.0);
+}`
+},
+
+{ 
+  name: 'Grok: Holographic Spectrum Waves', 
+  type: 'webgl-shader-holo', 
+  base: 'bg-cyan-950', 
+  display: 'bg-cyan-900/70', 
+  bar: '', 
+  sliderTrack: 'bg-cyan-800/50', 
+  sliderThumb: 'bg-blue-400', 
+  text: 'text-blue-200', 
+  accent: 'text-cyan-300', 
+  button: 'bg-cyan-900/60', 
+  buttonHover: 'hover:bg-cyan-800/60', 
+  highlight: 'bg-blue-500/40',
+  fragmentShader: `#version 300 es
+precision highp float;
+
+uniform float u_time;
+uniform vec2 u_resolution;
+uniform sampler2D u_fftTexture;
+
+in vec2 v_uv;
+out vec4 fragColor;
+
+void main() {
+    vec2 uv = gl_FragCoord.xy / u_resolution * 2.0 - 1.0;
+    float wave = 0.0;
+    for (float i = 0.0; i < 20.0; i++) {
+        float bin = texture(u_fftTexture, vec2(i / 20.0, 0.5)).r;
+        wave += sin(uv.x * 10.0 * (i + 1.0) + u_time + bin * 10.0) * bin;
+    }
+    wave *= 0.1;
+    
+    uv.y += wave;
+    float holo = sin(length(uv) * 20.0 - u_time * 0.1 - 0.4) * 0.5 + 0.5;
+    vec3 col = mix(vec3(0.0, 0.5, 1.0), vec3(1.0), holo + wave);
+    col *= 0.5 + texture(u_fftTexture, vec2(0.5, 0.5)).r * 2.0;
+    
+    fragColor = vec4(col, 0.7);
+}`
+},
+
+{ 
+  name: 'Grok: Quantum Pulse Fractal', 
+  type: 'webgl-shader-fractal', 
+  base: 'bg-emerald-950', 
+  display: 'bg-emerald-900/80', 
+  bar: '', 
+  sliderTrack: 'bg-emerald-800/50', 
+  sliderThumb: 'bg-lime-400', 
+  text: 'text-lime-200', 
+  accent: 'text-emerald-300', 
+  button: 'bg-emerald-900/60', 
+  buttonHover: 'hover:bg-emerald-800/60', 
+  highlight: 'bg-lime-500/40',
+  fragmentShader: `#version 300 es
+precision highp float;
+
+uniform float u_time;
+uniform vec2 u_resolution;
+uniform vec3 u_lowMidHigh;
+
+in vec2 v_uv;
+out vec4 fragColor;
+
+vec2 mandel(vec2 z, vec2 c) {
+    return vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
+}
+
+void main() {
+    vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
+    vec2 c = uv * (2.0 + u_lowMidHigh.x * 2.0);
+    vec2 z = vec2(0.0);
+    float iter = 0.0;
+    float maxIter = 50.0 + u_lowMidHigh.y * 50.0;
+    
+    for (float i = 0.0; i < 100.0; i++) {
+        z = mandel(z, c + sin(u_time + u_lowMidHigh.z) * 0.1);
+        if (length(z) > 2.0) break;
+        iter++;
+    }
+    
+    float frac = iter / maxIter;
+    vec3 col = vec3(frac, sin(frac * 3.14), cos(frac * 3.14)) * (1.0 + u_lowMidHigh.x);
+    
+    fragColor = vec4(col, 1.0);
+}`
+},
     { name: 'Geometric Harmony', type: 'ford-circles', base: 'bg-gray-900', display: 'bg-black/50', bar: '', sliderTrack: 'bg-sky-800/60', sliderThumb: 'bg-rose-400', text: 'text-sky-200', accent: 'text-rose-300', button: 'bg-sky-900/70', buttonHover: 'hover:bg-sky-800/70', highlight: 'bg-rose-500/50' },
-    { name: 'Mukyo', type: 'shadow', base: 'bg-zinc-950', display: 'bg-zinc-900/80 backdrop-blur-sm border border-zinc-800', bar: 'bg-gradient-to-t from-cyan-900 via-cyan-500 to-white shadow-[0_0_15px_rgba(34,211,238,0.6)] rounded-t-[2px]', sliderTrack: 'bg-zinc-800', sliderThumb: 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]', text: 'text-zinc-300', accent: 'text-cyan-400', button: 'bg-zinc-800 border border-zinc-700', buttonHover: 'hover:bg-zinc-700', highlight: 'bg-zinc-800' },
-    { name: 'Muknics', type: 'shadow', base: 'bg-[#1c1917]', display: 'bg-black/60 border-t border-orange-900/30', bar: 'bg-gradient-to-t from-orange-900 via-amber-500 to-yellow-100 shadow-[inset_2px_0_4px_rgba(0,0,0,0.6),0_0_12px_rgba(245,158,11,0.4)] rounded-t-sm', sliderTrack: 'bg-stone-800', sliderThumb: 'bg-amber-500 border-2 border-orange-900', text: 'text-stone-300', accent: 'text-amber-400', button: 'bg-stone-800', buttonHover: 'hover:bg-stone-700', highlight: 'bg-stone-700/50' },    // Updated Borderless LED: Ensuring truly rectangular, no borders, no shadows, no rounding for a clean stereo-system look
     { name: 'Borderless LED Rectangular', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-gray-700 border-none shadow-none rounded-none', sliderTrack: 'bg-gray-600 border-none shadow-none rounded-none', sliderThumb: 'bg-gray-400 border-none shadow-none rounded-none', text: 'text-gray-300', accent: 'text-green-400', button: 'bg-gray-700 border-none shadow-none rounded-none', buttonHover: 'hover:bg-gray-600', highlight: 'bg-green-600/50 border-none shadow-none rounded-none' },
     // More innovative gradients based on existing ones, mutating with multi-stop gradients, radial elements, and dynamic shadows
     { name: 'Pioneer Aurora', type: 'shadow', base: 'bg-slate-200', display: 'bg-indigo-900/80', bar: 'bg-gradient-to-t from-indigo-800 via-purple-500 to-pink-300 shadow-[0_0_12px_#a855f7,-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-indigo-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
@@ -575,8 +1024,8 @@ themes: EqualizerTheme[] = [
     { name: 'Vaporwave Retro', type: 'led', base: 'bg-pink-900', display: 'bg-purple-950/80', bar: 'bg-gradient-to-t from-pink-600 to-purple-400 shadow-none border-none rounded-none', sliderTrack: 'bg-pink-700/60', sliderThumb: 'bg-purple-300', text: 'text-purple-200', accent: 'text-pink-400', button: 'bg-pink-800/70', buttonHover: 'hover:bg-pink-700/70', highlight: 'bg-purple-500/50' },
     { name: 'Quantum Pulse', type: 'shadow', base: 'bg-black', display: 'bg-green-950/90', bar: 'bg-radial-gradient(circle,green-500_20%,lime-300_60%,transparent_100%) shadow-[0_0_18px_#22c55e,-2px_0_5px_rgba(0,0,0,0.5)] rounded-t-sm', sliderTrack: 'bg-green-800/50', sliderThumb: 'bg-lime-400', text: 'text-lime-200', accent: 'text-green-500', button: 'bg-green-900/70', buttonHover: 'hover:bg-green-800/70', highlight: 'bg-lime-600/40' },
     { name: 'Eclipse Shadow', type: 'concave', base: 'bg-gray-950', display: 'bg-black/95', bar: 'bg-gradient-to-t from-gray-900 via-gray-500 to-white/50 shadow-[inset_0_-4px_8px_rgba(0,0,0,0.4),0_0_10px_rgba(255,255,255,0.3)] rounded-t-sm', sliderTrack: 'bg-gray-700', sliderThumb: 'bg-gray-300', text: 'text-white', accent: 'text-gray-400', button: 'bg-gray-800', buttonHover: 'hover:bg-gray-700', highlight: 'bg-gray-500/50' },
-    { name: 'Mukyo', type: '3d', base: 'bg-gradient-to-br from-gray-900 via-black to-blue-900', display: 'bg-gray-900/70', bar: 'bg-gradient-to-t from-sky-500 to-cyan-200 shadow-[0_0_8px_#22d3ee,0_0_12px_#67e8f9]', sliderTrack: 'bg-gray-700', sliderThumb: 'bg-gray-300', text: 'text-gray-300', accent: 'text-cyan-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-gray-800' },
-    { name: 'Muknics', type: '3d', base: 'bg-gradient-to-br from-stone-800 via-neutral-900 to-stone-900', display: 'bg-black/60 backdrop-blur-sm', bar: 'bg-gradient-to-t from-orange-600 via-amber-400 to-yellow-200 shadow-[0_0_7px_#f59e0b]', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-amber-500', text: 'text-amber-100', accent: 'text-amber-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-gray-700/50' },
+    { name: 'Mukyo', type: 'shadow', base: 'bg-zinc-950', display: 'bg-zinc-900/80 backdrop-blur-sm border border-zinc-800', bar: 'bg-gradient-to-t from-cyan-900 via-cyan-500 to-white shadow-[0_0_15px_rgba(34,211,238,0.6)] rounded-t-[2px]', sliderTrack: 'bg-zinc-800', sliderThumb: 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]', text: 'text-zinc-300', accent: 'text-cyan-400', button: 'bg-zinc-800 border border-zinc-700', buttonHover: 'hover:bg-zinc-700', highlight: 'bg-zinc-800' },
+    { name: 'Muknics', type: 'shadow', base: 'bg-[#1c1917]', display: 'bg-black/60 border-t border-orange-900/30', bar: 'bg-gradient-to-t from-orange-900 via-amber-500 to-yellow-100 shadow-[inset_2px_0_4px_rgba(0,0,0,0.6),0_0_12px_rgba(245,158,11,0.4)] rounded-t-sm', sliderTrack: 'bg-stone-800', sliderThumb: 'bg-amber-500 border-2 border-orange-900', text: 'text-stone-300', accent: 'text-amber-400', button: 'bg-stone-800', buttonHover: 'hover:bg-stone-700', highlight: 'bg-stone-700/50' },
     { name: 'Pioneer', type: 'shadow', base: 'bg-slate-200', display: 'bg-blue-900/80', bar: 'bg-gradient-to-t from-sky-600 to-sky-400 shadow-[0_0_8px_#38bdf8,-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-blue-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
     { name: 'Pioneer Convex', type: 'convex', base: 'bg-slate-200', display: 'bg-blue-900/80', bar: 'bg-gradient-to-t from-sky-600 to-sky-400 shadow-[0_0_8px_#38bdf8] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-blue-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
     { name: 'Marantz', type: 'shadow', base: 'bg-amber-100', display: 'bg-black/80', bar: 'bg-gradient-to-t from-blue-700 to-blue-500 shadow-[0_0_8px_#3b82f6,-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-blue-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },
@@ -594,7 +1043,7 @@ themes: EqualizerTheme[] = [
     { name: 'Matrix', type: 'shadow', base: 'bg-black', display: 'bg-black/80', bar: 'bg-gradient-to-t from-emerald-700 to-green-400 shadow-[0_0_10px_#4ade80,-1px_0_4px_rgba(0,0,0,0.7)]', sliderTrack: 'bg-gray-800', sliderThumb: 'bg-green-500', text: 'text-green-400 font-mono', accent: 'text-green-300', button: 'bg-gray-900 border border-green-700', buttonHover: 'hover:bg-gray-800', highlight: 'bg-green-600/50' },
     { name: 'Cosmic Rift 2.0', type: '3d', base: 'cosmic-rift-bg', display: 'bg-black/40', bar: 'bg-gradient-to-t from-fuchsia-500 via-pink-400 to-cyan-300 shadow-[0_0_10px_#a855f7]', sliderTrack: 'bg-purple-800/50', sliderThumb: 'bg-fuchsia-500', text: 'text-purple-300', accent: 'text-cyan-300', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-fuchsia-500/50' },
     { name: 'Celestial Sphere', type: 'fractal', base: 'bg-gradient-to-br from-gray-900 via-blue-900 to-black', display: 'bg-black/40', bar: '', sliderTrack: 'bg-blue-800/50', sliderThumb: 'bg-sky-500', text: 'text-sky-300', accent: 'text-cyan-300', button: 'bg-blue-900/70', buttonHover: 'hover:bg-blue-800/70', highlight: 'bg-sky-500/50' },
-   { name: 'Aura Bloom', type: 'aura', base: 'bg-black', display: 'bg-black/50', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: 'text-sky-300', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-sky-500/50' },
+    { name: 'Aura Bloom', type: 'aura', base: 'bg-black', display: 'bg-black/50', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: 'text-sky-300', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-sky-500/50' },
     { name: 'Rhythmic Glyphs', type: 'glyphs', base: 'bg-slate-900', display: 'bg-black/60', bar: '', sliderTrack: 'bg-teal-800/50', sliderThumb: 'bg-emerald-400', text: 'text-teal-200', accent: 'text-emerald-300', button: 'bg-teal-900/60', buttonHover: 'hover:bg-teal-800/60', highlight: 'bg-emerald-500/50' },
     { name: 'Liquify', type: 'liquid', base: 'bg-gray-800', display: 'bg-black/70', bar: '', sliderTrack: 'bg-slate-600', sliderThumb: 'bg-white', text: 'text-slate-200', accent: 'text-cyan-300', button: 'bg-slate-700', buttonHover: 'hover:bg-slate-600', highlight: 'bg-cyan-500/50' },
     { name: 'Molten Core', type: 'glossy', base: 'bg-stone-900', display: 'bg-black/60', bar: 'bg-gradient-to-t from-red-700 via-orange-500 to-yellow-400 shadow-[0_0_8px_#fb923c]', sliderTrack: 'bg-red-900/50', sliderThumb: 'bg-amber-400', text: 'text-amber-300', accent: 'text-orange-400', button: 'bg-orange-800/50', buttonHover: 'hover:bg-orange-700/50', highlight: 'bg-yellow-500/50' },
@@ -625,10 +1074,7 @@ themes: EqualizerTheme[] = [
     { name: 'Marantz Concave Gold', type: 'concave', base: 'bg-amber-100', display: 'bg-black/80', bar: 'bg-gradient-to-t from-amber-700 to-amber-500 shadow-[0_0_8px_#fbbf24] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-amber-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },
     { name: 'Classic LED Neon Blue', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-blue-700 shadow-[0_0_6px_#3b82f6]', sliderTrack: 'bg-blue-600', sliderThumb: 'bg-blue-400', text: 'text-blue-300', accent: 'text-blue-400', button: 'bg-blue-700', buttonHover: 'hover:bg-blue-600', highlight: 'bg-blue-600/50' },
     { name: 'Pioneer Convex Fuchsia', type: 'convex', base: 'bg-slate-200', display: 'bg-fuchsia-900/80', bar: 'bg-gradient-to-t from-fuchsia-600 to-fuchsia-400 shadow-[0_0_8px_#d946ef] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-fuchsia-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
-    { name: 'Marantz Retro Green', type: 'shadow', base: 'bg-amber-100', display: 'bg-black/80', bar: 'bg-gradient-to-t from-green-700 to-green-500 shadow-[0_0_8px_#22c55e,-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-green-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },  
-    { name: '2030: Neural Network', type: 'neural', base: 'bg-black', display: 'bg-black/80', bar: '', sliderTrack: 'bg-gray-800', sliderThumb: 'bg-cyan-400', text: 'text-cyan-300 font-mono', accent: 'text-lime-300', button: 'bg-gray-900 border border-cyan-700', buttonHover: 'hover:bg-gray-800', highlight: 'bg-cyan-600/50' },
-    { name: '2040: Energy Field', type: 'plasma', base: 'bg-gradient-to-br from-indigo-900 to-black', display: 'bg-black/50', bar: '', sliderTrack: 'bg-purple-800/50', sliderThumb: 'bg-fuchsia-500', text: 'text-purple-300', accent: 'text-fuchsia-400', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-fuchsia-500/50' },
-    { name: '2050: Hyperlane', type: 'hyperlane', base: 'bg-black', display: 'bg-black/90', bar: '', sliderTrack: 'bg-blue-800/50', sliderThumb: 'bg-white', text: 'text-blue-200', accent: 'text-white', button: 'bg-blue-900/70', buttonHover: 'hover:bg-blue-800/70', highlight: 'bg-blue-500/50' },      
+    { name: 'Marantz Retro Green', type: 'shadow', base: 'bg-amber-100', display: 'bg-black/80', bar: 'bg-gradient-to-t from-green-700 to-green-500 shadow-[0_0_8px_#22c55e,-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-green-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },        
   ];
 
   selectedTheme: WritableSignal<EqualizerTheme> = signal(this.themes[0]);
@@ -686,7 +1132,7 @@ themes: EqualizerTheme[] = [
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   }
 
-  incrementLedWidth() { this.ledSegmentWidth.update(w => Math.min(24, w + 1)); }
+  incrementLedWidth() { this.ledSegmentWidth.update(w => Math.min(18, w + 1)); }
   decrementLedWidth() { this.ledSegmentWidth.update(w => Math.max(2, w - 1)); }
   incrementLedHeight() { this.ledSegmentHeight.update(h => Math.min(16, h + 1)); }
   decrementLedHeight() { this.ledSegmentHeight.update(h => Math.max(1, h - 1)); }

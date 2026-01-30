@@ -5,6 +5,7 @@ import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 import { EqualizerTheme } from '../models/equalizer-theme.model';
 
 type MusicProfile = 'atmosphere' | 'rhythm' | 'transient';
+
 @Component({
   selector: 'app-webgl-visualizer',
   standalone: true,
@@ -54,10 +55,10 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
             this.directionalLight.intensity = this.baseLightIntensity + currentBeat.strength * 1.5;
 
             // Bar bounce impulse
-            const beatImpulse = currentBeat.strength * 0.35;
+             const beatImpulse = currentBeat.strength * 0.4; // Slightly increased impulse //WAS 0.35
             this.cubeStates.forEach((state, i) => {
                 // Stronger impulse for lower frequency bars
-                const impulseFactor = Math.max(0, 1 - (i / this.cubes.length) * 0.7);
+                const impulseFactor = Math.max(0, 1 - (i / this.cubes.length) * 0.4); //WAS 0.7
                 state.velocity += beatImpulse * impulseFactor;
             });
         }
@@ -252,14 +253,15 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
       this.recreateCubes();
     }
 
-    // Apply spring physics to cubes
+    // Apply spring physics and rotation to cubes
     if (this.cubes.length === barData.length) {
-      const SPRING = 0.04, DAMPING = 0.25;
+      const SPRING = 0.045, DAMPING = 0.22; // Tuned physics
       barData.forEach((value, i) => {
         const cube = this.cubes[i];
         const state = this.cubeStates[i];
         const targetScale = Math.max(0.01, value * 12);
         
+        // Spring physics
         const displacement = targetScale - cube.scale.y;
         const springForce = displacement * SPRING;
         const dampingForce = state.velocity * DAMPING;
@@ -269,6 +271,11 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
         cube.scale.y += state.velocity;
         cube.scale.y = Math.max(0.01, cube.scale.y);
         cube.position.y = cube.scale.y / 2;
+        
+        // Individual rotation based on height
+        if (this.isPlaying()) {
+          cube.rotation.y += (0.005 + value * 0.02);
+        }
       });
     }
 
