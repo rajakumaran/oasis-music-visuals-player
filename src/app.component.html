@@ -522,7 +522,7 @@
 
         <div>
           <label class="block text-sm mb-1">Sensitivity: {{ sensitivity().toFixed(1) }}</label>
-          <input type="range" min="0.5" max="5" step="0.1" [value]="sensitivity()" (input)="onSensitivityChange($event)" class="range range-primary range-sm" title="Adjusts the overall height and reactivity of the visuals." />
+          <input type="range" min="0.5" max="3" step="0.1" [value]="sensitivity()" (input)="onSensitivityChange($event)" class="range range-primary range-sm" title="Adjusts the overall height and reactivity of the visuals." />
         </div>
         
         <div>
@@ -532,7 +532,7 @@
 
         <div>
           <label class="block text-sm mb-1">Bar Spacing: {{ barSpacing() }}px</label>
-          <input type="range" min="0" max="10" step="1" [value]="barSpacing()" (input)="onBarSpacingChange($event)" class="range range-primary range-sm" title="Adjusts the spacing between visualizer bars." />
+          <input type="range" min="0" max="10" step="0.05" [value]="barSpacing()" (input)="onBarSpacingChange($event)" class="range range-primary range-sm" title="Adjusts the spacing between visualizer bars." />
         </div>
         
         <div class="form-control">

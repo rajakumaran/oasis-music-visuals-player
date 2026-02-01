@@ -55,10 +55,10 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
             this.directionalLight.intensity = this.baseLightIntensity + currentBeat.strength * 1.5;
 
             // Bar bounce impulse
-             const beatImpulse = currentBeat.strength * 0.4; // Slightly increased impulse //WAS 0.35
+             const beatImpulse = currentBeat.strength * 0.1; // Slightly increased impulse //WAS 0.35
             this.cubeStates.forEach((state, i) => {
                 // Stronger impulse for lower frequency bars
-                const impulseFactor = Math.max(0, 1 - (i / this.cubes.length) * 0.4); //WAS 0.7
+                const impulseFactor = Math.max(0, 1 - (i / this.cubes.length) * 0.1); //WAS 0.7
                 state.velocity += beatImpulse * impulseFactor;
             });
         }
@@ -72,15 +72,15 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
         if (this.scene) {
             // FOG
             const fogColor = new THREE.Color(newTheme.accent);
-            let fogNear = 15, fogFar = 40;
+            let fogNear = 30, fogFar = 40;
 
             switch(profile) {
                 case 'atmosphere':
                     fogColor.set(0x111827); // Darker color
-                    fogNear = 12; fogFar = 28;
+                    fogNear = 24; fogFar = 28;
                     break;
                 case 'transient':
-                    fogNear = 18; fogFar = 45;
+                    fogNear = 36; fogFar = 45;
                     break;
             }
             if (this.scene.fog) {
@@ -98,12 +98,12 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
         }
     });
 
-    // --- Camera Rotation Effect ---
-    effect(() => {
-        if (this.controls) {
-            this.controls.autoRotate = this.isPlaying();
-        }
-    });
+    // --- Camera Rotation Effect --- this effect is ugly and not pleasant, hence commentin it out
+    // effect(() => {
+    //     if (this.controls) {
+    //         this.controls.autoRotate = this.isPlaying();
+    //     }
+    // });
   }
 
   ngAfterViewInit(): void {

@@ -555,452 +555,452 @@ bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k
 
 themes: EqualizerTheme[] = [
     { name: 'VoxelScape', type: 'webgl', base: 'bg-gray-900', display: '#111827', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: '#a78bfa', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-violet-500/50' },
-    { 
-    name: 'Ferrofluid Bass Blob', 
-    type: 'webgl-shader-ferrofluid', 
-    base: 'bg-black', 
-    display: 'bg-transparent', 
-    bar: '', 
-    sliderTrack: 'bg-purple-800/50', 
-    sliderThumb: 'bg-indigo-400', 
-    text: 'text-indigo-200', 
-    accent: 'text-purple-400', 
-    button: 'bg-purple-900/70', 
-    buttonHover: 'hover:bg-purple-800/70', 
-    highlight: 'bg-indigo-500/40',
-    fragmentShader: `#version 300 es
-precision highp float;
+//     { 
+//     name: 'Ferrofluid Bass Blob', 
+//     type: 'webgl-shader-ferrofluid', 
+//     base: 'bg-black', 
+//     display: 'bg-transparent', 
+//     bar: '', 
+//     sliderTrack: 'bg-purple-800/50', 
+//     sliderThumb: 'bg-indigo-400', 
+//     text: 'text-indigo-200', 
+//     accent: 'text-purple-400', 
+//     button: 'bg-purple-900/70', 
+//     buttonHover: 'hover:bg-purple-800/70', 
+//     highlight: 'bg-indigo-500/40',
+//     fragmentShader: `#version 300 es
+// precision highp float;
 
-uniform float u_time;
-uniform vec2 u_resolution;
-uniform vec3 u_lowMidHigh;
-uniform sampler2D u_fftTexture;
+// uniform float u_time;
+// uniform vec2 u_resolution;
+// uniform vec3 u_lowMidHigh;
+// uniform sampler2D u_fftTexture;
 
-in vec2 v_uv;
-out vec4 fragColor;
+// in vec2 v_uv;
+// out vec4 fragColor;
 
-float ferrofluid(vec2 p) {
-  float val = 0.0;
-  for (float i = 0.0; i < 5.0; i++) {
-    float freq = texture(u_fftTexture, vec2(i / 5.0, 0.5)).r * (1.0 + u_lowMidHigh.x * 2.0);
-    val += sin(length(p) * 20.0 - u_time * 0.5 + freq * 5.0) * freq;
-  }
-  return smoothstep(0.4, 0.6, val + u_lowMidHigh.y * 1.5);
-}
+// float ferrofluid(vec2 p) {
+//   float val = 0.0;
+//   for (float i = 0.0; i < 5.0; i++) {
+//     float freq = texture(u_fftTexture, vec2(i / 5.0, 0.5)).r * (1.0 + u_lowMidHigh.x * 2.0);
+//     val += sin(length(p) * 20.0 - u_time * 0.5 + freq * 5.0) * freq;
+//   }
+//   return smoothstep(0.4, 0.6, val + u_lowMidHigh.y * 1.5);
+// }
 
-void main() {
-  vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
-  uv *= 2.0 + u_lowMidHigh.x * 1.0; // Bass expands blob
-  float t = u_time * (0.2 + u_lowMidHigh.y * 0.5); // Mids speed up ripple
-  uv += sin(uv.y * 10.0 + t) * u_lowMidHigh.z * 0.1; // Highs add distortion
+// void main() {
+//   vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
+//   uv *= 2.0 + u_lowMidHigh.x * 1.0; // Bass expands blob
+//   float t = u_time * (0.2 + u_lowMidHigh.y * 0.5); // Mids speed up ripple
+//   uv += sin(uv.y * 10.0 + t) * u_lowMidHigh.z * 0.1; // Highs add distortion
   
-  float f = ferrofluid(uv);
-  vec3 col = mix(vec3(0.0, 0.0, 0.1), vec3(0.2, 0.5, 1.0), f);
-  col += vec3(1.0, 0.8, 0.2) * u_lowMidHigh.z * 0.8; // Highs add golden sparkles
-  col *= 0.8 + u_lowMidHigh.x * 1.2; // Overall bass glow
+//   float f = ferrofluid(uv);
+//   vec3 col = mix(vec3(0.0, 0.0, 0.1), vec3(0.2, 0.5, 1.0), f);
+//   col += vec3(1.0, 0.8, 0.2) * u_lowMidHigh.z * 0.8; // Highs add golden sparkles
+//   col *= 0.8 + u_lowMidHigh.x * 1.2; // Overall bass glow
   
-  fragColor = vec4(col, 1.0);
-}`
-  },
-  { 
-    name: 'Beat Explosion Particles', 
-    type: 'webgl-shader-explosion', 
-    base: 'bg-gray-900', 
-    display: 'bg-transparent', 
-    bar: '', 
-    sliderTrack: 'bg-red-800/50', 
-    sliderThumb: 'bg-orange-400', 
-    text: 'text-orange-200', 
-    accent: 'text-red-400', 
-    button: 'bg-red-900/70', 
-    buttonHover: 'hover:bg-red-800/70', 
-    highlight: 'bg-orange-500/40',
-    fragmentShader: `#version 300 es
-precision highp float;
+//   fragColor = vec4(col, 1.0);
+// }`
+//   },
+//   { 
+//     name: 'Beat Explosion Particles', 
+//     type: 'webgl-shader-explosion', 
+//     base: 'bg-gray-900', 
+//     display: 'bg-transparent', 
+//     bar: '', 
+//     sliderTrack: 'bg-red-800/50', 
+//     sliderThumb: 'bg-orange-400', 
+//     text: 'text-orange-200', 
+//     accent: 'text-red-400', 
+//     button: 'bg-red-900/70', 
+//     buttonHover: 'hover:bg-red-800/70', 
+//     highlight: 'bg-orange-500/40',
+//     fragmentShader: `#version 300 es
+// precision highp float;
 
-uniform float u_time;
-uniform vec2 u_resolution;
-uniform vec3 u_lowMidHigh;
-uniform sampler2D u_fftTexture;
+// uniform float u_time;
+// uniform vec2 u_resolution;
+// uniform vec3 u_lowMidHigh;
+// uniform sampler2D u_fftTexture;
 
-in vec2 v_uv;
-out vec4 fragColor;
+// in vec2 v_uv;
+// out vec4 fragColor;
 
-float particle(vec2 p, vec2 center, float radius, float intensity) {
-  float d = length(p - center);
-  return smoothstep(radius, radius * 0.7, d) * intensity * (1.0 + u_lowMidHigh.z * 3.0);
-}
+// float particle(vec2 p, vec2 center, float radius, float intensity) {
+//   float d = length(p - center);
+//   return smoothstep(radius, radius * 0.7, d) * intensity * (1.0 + u_lowMidHigh.z * 3.0);
+// }
 
-void main() {
-  vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
-  uv *= 1.2 + u_lowMidHigh.x * 1.5; // Bass scales explosion outward
+// void main() {
+//   vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
+//   uv *= 1.2 + u_lowMidHigh.x * 1.5; // Bass scales explosion outward
   
-  vec3 col = vec3(0.0);
-  float fftSum = 0.0;
-  for (float i = 0.0; i < 8.0; i++) {
-    fftSum += texture(u_fftTexture, vec2(i / 8.0, 0.5)).r;
-  }
-  fftSum /= 8.0;
+//   vec3 col = vec3(0.0);
+//   float fftSum = 0.0;
+//   for (float i = 0.0; i < 8.0; i++) {
+//     fftSum += texture(u_fftTexture, vec2(i / 8.0, 0.5)).r;
+//   }
+//   fftSum /= 8.0;
   
-  for (float i = 0.0; i < 12.0; i++) {
-    float angle = i * 3.14159 * 2.0 / 12.0 + u_time * 0.3;
-    vec2 pos = vec2(cos(angle), sin(angle)) * (0.3 + fftSum * u_lowMidHigh.y * 2.0); // Mids scatter particles
-    float radius = 0.03 + u_lowMidHigh.x * 0.15; // Bass grows particle size
-    col += vec3(1.0, 0.4, 0.1) * particle(uv, pos, radius, 1.0 - i/12.0);
-  }
+//   for (float i = 0.0; i < 12.0; i++) {
+//     float angle = i * 3.14159 * 2.0 / 12.0 + u_time * 0.3;
+//     vec2 pos = vec2(cos(angle), sin(angle)) * (0.3 + fftSum * u_lowMidHigh.y * 2.0); // Mids scatter particles
+//     float radius = 0.03 + u_lowMidHigh.x * 0.15; // Bass grows particle size
+//     col += vec3(1.0, 0.4, 0.1) * particle(uv, pos, radius, 1.0 - i/12.0);
+//   }
   
-  col += vec3(0.2, 0.1, 0.0) * u_lowMidHigh.z * 2.0; // Highs add ember glow
-  fragColor = vec4(col, 1.0);
-}`
-  },
-  { 
-    name: 'Distorted Spectrum Waves', 
-    type: 'webgl-shader-waves', 
-    base: 'bg-black', 
-    display: 'bg-transparent', 
-    bar: '', 
-    sliderTrack: 'bg-cyan-800/50', 
-    sliderThumb: 'bg-blue-400', 
-    text: 'text-blue-200', 
-    accent: 'text-cyan-300', 
-    button: 'bg-cyan-900/70', 
-    buttonHover: 'hover:bg-cyan-800/70', 
-    highlight: 'bg-blue-500/40',
-    fragmentShader: `#version 300 es
-precision highp float;
+//   col += vec3(0.2, 0.1, 0.0) * u_lowMidHigh.z * 2.0; // Highs add ember glow
+//   fragColor = vec4(col, 1.0);
+// }`
+//   },
+//   { 
+//     name: 'Distorted Spectrum Waves', 
+//     type: 'webgl-shader-waves', 
+//     base: 'bg-black', 
+//     display: 'bg-transparent', 
+//     bar: '', 
+//     sliderTrack: 'bg-cyan-800/50', 
+//     sliderThumb: 'bg-blue-400', 
+//     text: 'text-blue-200', 
+//     accent: 'text-cyan-300', 
+//     button: 'bg-cyan-900/70', 
+//     buttonHover: 'hover:bg-cyan-800/70', 
+//     highlight: 'bg-blue-500/40',
+//     fragmentShader: `#version 300 es
+// precision highp float;
 
-uniform float u_time;
-uniform vec2 u_resolution;
-uniform vec3 u_lowMidHigh;
-uniform sampler2D u_fftTexture;
+// uniform float u_time;
+// uniform vec2 u_resolution;
+// uniform vec3 u_lowMidHigh;
+// uniform sampler2D u_fftTexture;
 
-in vec2 v_uv;
-out vec4 fragColor;
+// in vec2 v_uv;
+// out vec4 fragColor;
 
-void main() {
-  vec2 uv = gl_FragCoord.xy / u_resolution * 2.0 - 1.0;
-  uv *= 1.0 + u_lowMidHigh.x * 0.8; // Bass distorts scale
+// void main() {
+//   vec2 uv = gl_FragCoord.xy / u_resolution * 2.0 - 1.0;
+//   uv *= 1.0 + u_lowMidHigh.x * 0.8; // Bass distorts scale
   
-  float wave = 0.0;
-  for (float i = 0.0; i < 16.0; i++) {
-    float bin = texture(u_fftTexture, vec2(i / 16.0, 0.5)).r * (1.0 + u_lowMidHigh.y * 2.0);
-    wave += sin(uv.x * 8.0 * (i + 1.0) + u_time * 0.4 + bin * 12.0) * bin;
-  }
-  wave *= 0.08 + u_lowMidHigh.z * 0.1; // Highs amplify wave height
+//   float wave = 0.0;
+//   for (float i = 0.0; i < 16.0; i++) {
+//     float bin = texture(u_fftTexture, vec2(i / 16.0, 0.5)).r * (1.0 + u_lowMidHigh.y * 2.0);
+//     wave += sin(uv.x * 8.0 * (i + 1.0) + u_time * 0.4 + bin * 12.0) * bin;
+//   }
+//   wave *= 0.08 + u_lowMidHigh.z * 0.1; // Highs amplify wave height
   
-  uv.y += wave;
-  float spec = sin(length(uv) * 15.0 - u_time * 0.6) * 0.6 + 0.4;
-  vec3 col = mix(vec3(0.0, 0.4, 0.8), vec3(1.0, 0.9, 0.6), spec + wave * 2.0);
-  col *= 0.7 + u_lowMidHigh.x * 1.5; // Bass boosts overall glow
+//   uv.y += wave;
+//   float spec = sin(length(uv) * 15.0 - u_time * 0.6) * 0.6 + 0.4;
+//   vec3 col = mix(vec3(0.0, 0.4, 0.8), vec3(1.0, 0.9, 0.6), spec + wave * 2.0);
+//   col *= 0.7 + u_lowMidHigh.x * 1.5; // Bass boosts overall glow
   
-  fragColor = vec4(col, 1.0);
-}`
-  },
-  { 
-    name: 'Fractal Zoom Abyss', 
-    type: 'webgl-shader-fractal-zoom', 
-    base: 'bg-gray-900', 
-    display: 'bg-transparent', 
-    bar: '', 
-    sliderTrack: 'bg-emerald-800/50', 
-    sliderThumb: 'bg-lime-400', 
-    text: 'text-lime-200', 
-    accent: 'text-emerald-300', 
-    button: 'bg-emerald-900/70', 
-    buttonHover: 'hover:bg-emerald-800/70', 
-    highlight: 'bg-lime-500/40',
-    fragmentShader: `#version 300 es
-precision highp float;
+//   fragColor = vec4(col, 1.0);
+// }`
+//   },
+//   { 
+//     name: 'Fractal Zoom Abyss', 
+//     type: 'webgl-shader-fractal-zoom', 
+//     base: 'bg-gray-900', 
+//     display: 'bg-transparent', 
+//     bar: '', 
+//     sliderTrack: 'bg-emerald-800/50', 
+//     sliderThumb: 'bg-lime-400', 
+//     text: 'text-lime-200', 
+//     accent: 'text-emerald-300', 
+//     button: 'bg-emerald-900/70', 
+//     buttonHover: 'hover:bg-emerald-800/70', 
+//     highlight: 'bg-lime-500/40',
+//     fragmentShader: `#version 300 es
+// precision highp float;
 
-uniform float u_time;
-uniform vec2 u_resolution;
-uniform vec3 u_lowMidHigh;
-uniform sampler2D u_fftTexture;
+// uniform float u_time;
+// uniform vec2 u_resolution;
+// uniform vec3 u_lowMidHigh;
+// uniform sampler2D u_fftTexture;
 
-in vec2 v_uv;
-out vec4 fragColor;
+// in vec2 v_uv;
+// out vec4 fragColor;
 
-vec2 mandel(vec2 z, vec2 c) {
-  return vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
-}
+// vec2 mandel(vec2 z, vec2 c) {
+//   return vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
+// }
 
-void main() {
-  vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
-  vec2 c = uv * (1.5 + u_lowMidHigh.x * 3.0); // Bass zooms deeper
-  vec2 z = vec2(0.0);
-  float iter = 0.0;
-  float maxIter = 60.0 + u_lowMidHigh.y * 80.0; // Mids add fractal complexity
+// void main() {
+//   vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
+//   vec2 c = uv * (1.5 + u_lowMidHigh.x * 3.0); // Bass zooms deeper
+//   vec2 z = vec2(0.0);
+//   float iter = 0.0;
+//   float maxIter = 60.0 + u_lowMidHigh.y * 80.0; // Mids add fractal complexity
   
-  for (float i = 0.0; i < 200.0; i++) {
-    z = mandel(z, c + sin(u_time * 0.2 + texture(u_fftTexture, vec2(i/200.0, 0.5)).r) * u_lowMidHigh.z * 0.15); // Highs perturb edges
-    if (length(z) > 2.0) break;
-    iter++;
-  }
+//   for (float i = 0.0; i < 200.0; i++) {
+//     z = mandel(z, c + sin(u_time * 0.2 + texture(u_fftTexture, vec2(i/200.0, 0.5)).r) * u_lowMidHigh.z * 0.15); // Highs perturb edges
+//     if (length(z) > 2.0) break;
+//     iter++;
+//   }
   
-  float frac = iter / maxIter;
-  vec3 col = vec3(frac * 1.5, sin(frac * 3.14 + u_time * 0.3) * 0.8, cos(frac * 3.14)) * (1.0 + u_lowMidHigh.x * 1.5);
-  col += vec3(0.2, 0.5, 0.1) * u_lowMidHigh.z * 2.0; // Highs add green sparks
+//   float frac = iter / maxIter;
+//   vec3 col = vec3(frac * 1.5, sin(frac * 3.14 + u_time * 0.3) * 0.8, cos(frac * 3.14)) * (1.0 + u_lowMidHigh.x * 1.5);
+//   col += vec3(0.2, 0.5, 0.1) * u_lowMidHigh.z * 2.0; // Highs add green sparks
   
-  fragColor = vec4(col, 1.0);
-}`
-  },
-  { 
-    name: 'Nebula Highs Sparkle', 
-    type: 'webgl-shader-nebula', 
-    base: 'bg-indigo-950', 
-    display: 'bg-transparent', 
-    bar: '', 
-    sliderTrack: 'bg-indigo-800/50', 
-    sliderThumb: 'bg-violet-400', 
-    text: 'text-violet-200', 
-    accent: 'text-indigo-300', 
-    button: 'bg-indigo-900/70', 
-    buttonHover: 'hover:bg-indigo-800/70', 
-    highlight: 'bg-violet-500/40',
-    fragmentShader: `#version 300 es
-precision highp float;
+//   fragColor = vec4(col, 1.0);
+// }`
+//   },
+//   { 
+//     name: 'Nebula Highs Sparkle', 
+//     type: 'webgl-shader-nebula', 
+//     base: 'bg-indigo-950', 
+//     display: 'bg-transparent', 
+//     bar: '', 
+//     sliderTrack: 'bg-indigo-800/50', 
+//     sliderThumb: 'bg-violet-400', 
+//     text: 'text-violet-200', 
+//     accent: 'text-indigo-300', 
+//     button: 'bg-indigo-900/70', 
+//     buttonHover: 'hover:bg-indigo-800/70', 
+//     highlight: 'bg-violet-500/40',
+//     fragmentShader: `#version 300 es
+// precision highp float;
 
-uniform float u_time;
-uniform vec2 u_resolution;
-uniform vec3 u_lowMidHigh;
-uniform sampler2D u_fftTexture;
+// uniform float u_time;
+// uniform vec2 u_resolution;
+// uniform vec3 u_lowMidHigh;
+// uniform sampler2D u_fftTexture;
 
-in vec2 v_uv;
-out vec4 fragColor;
+// in vec2 v_uv;
+// out vec4 fragColor;
 
-float nebulaNoise(vec2 p) {
-  float v = 0.0;
-  for (float i = 0.0; i < 4.0; i++) {
-    float freq = texture(u_fftTexture, vec2(i / 4.0, 0.5)).r;
-    v += sin(p.x * 15.0 + u_time * 0.4 + freq * 5.0) + cos(p.y * 15.0 + u_time * 0.4 + freq * 5.0);
-  }
-  return v * 0.25 + 0.5 + u_lowMidHigh.z * 2.0; // Highs add sparkle intensity
-}
+// float nebulaNoise(vec2 p) {
+//   float v = 0.0;
+//   for (float i = 0.0; i < 4.0; i++) {
+//     float freq = texture(u_fftTexture, vec2(i / 4.0, 0.5)).r;
+//     v += sin(p.x * 15.0 + u_time * 0.4 + freq * 5.0) + cos(p.y * 15.0 + u_time * 0.4 + freq * 5.0);
+//   }
+//   return v * 0.25 + 0.5 + u_lowMidHigh.z * 2.0; // Highs add sparkle intensity
+// }
 
-void main() {
-  vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
-  uv *= 1.5 + u_lowMidHigh.x * 1.0; // Bass expands nebula
-  uv += sin(uv * 3.0 + u_time * (0.3 + u_lowMidHigh.y * 0.7)) * 0.1; // Mids distort clouds
+// void main() {
+//   vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
+//   uv *= 1.5 + u_lowMidHigh.x * 1.0; // Bass expands nebula
+//   uv += sin(uv * 3.0 + u_time * (0.3 + u_lowMidHigh.y * 0.7)) * 0.1; // Mids distort clouds
   
-  float noise = nebulaNoise(uv);
-  vec3 col = mix(vec3(0.1, 0.0, 0.3), vec3(0.6, 0.2, 1.0), noise);
-  col += vec3(1.0, 0.8, 0.4) * pow(u_lowMidHigh.z, 3.0) * 1.5; // Highs create bright star bursts
-  col *= 0.8 + u_lowMidHigh.x * 1.2; // Bass adds deep glow
+//   float noise = nebulaNoise(uv);
+//   vec3 col = mix(vec3(0.1, 0.0, 0.3), vec3(0.6, 0.2, 1.0), noise);
+//   col += vec3(1.0, 0.8, 0.4) * pow(u_lowMidHigh.z, 3.0) * 1.5; // Highs create bright star bursts
+//   col *= 0.8 + u_lowMidHigh.x * 1.2; // Bass adds deep glow
   
-  fragColor = vec4(col, 1.0);
-}`
-  },
+//   fragColor = vec4(col, 1.0);
+// }`
+//   },
 
-{ 
-  name: 'Grok: Pulsing Plasma Vortex', 
-  type: 'webgl-shader-plasma', 
-  base: 'bg-gray-900', 
-  display: 'bg-gray-900', 
-  bar: '', 
-  sliderTrack: 'bg-slate-800/50', 
-  sliderThumb: 'bg-purple-400', 
-  text: 'text-green-300', 
-  accent: 'text-violet-400', 
-  button: 'bg-slate-600/70', 
-  buttonHover: 'hover:bg-yellow-600/70', 
-  highlight: 'bg-gray-500/50',
-  fragmentShader: `#version 300 es
-precision highp float;
-uniform float u_time;
-uniform vec3 u_lowMidHigh;
-out vec4 fragColor;
-void main() {
-  vec3 col = vec3(
-    0.5 + u_lowMidHigh.x * 2.0,           // red channel = bass strength
-    0.5 + u_lowMidHigh.y * 2.0,           // green = mids
-    0.5 + u_lowMidHigh.z * 2.0            // blue = highs
-  );
-  col += sin(u_time * 0.2 - 0.4) * 0.1;         // subtle time pulse so we know it's animating
-  fragColor = vec4(col, 1.0);
-}`
-},
+// { 
+//   name: 'Grok: Pulsing Plasma Vortex', 
+//   type: 'webgl-shader-plasma', 
+//   base: 'bg-gray-900', 
+//   display: 'bg-gray-900', 
+//   bar: '', 
+//   sliderTrack: 'bg-slate-800/50', 
+//   sliderThumb: 'bg-purple-400', 
+//   text: 'text-green-300', 
+//   accent: 'text-violet-400', 
+//   button: 'bg-slate-600/70', 
+//   buttonHover: 'hover:bg-yellow-600/70', 
+//   highlight: 'bg-gray-500/50',
+//   fragmentShader: `#version 300 es
+// precision highp float;
+// uniform float u_time;
+// uniform vec3 u_lowMidHigh;
+// out vec4 fragColor;
+// void main() {
+//   vec3 col = vec3(
+//     0.5 + u_lowMidHigh.x * 2.0,           // red channel = bass strength
+//     0.5 + u_lowMidHigh.y * 2.0,           // green = mids
+//     0.5 + u_lowMidHigh.z * 2.0            // blue = highs
+//   );
+//   col += sin(u_time * 0.2 - 0.4) * 0.1;         // subtle time pulse so we know it's animating
+//   fragColor = vec4(col, 1.0);
+// }`
+// },
 
-{ 
-  name: 'Grok: Frequency-Displaced Geometry', 
-  type: 'webgl-shader-geometry', 
-  base: 'bg-indigo-950', 
-  display: 'bg-indigo-900/70', 
-  bar: '', 
-  sliderTrack: 'bg-indigo-800/50', 
-  sliderThumb: 'bg-cyan-500', 
-  text: 'text-cyan-200', 
-  accent: 'text-indigo-300', 
-  button: 'bg-indigo-900/60', 
-  buttonHover: 'hover:bg-indigo-800/60', 
-  highlight: 'bg-cyan-500/40',
-  fragmentShader: `#version 300 es
-precision highp float;
+// { 
+//   name: 'Grok: Frequency-Displaced Geometry', 
+//   type: 'webgl-shader-geometry', 
+//   base: 'bg-indigo-950', 
+//   display: 'bg-indigo-900/70', 
+//   bar: '', 
+//   sliderTrack: 'bg-indigo-800/50', 
+//   sliderThumb: 'bg-cyan-500', 
+//   text: 'text-cyan-200', 
+//   accent: 'text-indigo-300', 
+//   button: 'bg-indigo-900/60', 
+//   buttonHover: 'hover:bg-indigo-800/60', 
+//   highlight: 'bg-cyan-500/40',
+//   fragmentShader: `#version 300 es
+// precision highp float;
 
-uniform float u_time;
-uniform vec2 u_resolution;
-uniform sampler2D u_fftTexture;
-uniform vec3 u_lowMidHigh;
+// uniform float u_time;
+// uniform vec2 u_resolution;
+// uniform sampler2D u_fftTexture;
+// uniform vec3 u_lowMidHigh;
 
-in vec2 v_uv;
-out vec4 fragColor;
+// in vec2 v_uv;
+// out vec4 fragColor;
 
-float noise(vec2 p) {
-    return sin(p.x * 10.0 + u_time) * sin(p.y * 10.0 + u_time) * 0.5 + 0.5;
-}
+// float noise(vec2 p) {
+//     return sin(p.x * 10.0 + u_time) * sin(p.y * 10.0 + u_time) * 0.5 + 0.5;
+// }
 
-void main() {
-    vec2 uv = gl_FragCoord.xy / u_resolution;
-    float fftVal = texture(u_fftTexture, vec2(uv.x, 0.5)).r;
+// void main() {
+//     vec2 uv = gl_FragCoord.xy / u_resolution;
+//     float fftVal = texture(u_fftTexture, vec2(uv.x, 0.5)).r;
     
-    uv.y += sin(uv.x * 20.0 + u_time * 0.1 - 0.4) * (0.1 + fftVal * u_lowMidHigh.x);
-    float displace = noise(uv + vec2(u_time * 0.1 - 0.4)) * (0.2 + u_lowMidHigh.y);
-    uv.x += displace;
+//     uv.y += sin(uv.x * 20.0 + u_time * 0.1 - 0.4) * (0.1 + fftVal * u_lowMidHigh.x);
+//     float displace = noise(uv + vec2(u_time * 0.1 - 0.4)) * (0.2 + u_lowMidHigh.y);
+//     uv.x += displace;
     
-    vec3 col = vec3(0.1, 0.3, 0.6) + vec3(fftVal, u_lowMidHigh.z, 0.0);
-    col *= smoothstep(0.0, 0.1, abs(uv.y - 0.5) + displace);
+//     vec3 col = vec3(0.1, 0.3, 0.6) + vec3(fftVal, u_lowMidHigh.z, 0.0);
+//     col *= smoothstep(0.0, 0.1, abs(uv.y - 0.5) + displace);
     
-    fragColor = vec4(col, 1.0);
-}`
-},
+//     fragColor = vec4(col, 1.0);
+// }`
+// },
 
-{ 
-  name: 'Grok: Spectral Fire Opal Particles', 
-  type: 'webgl-shader-particles', 
-  base: 'bg-rose-950', 
-  display: 'bg-rose-900/80', 
-  bar: '', 
-  sliderTrack: 'bg-rose-800/50', 
-  sliderThumb: 'bg-amber-400', 
-  text: 'text-amber-200', 
-  accent: 'text-rose-300', 
-  button: 'bg-rose-900/60', 
-  buttonHover: 'hover:bg-rose-800/60', 
-  highlight: 'bg-amber-500/40',
-  fragmentShader: `#version 300 es
-precision highp float;
+// { 
+//   name: 'Grok: Spectral Fire Opal Particles', 
+//   type: 'webgl-shader-particles', 
+//   base: 'bg-rose-950', 
+//   display: 'bg-rose-900/80', 
+//   bar: '', 
+//   sliderTrack: 'bg-rose-800/50', 
+//   sliderThumb: 'bg-amber-400', 
+//   text: 'text-amber-200', 
+//   accent: 'text-rose-300', 
+//   button: 'bg-rose-900/60', 
+//   buttonHover: 'hover:bg-rose-800/60', 
+//   highlight: 'bg-amber-500/40',
+//   fragmentShader: `#version 300 es
+// precision highp float;
 
-uniform float u_time;
-uniform vec2 u_resolution;
-uniform vec3 u_lowMidHigh;
-uniform sampler2D u_fftTexture;
+// uniform float u_time;
+// uniform vec2 u_resolution;
+// uniform vec3 u_lowMidHigh;
+// uniform sampler2D u_fftTexture;
 
-in vec2 v_uv;
-out vec4 fragColor;
+// in vec2 v_uv;
+// out vec4 fragColor;
 
-float particle(vec2 p, vec2 center, float radius) {
-    float d = length(p - center);
-    return smoothstep(radius, radius * 0.8, d) * (1.0 + u_lowMidHigh.z * 2.0);
-}
+// float particle(vec2 p, vec2 center, float radius) {
+//     float d = length(p - center);
+//     return smoothstep(radius, radius * 0.8, d) * (1.0 + u_lowMidHigh.z * 2.0);
+// }
 
-void main() {
-    vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
-    uv *= 1.5 + u_lowMidHigh.x;
+// void main() {
+//     vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
+//     uv *= 1.5 + u_lowMidHigh.x;
     
-    float fftSum = 0.0;
-    for (float i = 0.0; i < 10.0; i++) {
-        fftSum += texture(u_fftTexture, vec2(i / 10.0, 0.5)).r;
-    }
-    fftSum /= 10.0;
+//     float fftSum = 0.0;
+//     for (float i = 0.0; i < 10.0; i++) {
+//         fftSum += texture(u_fftTexture, vec2(i / 10.0, 0.5)).r;
+//     }
+//     fftSum /= 10.0;
     
-    vec3 col = vec3(0.0);
-    for (float i = 0.0; i < 5.0; i++) {
-        vec2 pos = vec2(sin(u_time + i) * 0.5, cos(u_time + i) * 0.3);
-        pos += vec2(fftSum * sin(i), fftSum * cos(i)) * u_lowMidHigh.y;
-        col += vec3(1.0, 0.5, 0.2) * particle(uv, pos, 0.05 + u_lowMidHigh.x * 0.1);
-    }
+//     vec3 col = vec3(0.0);
+//     for (float i = 0.0; i < 5.0; i++) {
+//         vec2 pos = vec2(sin(u_time + i) * 0.5, cos(u_time + i) * 0.3);
+//         pos += vec2(fftSum * sin(i), fftSum * cos(i)) * u_lowMidHigh.y;
+//         col += vec3(1.0, 0.5, 0.2) * particle(uv, pos, 0.05 + u_lowMidHigh.x * 0.1);
+//     }
     
-    fragColor = vec4(col, 1.0);
-}`
-},
+//     fragColor = vec4(col, 1.0);
+// }`
+// },
 
-{ 
-  name: 'Grok: Holographic Spectrum Waves', 
-  type: 'webgl-shader-holo', 
-  base: 'bg-cyan-950', 
-  display: 'bg-cyan-900/70', 
-  bar: '', 
-  sliderTrack: 'bg-cyan-800/50', 
-  sliderThumb: 'bg-blue-400', 
-  text: 'text-blue-200', 
-  accent: 'text-cyan-300', 
-  button: 'bg-cyan-900/60', 
-  buttonHover: 'hover:bg-cyan-800/60', 
-  highlight: 'bg-blue-500/40',
-  fragmentShader: `#version 300 es
-precision highp float;
+// { 
+//   name: 'Grok: Holographic Spectrum Waves', 
+//   type: 'webgl-shader-holo', 
+//   base: 'bg-cyan-950', 
+//   display: 'bg-cyan-900/70', 
+//   bar: '', 
+//   sliderTrack: 'bg-cyan-800/50', 
+//   sliderThumb: 'bg-blue-400', 
+//   text: 'text-blue-200', 
+//   accent: 'text-cyan-300', 
+//   button: 'bg-cyan-900/60', 
+//   buttonHover: 'hover:bg-cyan-800/60', 
+//   highlight: 'bg-blue-500/40',
+//   fragmentShader: `#version 300 es
+// precision highp float;
 
-uniform float u_time;
-uniform vec2 u_resolution;
-uniform sampler2D u_fftTexture;
+// uniform float u_time;
+// uniform vec2 u_resolution;
+// uniform sampler2D u_fftTexture;
 
-in vec2 v_uv;
-out vec4 fragColor;
+// in vec2 v_uv;
+// out vec4 fragColor;
 
-void main() {
-    vec2 uv = gl_FragCoord.xy / u_resolution * 2.0 - 1.0;
-    float wave = 0.0;
-    for (float i = 0.0; i < 20.0; i++) {
-        float bin = texture(u_fftTexture, vec2(i / 20.0, 0.5)).r;
-        wave += sin(uv.x * 10.0 * (i + 1.0) + u_time + bin * 10.0) * bin;
-    }
-    wave *= 0.1;
+// void main() {
+//     vec2 uv = gl_FragCoord.xy / u_resolution * 2.0 - 1.0;
+//     float wave = 0.0;
+//     for (float i = 0.0; i < 20.0; i++) {
+//         float bin = texture(u_fftTexture, vec2(i / 20.0, 0.5)).r;
+//         wave += sin(uv.x * 10.0 * (i + 1.0) + u_time + bin * 10.0) * bin;
+//     }
+//     wave *= 0.1;
     
-    uv.y += wave;
-    float holo = sin(length(uv) * 20.0 - u_time * 0.1 - 0.4) * 0.5 + 0.5;
-    vec3 col = mix(vec3(0.0, 0.5, 1.0), vec3(1.0), holo + wave);
-    col *= 0.5 + texture(u_fftTexture, vec2(0.5, 0.5)).r * 2.0;
+//     uv.y += wave;
+//     float holo = sin(length(uv) * 20.0 - u_time * 0.1 - 0.4) * 0.5 + 0.5;
+//     vec3 col = mix(vec3(0.0, 0.5, 1.0), vec3(1.0), holo + wave);
+//     col *= 0.5 + texture(u_fftTexture, vec2(0.5, 0.5)).r * 2.0;
     
-    fragColor = vec4(col, 0.7);
-}`
-},
+//     fragColor = vec4(col, 0.7);
+// }`
+// },
 
-{ 
-  name: 'Grok: Quantum Pulse Fractal', 
-  type: 'webgl-shader-fractal', 
-  base: 'bg-emerald-950', 
-  display: 'bg-emerald-900/80', 
-  bar: '', 
-  sliderTrack: 'bg-emerald-800/50', 
-  sliderThumb: 'bg-lime-400', 
-  text: 'text-lime-200', 
-  accent: 'text-emerald-300', 
-  button: 'bg-emerald-900/60', 
-  buttonHover: 'hover:bg-emerald-800/60', 
-  highlight: 'bg-lime-500/40',
-  fragmentShader: `#version 300 es
-precision highp float;
+// { 
+//   name: 'Grok: Quantum Pulse Fractal', 
+//   type: 'webgl-shader-fractal', 
+//   base: 'bg-emerald-950', 
+//   display: 'bg-emerald-900/80', 
+//   bar: '', 
+//   sliderTrack: 'bg-emerald-800/50', 
+//   sliderThumb: 'bg-lime-400', 
+//   text: 'text-lime-200', 
+//   accent: 'text-emerald-300', 
+//   button: 'bg-emerald-900/60', 
+//   buttonHover: 'hover:bg-emerald-800/60', 
+//   highlight: 'bg-lime-500/40',
+//   fragmentShader: `#version 300 es
+// precision highp float;
 
-uniform float u_time;
-uniform vec2 u_resolution;
-uniform vec3 u_lowMidHigh;
+// uniform float u_time;
+// uniform vec2 u_resolution;
+// uniform vec3 u_lowMidHigh;
 
-in vec2 v_uv;
-out vec4 fragColor;
+// in vec2 v_uv;
+// out vec4 fragColor;
 
-vec2 mandel(vec2 z, vec2 c) {
-    return vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
-}
+// vec2 mandel(vec2 z, vec2 c) {
+//     return vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
+// }
 
-void main() {
-    vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
-    vec2 c = uv * (2.0 + u_lowMidHigh.x * 2.0);
-    vec2 z = vec2(0.0);
-    float iter = 0.0;
-    float maxIter = 50.0 + u_lowMidHigh.y * 50.0;
+// void main() {
+//     vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
+//     vec2 c = uv * (2.0 + u_lowMidHigh.x * 2.0);
+//     vec2 z = vec2(0.0);
+//     float iter = 0.0;
+//     float maxIter = 50.0 + u_lowMidHigh.y * 50.0;
     
-    for (float i = 0.0; i < 100.0; i++) {
-        z = mandel(z, c + sin(u_time + u_lowMidHigh.z) * 0.1);
-        if (length(z) > 2.0) break;
-        iter++;
-    }
+//     for (float i = 0.0; i < 100.0; i++) {
+//         z = mandel(z, c + sin(u_time + u_lowMidHigh.z) * 0.1);
+//         if (length(z) > 2.0) break;
+//         iter++;
+//     }
     
-    float frac = iter / maxIter;
-    vec3 col = vec3(frac, sin(frac * 3.14), cos(frac * 3.14)) * (1.0 + u_lowMidHigh.x);
+//     float frac = iter / maxIter;
+//     vec3 col = vec3(frac, sin(frac * 3.14), cos(frac * 3.14)) * (1.0 + u_lowMidHigh.x);
     
-    fragColor = vec4(col, 1.0);
-}`
-},
-    { name: 'Geometric Harmony', type: 'ford-circles', base: 'bg-gray-900', display: 'bg-black/50', bar: '', sliderTrack: 'bg-sky-800/60', sliderThumb: 'bg-rose-400', text: 'text-sky-200', accent: 'text-rose-300', button: 'bg-sky-900/70', buttonHover: 'hover:bg-sky-800/70', highlight: 'bg-rose-500/50' },
+//     fragColor = vec4(col, 1.0);
+// }`
+// },
+//     { name: 'Geometric Harmony', type: 'ford-circles', base: 'bg-gray-900', display: 'bg-black/50', bar: '', sliderTrack: 'bg-sky-800/60', sliderThumb: 'bg-rose-400', text: 'text-sky-200', accent: 'text-rose-300', button: 'bg-sky-900/70', buttonHover: 'hover:bg-sky-800/70', highlight: 'bg-rose-500/50' },
     { name: 'Borderless LED Rectangular', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-gray-700 border-none shadow-none rounded-none', sliderTrack: 'bg-gray-600 border-none shadow-none rounded-none', sliderThumb: 'bg-gray-400 border-none shadow-none rounded-none', text: 'text-gray-300', accent: 'text-green-400', button: 'bg-gray-700 border-none shadow-none rounded-none', buttonHover: 'hover:bg-gray-600', highlight: 'bg-green-600/50 border-none shadow-none rounded-none' },
     // More innovative gradients based on existing ones, mutating with multi-stop gradients, radial elements, and dynamic shadows
     { name: 'Pioneer Aurora', type: 'shadow', base: 'bg-slate-200', display: 'bg-indigo-900/80', bar: 'bg-gradient-to-t from-indigo-800 via-purple-500 to-pink-300 shadow-[0_0_12px_#a855f7,-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-indigo-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
