@@ -27,45 +27,25 @@ input[type=range].vertical {
   transition: height 75ms ease-out;
   border-radius: 1px;
 }
-
-/* Top face of the 3D bar - REVISED for a cleaner look */
-.bar-3d::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 4px;
+.bar-3d::before { /* Top face */
+  content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
   background: linear-gradient(to bottom, rgba(255,255,255,0.35), rgba(255,255,255,0.1));
-  transform: translateY(-100%);
-  border-radius: 1px 1px 0 0;
+  transform: translateY(-100%); border-radius: 1px 1px 0 0;
+}
+.bar-3d::after { /* Side face */
+  content: ''; position: absolute; top: 0; left: 100%; width: 4px; height: 100%;
+  background: inherit; filter: brightness(0.6); border-radius: 0 1px 1px 0;
 }
 
-/* Side face of the 3D bar */
-.bar-3d::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 100%;
-  width: 4px; /* Same as the gap left in .bar-3d width */
-  height: 100%;
-  background: inherit;
-  filter: brightness(0.6); /* Make it appear darker, as if in shadow */
-  border-radius: 0 1px 1px 0;
-}
-
-/* Individual Bar Styles for different themes */
+/* Generic/Individual Bar Styles for different themes */
 .bar-shadow, .bar-glossy, .bar-glass, .bar-convex, .bar-concave {
-  height: 100%;
   transition: height 75ms ease-out;
 }
 
 
 /* --- 3D Classic LED Visualizer Styles --- */
 .led-segment {
-  /* Creates an inset shadow to give the segment depth */
-  box-shadow: inset 0 0 2px 1px rgba(0,0,0,0.5);
-  position: relative;
+  box-shadow: inset 0 0 2px 1px rgba(0,0,0,0.5); position: relative;
   transition: background-color 100ms ease-in-out, opacity 100ms ease-in-out;
 }
 
@@ -75,19 +55,19 @@ input[type=range].vertical {
 }
 
 .led-on {
-  opacity: 1.0; /* Add slight translucency to on segments was 0.95 */
+  opacity: 0.95 /* Add slight translucency to on segments was 0.95 */
 }
 
 /* Add a pseudo-element to create the "glow" effect on lit LEDs */
 .led-on::after {
-    content: '';
+    content: ''; position: absolute; top: 1px; left: 1px; right: 1px; bottom: 1px;
     position: absolute;
     top: 1px;
     left: 1px;
     right: 1px;
     bottom: 1px;
     /* The glow color is inherited from the parent's text color */
-    box-shadow: 0 0 5px 0.5px currentColor;
+    box-shadow: 0 0 5px 1px currentColor;
 }
 
 .led-green {
@@ -142,6 +122,51 @@ input[type=range].vertical {
   background: linear-gradient(to bottom, rgba(255, 255, 255, 0.6), transparent);
   border-radius: 2px 2px 0 0;
 }
+
+/* --- Cyberdeck Theme (2040 Gadget UI) --- */
+.cyberdeck-bg {
+  background-color: #0d1117;
+  background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+.cyberdeck-display {
+  background: radial-gradient(ellipse at center, rgba(17,24,39,0.9) 0%, rgba(3,7,18,0.95) 100%);
+  box-shadow: inset 0 0 20px 5px rgba(0,0,0,0.7);
+}
+.btn-cyber {
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  box-shadow: 0 2px 0 #334155, 0 3px 5px rgba(0,0,0,0.4);
+  transition: all 0.1s ease-out;
+}
+.btn-cyber:hover {
+  background-color: #334155;
+  border-color: #475569;
+  color: #cbd5e1;
+}
+.btn-cyber:active, .btn-cyber.btn-active {
+  transform: translateY(2px);
+  box-shadow: 0 0px 0 #334155, 0 1px 2px rgba(0,0,0,0.4), inset 0 0 5px rgba(0,0,0,0.3);
+  background-color: #1a2433;
+}
+.btn-cyber.btn-primary {
+  background-color: #0e7490;
+  border-color: #0891b2;
+  color: white;
+  box-shadow: 0 2px 0 #0e7490, 0 3px 5px rgba(0,0,0,0.4), inset 0 0 10px rgba(236, 72, 153, 0.3);
+}
+.btn-cyber.btn-primary:hover {
+  background-color: #0891b2;
+  border-color: #06b6d4;
+  box-shadow: 0 2px 0 #0e7490, 0 3px 5px rgba(0,0,0,0.4), inset 0 0 10px rgba(236, 72, 153, 0.3), 0 0 15px rgba(103, 232, 249, 0.5);
+}
+.btn-cyber.btn-primary:active {
+  background-color: #155e75;
+  transform: translateY(2px);
+  box-shadow: 0 0px 0 #0e7490, 0 1px 2px rgba(0,0,0,0.4), inset 0 0 10px rgba(236, 72, 153, 0.5);
+}
+
 
 /* --- Glass Bar Visualizer Styles --- */
 .bar-glass {
@@ -334,6 +359,9 @@ input[type=range].vertical {
 .liquify-surface {
   fill: #99f6e4; /* teal-200 */
 }
+
+/* --- Misc & Legacy Theme Styles --- */
+.visualizer-content-host { transition: filter 100ms linear; will-change: filter; }
 
 .ford-circles-viz circle {
   fill: #fb7185; /* rose-400 */

@@ -14,4 +14,5 @@ export interface EqualizerTheme {
   buttonHover: string;
   highlight: string;
   fragmentShader?: string; // Optional for webgl themes
+  webglMode?: 'bars' | 'terrain';
 }
