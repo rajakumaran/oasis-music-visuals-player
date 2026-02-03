@@ -1,6 +1,9 @@
 # oasis-music-visuals-player
 
-# February/3rd/2026:
+# February/3rd/2026 #2:
+This is the initial checkin for this branch 2026-Feb-3rd-onwards cut from: more-features-latest-than-3D
+
+# February/3rd/2026 #1:
 This is the last code push for this branch. As of yesterday, all the latest in this branch has been made available in the Preview version and they are all production quality. The only defect is: many of the themes donot show up in the mobile view, only the VoxelScape and LED bar themes show up. That gotta be fixed. 
 Here on, refer to my latest branch being cut from this branch. That new branch name is: 2026-Feb-3rd-onwards
 
