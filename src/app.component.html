@@ -20,7 +20,7 @@
     </div>
   </header>
 
-  <main class="flex-1 flex flex-col md:flex-row min-h-0">
+  <main class="flex-1 flex flex-col-reverse md:flex-row min-h-0">
     <!-- For the Sidebar / Controls to be here, place the code chunk here. MKA-->
     <!-- Visualizer area -->
      <section id="visualizer-section" class="flex-1 relative flex flex-col min-h-0">
@@ -44,90 +44,28 @@
                   [musicProfile]="effectiveSynergyDriveMode()"
                 />
               }
-              @case ('webgl-grok-lattice') {
-                <app-webgl-visualizer 
-                  [theme]="effectiveTheme()"
-                  [bars]="visualizerBars()"
-                  [isPlaying]="isPlaying()"
-                  [beat]="beat()"
-                  [musicProfile]="effectiveSynergyDriveMode()"
-                />
+              @case ('aura') {
+                <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+                  <defs><filter id="auraGlow"><feGaussianBlur stdDeviation="1.5"></feGaussianBlur></filter></defs>
+                  <g class="aura-viz" filter="url(#auraGlow)">
+                    @for(ring of auraRings(); track ring.id) {
+                      <circle cx="50" cy="50" fill="none" [attr.r]="ring.radius" [style.stroke]="'hsl(' + ring.hue + ', 100%, 70%)'" [style.stroke-width]="ring.thickness" [style.opacity]="ring.opacity"></circle>
+                    }
+                  </g>
+                </svg>
               }
-              @case ('webgl-grok-rift') { <app-webgl-visualizer 
-                  [theme]="effectiveTheme()"
-                  [bars]="visualizerBars()"
-                  [isPlaying]="isPlaying()"
-                  [beat]="beat()"
-                  [musicProfile]="effectiveSynergyDriveMode()"
-                /> }
-              @case ('webgl-grok-neural-ember') { <app-webgl-visualizer 
-                  [theme]="effectiveTheme()"
-                  [bars]="visualizerBars()"
-                  [isPlaying]="isPlaying()"
-                  [beat]="beat()"
-                  [musicProfile]="effectiveSynergyDriveMode()"
-                /> }
-              @case ('webgl-grok-collapse') { <app-webgl-visualizer 
-                  [theme]="effectiveTheme()"
-                  [bars]="visualizerBars()"
-                  [isPlaying]="isPlaying()"
-                  [beat]="beat()"
-                  [musicProfile]="effectiveSynergyDriveMode()"
-                /> }
-              @case ('webgl-grok-aurora') { <app-webgl-visualizer 
-                  [theme]="effectiveTheme()"
-                  [bars]="visualizerBars()"
-                  [isPlaying]="isPlaying()"
-                  [beat]="beat()"
-                  [musicProfile]="effectiveSynergyDriveMode()"
-                /> }
-
-
-             @case ('webgl-shader-plasma') {
-                <app-webgl-visualizer 
-                  [theme]="effectiveTheme()"
-                  [bars]="visualizerBars()"
-                  [isPlaying]="isPlaying()"
-                  [beat]="beat()"
-                  [musicProfile]="effectiveSynergyDriveMode()"
-                />
-              }
-              @case ('webgl-shader-geometry') {
-                <app-webgl-visualizer 
-                  [theme]="effectiveTheme()"
-                  [bars]="visualizerBars()"
-                  [isPlaying]="isPlaying()"
-                  [beat]="beat()"
-                  [musicProfile]="effectiveSynergyDriveMode()"
-                />
-              }
-              @case ('webgl-shader-particles') {
-                <app-webgl-visualizer 
-                  [theme]="effectiveTheme()"
-                  [bars]="visualizerBars()"
-                  [isPlaying]="isPlaying()"
-                  [beat]="beat()"
-                  [musicProfile]="effectiveSynergyDriveMode()"
-                />
-              }
-              @case ('webgl-shader-holo') {
-                <app-webgl-visualizer 
-                  [theme]="effectiveTheme()"
-                  [bars]="visualizerBars()"
-                  [isPlaying]="isPlaying()"
-                  [beat]="beat()"
-                  [musicProfile]="effectiveSynergyDriveMode()"
-                />
-              }
-              @case ('webgl-shader-fractal') {
-                <app-webgl-visualizer 
-                  [theme]="effectiveTheme()"
-                  [bars]="visualizerBars()"
-                  [isPlaying]="isPlaying()"
-                  [beat]="beat()"
-                  [musicProfile]="effectiveSynergyDriveMode()"
-                />
-              }
+              @case ('glyphs') {
+              <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                  <filter id="glyphGlow"><feGaussianBlur stdDeviation="1" result="coloredBlur"></feGaussianBlur><feMerge><feMergeNode in="coloredBlur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter>
+                </defs>
+                <g class="glyph-viz" filter="url(#glyphGlow)">
+                  @for(glyph of glyphData(); track glyph.id) {
+                    <path [attr.d]="glyph.d" [style.opacity]="glyph.opacity" [style.stroke-width]="glyph.strokeWidth" [style.stroke-dashoffset]="glyph.dashOffset"></path>
+                  }
+                </g>
+              </svg>
+              }              
               @case ('glass-box') {
                 <div class="visualizer-box-3d">
                   <div class="visualizer-stage">
@@ -301,13 +239,13 @@
             </div>
 
             <div class="flex justify-center items-center gap-6">
-              <button (click)="audioService.previous()" [disabled]="playlist().length < 2" class="btn btn-circle btn-ghost" title="Previous Track">
+              <button (click)="audioService.previous()" [disabled]="playlist().length < 2" [class]="'btn btn-circle btn-ghost ' + effectiveTheme().button" title="Previous Track">
                 <i class="fa-solid fa-backward-step"></i>
               </button>
-              <button (click)="onPlayPauseClick()" [disabled]="!currentTrack()" class="btn btn-circle btn-primary btn-lg" [title]="isPlaying() ? 'Pause' : 'Play'">
+              <button (click)="onPlayPauseClick()" [disabled]="!currentTrack()" [class]="'btn btn-circle btn-primary btn-lg ' + effectiveTheme().button" [title]="isPlaying() ? 'Pause' : 'Play'">
                 <i class="fa-solid text-2xl" [class.fa-play]="!isPlaying()" [class.fa-pause]="isPlaying()"></i>
               </button>
-              <button (click)="audioService.next()" [disabled]="playlist().length < 2" class="btn btn-circle btn-ghost" title="Next Track">
+              <button (click)="audioService.next()" [disabled]="playlist().length < 2" [class]="'btn btn-circle btn-ghost ' + effectiveTheme().button" title="Next Track">
                 <i class="fa-solid fa-forward-step"></i>
               </button>
             </div>
@@ -460,8 +398,8 @@
         <div class="form-control">
            <label class="label"><span class="label-text">Master Engine</span></label>
            <div class="join">
-              <button (click)="visualizerEngine.set('synergy')" class="btn btn-sm join-item flex-1" [class.btn-active]="visualizerEngine() === 'synergy'" title="Use the intelligent, adaptive Synergy Drive engine.">Synergy Drive</button>
-              <button (click)="visualizerEngine.set('algorithm')" class="btn btn-sm join-item flex-1" [class.btn-active]="visualizerEngine() === 'algorithm'" title="Use raw, high-impact algorithms from my research.">Algorithm Lab</button>
+              <button (click)="visualizerEngine.set('synergy')" class="btn btn-sm join-item flex-1"  [class]="effectiveTheme().button" [class.btn-active]="visualizerEngine() === 'synergy'" title="Use the intelligent, adaptive Synergy Drive engine.">Synergy Drive</button>
+              <button (click)="visualizerEngine.set('algorithm')" class="btn btn-sm join-item flex-1"  [class]="effectiveTheme().button" [class.btn-active]="visualizerEngine() === 'algorithm'" title="Use raw, high-impact algorithms from my research.">Algorithm Lab</button>
             </div>
         </div>
         
@@ -472,10 +410,10 @@
                 Current mode ON is: <span class="font-medium text-white">{{ synergyDriveMode() | titlecase }}</span>
               </p>
              <div class="join" title="Synergy Drive automatically analyzes the music to apply dynamic visual effects.">
-                <button (click)="setSynergyDriveMode('smart')" class="btn btn-sm join-item flex-1" [class.btn-active]="synergyDriveMode() === 'smart'" title="Smart Mode: Automatically switches between Rhythm, Atmosphere, and Transient based on the music.">Smart</button>
-                <button (click)="setSynergyDriveMode('atmosphere')" class="btn btn-sm join-item flex-1" [class.btn-active]="synergyDriveMode() === 'atmosphere'" title="Atmosphere Mode: Creates smooth, flowing visuals ideal for ambient music.">Atmosphere</button>
-                <button (click)="setSynergyDriveMode('rhythm')" class="btn btn-sm join-item flex-1" [class.btn-active]="synergyDriveMode() === 'rhythm'" title="Rhythm Mode: Emphasizes the bass and beat for rhythmic music.">Rhythm</button>
-                <button (click)="setSynergyDriveMode('transient')" class="btn btn-sm join-item flex-1" [class.btn-active]="synergyDriveMode() === 'transient'" title="Transient Mode: Reacts sharply to high-frequency sounds like cymbals and snares.">Transient</button>
+                <button (click)="setSynergyDriveMode('smart')" class="btn btn-sm join-item flex-1"  [class]="effectiveTheme().button" [class.btn-active]="synergyDriveMode() === 'smart'" title="Smart Mode: Automatically switches between Rhythm, Atmosphere, and Transient based on the music.">Smart</button>
+                <button (click)="setSynergyDriveMode('atmosphere')" class="btn btn-sm join-item flex-1"  [class]="effectiveTheme().button" [class.btn-active]="synergyDriveMode() === 'atmosphere'" title="Atmosphere Mode: Creates smooth, flowing visuals ideal for ambient music.">Atmosphere</button>
+                <button (click)="setSynergyDriveMode('rhythm')" class="btn btn-sm join-item flex-1"  [class]="effectiveTheme().button" [class.btn-active]="synergyDriveMode() === 'rhythm'" title="Rhythm Mode: Emphasizes the bass and beat for rhythmic music.">Rhythm</button>
+                <button (click)="setSynergyDriveMode('transient')" class="btn btn-sm join-item flex-1"  [class]="effectiveTheme().button" [class.btn-active]="synergyDriveMode() === 'transient'" title="Transient Mode: Reacts sharply to high-frequency sounds like cymbals and snares.">Transient</button>
               </div>
           </div>
         }
@@ -497,7 +435,7 @@
                       [value]="responseCurve()"
                       [disabled]="selectedAlgorithm() !== 'basic'"
                       class="select select-sm select-bordered w-full disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Shapes the output of the 'Basic FFT' algorithm.">
+                      title="Shapes the output of the Algorithm Lab engine.">
                 <option value="linear">Linear</option>
                 <option value="polynomial">Punchy</option>
                 <option value="fractal">Celestial</option>

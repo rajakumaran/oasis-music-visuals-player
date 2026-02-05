@@ -164,7 +164,7 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
     const canvas = this.canvasRef.nativeElement;
     const renderPass = new RenderPass(this.scene, this.camera);
     // Tuned bloom pass settings to avoid "whitewash" on large screens
-    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(canvas.clientWidth, canvas.clientHeight), 0.8, 0.6, 0.4);
+    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(canvas.clientWidth, canvas.clientHeight), 0.5, 0.6, 0.8); //WAS  0.8, 0.6, 0.4
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(renderPass);
     this.composer.addPass(this.bloomPass);

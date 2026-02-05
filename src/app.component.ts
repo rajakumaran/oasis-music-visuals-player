@@ -6,7 +6,6 @@ import { PresetService, Preset } from './services/preset.service';
 import { EqualizerTheme } from './models/equalizer-theme.model';
 import { FullscreenToggleComponent } from './fullscreen-toggle/fullscreen-toggle.component';
 import { WebglVisualizerComponent } from './webgl-visualizer/webgl-visualizer.component';
-import { WebglGrokVisualizerComponent } from './webgl-grok-visualizer/webgl-grok-visualizer.component';
 import { inject as vercelAnalytics } from '@vercel/analytics';
 
 type LightSourcePosition = 'none' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center-stage' | 'top-center';
@@ -21,7 +20,7 @@ interface AuraParticle { id: number; x: number; y: number; opacity: number; size
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FullscreenToggleComponent, WebglVisualizerComponent, WebglGrokVisualizerComponent],
+  imports: [CommonModule, FullscreenToggleComponent, WebglVisualizerComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -117,7 +116,7 @@ export class AppComponent implements OnInit, OnDestroy {
   detectedHoliday = this.holidayService.detectedHoliday;
   
   lightSourcePosition = signal<LightSourcePosition>('none');
-  isLightingControlVisible = computed(() => !['led', 'webgl', 'webgl-shader-plasma', 'webgl-shader-geometry', 'webgl-shader-particles', 'webgl-shader-holo', 'webgl-shader-fractal' ].includes(this.effectiveTheme().type));
+  isLightingControlVisible = computed(() => !['led', 'webgl'].includes(this.effectiveTheme().type));
   lightingOverlayStyle = computed(() => {
     const position = this.lightSourcePosition();
     if (position === 'none' || !this.isLightingControlVisible()) return 'transparent';
@@ -364,6 +363,66 @@ export class AppComponent implements OnInit, OnDestroy {
     }
     return circles;
   });
+  
+  auraRings = computed(() => {
+    const rings = 10;
+    const bars = this.visualizerBars();
+    const bass = bars.slice(0, 4).reduce((a,b)=>a+b,0)/4;
+    const mids = bars.slice(4, 20).reduce((a,b)=>a+b,0)/16;
+    const time = performance.now() / 3000;
+
+    return Array.from({length: rings}, (_, i) => {
+      const progress = (time + i / rings) % 1;
+      const barIndex = Math.floor(i / rings * bars.length);
+      const energy = bars[barIndex] || 0;
+      return {
+        id: `aura-${i}`,
+        radius: progress * 50,
+        opacity: (1 - progress) * 0.5 * (1 + energy),
+        thickness: 1 + mids * 4 + energy * 3,
+        hue: (i * 20 + bass * 180) % 360,
+      }
+    });
+  });
+
+  private readonly GLYPH_PATHS = [
+    "M10 80 C 30 20, 70 20, 90 80",
+    "M10 50 L 50 10 L 90 50 L 50 90 Z",
+    "M20 20 L 80 80 M 80 20 L 20 80",
+    "M50 10 C 10 50, 90 50, 50 90",
+  ];
+  glyphData = computed(() => {
+    const bars = this.visualizerBars();
+    const count = this.isMobile() ? 2 : 4;
+    const beat = this.beat();
+    const transient = this.transient();
+    let beatGlow = 0;
+    if(beat.timestamp > this.lastBeatTimestamp) beatGlow = beat.strength;
+    let transientSpike = 0;
+    if(transient.timestamp > this.lastTransientTimestamp) transientSpike = transient.intensity;
+    
+    return this.GLYPH_PATHS.slice(0, count).map((path, i) => {
+      const barIndex = Math.floor(i / count * bars.length);
+      const energy = bars[barIndex] || 0;
+      return {
+        id: `glyph-${i}`,
+        d: path,
+        opacity: 0.3 + energy * 0.7,
+        strokeWidth: 0.5 + energy * 2 + beatGlow * 2,
+        dashOffset: 1000 - ((performance.now()/10) + (transientSpike * 500)) % 2000,
+        glow: beatGlow
+      }
+    })
+  });
+
+  liquidTurbulence = computed(() => {
+    const bars = this.visualizerBars();
+    const bass = bars.slice(0, 8).reduce((a, b) => a + b, 0) / 8;
+    const treble = bars.slice(bars.length - 16).reduce((a, b) => a + b, 0) / 16;
+    const baseFrequency = 0.01 + bass * 0.02;
+    const numOctaves = Math.floor(2 + treble * 4);
+    return { baseFrequency, numOctaves };
+  });
 
   ledBars = computed(() => {
     const bars = this.visualizerBars();
@@ -538,9 +597,9 @@ export class AppComponent implements OnInit, OnDestroy {
 bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k'];
 
    themes: EqualizerTheme[] = [
-    { name: 'Cyberdeck', type: 'convex', base: 'cyberdeck-bg', display: 'cyberdeck-display', bar: 'bg-gradient-to-t from-cyan-500 to-white shadow-[0_0_8px_rgba(34,211,238,0.8),0_0_20px_rgba(34,211,238,0.5)] rounded-t-sm', sliderTrack: 'bg-gray-800/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-200 font-mono', accent: 'text-fuchsia-400', button: 'btn-cyber', buttonHover: '', highlight: 'bg-cyan-400/20' },
-    { name: 'Audio Terrain', type: 'webgl', webglMode: 'terrain', base: 'bg-gray-900', display: '#030712', bar: '', sliderTrack: 'bg-emerald-800/50', sliderThumb: 'bg-lime-400', text: 'text-lime-300', accent: '#0ece62', button: 'bg-emerald-900/70', buttonHover: 'hover:bg-emerald-800/70', highlight: 'bg-lime-500/50' },
-    { name: 'VoxelScape', type: 'webgl', webglMode: 'bars', base: 'bg-gray-900', display: '#111827', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: '#a78bfa', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-violet-500/50' },
+    { name: 'Cyberdeck', type: 'convex', base: 'cyberdeck-bg', display: 'cyberdeck-display', bar: 'bg-gradient-to-t from-cyan-500 to-orange shadow-[0_0_8px_rgba(34,211,238,0.8),0_0_20px_rgba(34,211,238,0.5)] rounded-t-sm', sliderTrack: 'bg-gray-800/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-200 font-mono', accent: 'text-fuchsia-400', button: 'btn-cyber', buttonHover: '', highlight: 'bg-cyan-400/20' },
+    { name: 'Audio Terrain', type: 'webgl', webglMode: 'terrain', base: 'bg-gray-900', display: '#030712', bar: '', sliderTrack: 'bg-emerald-800/50', sliderThumb: 'bg-lime-400', text: 'text-lime-300', accent: '#d71230', button: 'bg-emerald-900/70', buttonHover: 'hover:bg-emerald-800/70', highlight: 'bg-lime-800/50' },
+    { name: 'VoxelScape', type: 'webgl', webglMode: 'bars', base: 'bg-gray-900', display: '#111827', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: '#200671', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-violet-500/50' },
     { name: 'Borderless LED Rectangular', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-gray-700 border-none shadow-none rounded-none', sliderTrack: 'bg-gray-600 border-none shadow-none rounded-none', sliderThumb: 'bg-gray-400 border-none shadow-none rounded-none', text: 'text-gray-300', accent: 'text-green-400', button: 'bg-gray-700 border-none shadow-none rounded-none', buttonHover: 'hover:bg-gray-600', highlight: 'bg-green-600/50 border-none shadow-none rounded-none' },
     // More innovative gradients based on existing ones, mutating with multi-stop gradients, radial elements, and dynamic shadows
     { name: 'Pioneer Aurora', type: 'shadow', base: 'bg-slate-200', display: 'bg-indigo-900/80', bar: 'bg-gradient-to-t from-indigo-800 via-purple-500 to-pink-300 shadow-[0_0_12px_#a855f7,-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-indigo-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
@@ -671,7 +730,7 @@ bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   }
 
-  incrementLedWidth() { this.ledSegmentWidth.update(w => Math.min(24, w + 1)); } //was 18 to not flood the menu bars on the side
+  incrementLedWidth() { this.ledSegmentWidth.update(w => Math.min(16, w + 1)); } //was 18 to not flood the menu bars on the side
   decrementLedWidth() { this.ledSegmentWidth.update(w => Math.max(2, w - 1)); }
   incrementLedHeight() { this.ledSegmentHeight.update(h => Math.min(16, h + 1)); }
   decrementLedHeight() { this.ledSegmentHeight.update(h => Math.max(1, h - 1)); }
