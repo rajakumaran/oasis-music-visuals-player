@@ -268,8 +268,16 @@
    
       <!-- For the Sidebar / Controls to be on right, place the code chunk here. MKA-->
           <!-- Sidebar / Controls -->    
-        <aside class="w-full md:w-80 bg-gray-900/80 backdrop-blur-sm border-r border-green-300 p-6 overflow-y-auto">
-        <h2 class="text-xl font-semibold mb-6">Controls Cockpit 1</h2>
+    <!-- <aside class="w-full md:w-80 bg-gray-900/80 backdrop-blur-sm border-r border-green-300 p-6 overflow-y-auto"> -->
+    <aside class="w-full md:w-80 bg-gray-900/80 backdrop-blur-sm border-r border-gray-800 p-6 overflow-y-auto transition-all duration-300">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold">Cockpit 1</h2>
+          <button (click)="isControlsCollapsed.set(!isControlsCollapsed())" class="btn btn-sm btn-ghost md:hidden" title="Toggle Controls Panel">
+            <i class="fa-solid" [class]="isControlsCollapsed() ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+          </button>
+        </div>
+        <div class="space-y-6" [class.hidden]="isControlsCollapsed() && isMobile()">
+        <!-- <h2 class="text-xl font-semibold mb-6">Controls Cockpit 1</h2> -->
           <!-- Theme selector -->
           <div class="mb-6">
             <label class="block text-sm mb-2">Theme</label>
@@ -368,9 +376,17 @@
                     <button (click)="savePreset()" [disabled]="!newPresetName().trim()" [class]="effectiveTheme().button + ' ' + effectiveTheme().buttonHover + ' text-xs rounded-md disabled:opacity-50'">Save</button>
                   </div>
                   </div>
-        </aside>
-        <aside class="w-full h-full md:w-80 bg-gray-900/80 backdrop-blur-sm border-r border-green-300 p-6 overflow-y-auto">
-          <h2 class="text-xl font-semibold mb-6 text-center">Controls Cockpit 2</h2> 
+    </div>
+    </aside>
+    <aside class="w-full h-full md:w-80 bg-gray-900/80 backdrop-blur-sm border-r border-green-300 p-6 overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-semibold">Cockpit 2</h2>
+          <button (click)="isControlsCollapsed.set(!isControlsCollapsed())" class="btn btn-sm btn-ghost md:hidden" title="Toggle Controls Panel">
+              <i class="fa-solid" [class]="isControlsCollapsed() ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+          </button>
+      </div>
+      <div class="space-y-6" [class.hidden]="isControlsCollapsed() && isMobile()">
+          <!-- <h2 class="text-xl font-semibold mb-6 text-center">Controls Cockpit 2</h2>  -->
           <!-- Presets, Sensitivity, etc. -->
           <div class="space-y-4">
             <!-- Advanced Controls -->
@@ -526,6 +542,7 @@
               </div>
             }
           </div>        
-        </aside>
+      </div>
+    </aside>
   </main>
 </div>

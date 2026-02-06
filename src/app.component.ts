@@ -67,6 +67,7 @@ export class AppComponent implements OnInit, OnDestroy {
   backgroundImageUrl = signal<string | null>(null);
   decayFactor = signal(0.94);
   isMobile = signal(false);
+  isControlsCollapsed = signal(false);
   private readonly resizeListener = () => {
     this.updateDecayFactor();
     this.isMobile.set(window.innerWidth < 768);
