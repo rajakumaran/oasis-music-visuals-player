@@ -19,8 +19,8 @@
       </label>
     </div>
   </header>
-  <!-- <h2 class="text-xl font-semibold mb-6 text-primary-content">Controls Cockpit</h2> -->
-  <main class="flex-1 flex flex-col-reverse md:flex-row min-h-0">          
+  <main class="flex-1 flex flex-col-reverse md:flex-row min-h-0">
+
     <!-- For the Sidebar / Controls to be here, place the code chunk here. MKA-->
       
     <!-- Visualizer area -->
@@ -37,8 +37,8 @@
         <div class="visualizer-content-host relative w-full h-full" [style.filter]="isKaleidoscope() && effectiveTheme().type !== 'led' ? 'hue-rotate(' + kaleidoscopeHueShift() + 'deg)' : 'none'">
             @switch (effectiveTheme().type) {
               @case ('webgl') {
-                <app-webgl-visualizer 
-                  [bars]="visualizerBars()" 
+                <app-webgl-visualizer
+                  [bars]="visualizerBars()"
                   [theme]="effectiveTheme()"
                   [isPlaying]="isPlaying()"
                   [beat]="beat()"
@@ -66,7 +66,7 @@
                   }
                 </g>
               </svg>
-              }              
+              }
               @case ('glass-box') {
                 <div class="visualizer-box-3d">
                   <div class="visualizer-stage">
@@ -224,6 +224,15 @@
             {{ opportunisticTickerMessage() }}
           </div>
         }
+
+        <!-- Floating toggle button for mobile (only visible when cockpits are hidden) -->
+        <button
+          (click)="isControlsCollapsed.set(!isControlsCollapsed())"
+          class="md:hidden fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform duration-200"
+          [class.hidden]="!isControlsCollapsed()"
+          title="Show Controls">
+          <i class="fa-solid fa-sliders text-xl"></i>
+        </button>
       </div>
 
       <!-- Player controls -->
@@ -265,15 +274,13 @@
 
 
     <!-- Visualizer area was here initially -->
-   
-      <!-- For the Sidebar / Controls to be on right, place the code chunk here. MKA-->
-          <!-- Sidebar / Controls -->    
-    <!-- <aside class="w-full md:w-80 bg-gray-900/80 backdrop-blur-sm border-r border-green-300 p-6 overflow-y-auto"> -->
-    <aside class="w-full md:w-80 bg-gray-900/80 backdrop-blur-sm border-r border-gray-800 p-6 overflow-y-auto transition-all duration-300">
+    <aside
+      class="w-full md:w-80 bg-gray-900/80 backdrop-blur-sm border-r border-gray-800 p-6 overflow-y-auto transition-all duration-300"
+      [class.hidden]="isControlsCollapsed() && isMobile()">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-semibold">Cockpit 1</h2>
-          <button (click)="isControlsCollapsed.set(!isControlsCollapsed())" class="btn btn-sm btn-ghost md:hidden" title="Toggle Controls Panel">
-            <i class="fa-solid" [class]="isControlsCollapsed() ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+          <button (click)="isControlsCollapsed.set(!isControlsCollapsed())" class="btn btn-sm btn-ghost md:hidden" title="Hide Controls Panel">
+            <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
         <div class="space-y-6" [class.hidden]="isControlsCollapsed() && isMobile()">
@@ -358,7 +365,7 @@
                 </div>
               }
             </div>
-          </div>          
+          </div>
           <div class="flex flex-col gap-1 md:col-span-3">
                   <label class="font-semibold">EQ Presets</label>
                   <div class="grid grid-cols-3 gap-2">
@@ -378,7 +385,11 @@
                   </div>
     </div>
     </aside>
-    <aside class="w-full h-full md:w-80 bg-gray-900/80 backdrop-blur-sm border-r border-green-300 p-6 overflow-y-auto">
+
+    <!-- Cockpit 2 -->
+    <aside
+      class="w-full h-full md:w-80 bg-gray-900/80 backdrop-blur-sm border-r border-green-300 p-6 overflow-y-auto transition-all duration-300"
+      [class.hidden]="isControlsCollapsed() && isMobile()">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-semibold">Cockpit 2</h2>
           <button (click)="isControlsCollapsed.set(!isControlsCollapsed())" class="btn btn-sm btn-ghost md:hidden" title="Toggle Controls Panel">
@@ -439,7 +450,7 @@
               <div class="space-y-4 animate-fade-in">
                 <div>
                   <label class="block text-sm mb-1">Algorithm</label>
-                  <select (change)="setSelectedAlgorithm($any($event.target).value)" [value]="selectedAlgorithm()" [class]="'select select-sm w-full appearance-none rounded-md py-1 pl-2 pr-7 text-xs ' + effectiveTheme().button + ' ' + effectiveTheme().text" title="Select a raw signal processing algorithm. Bypasses Synergy Drive.">                
+                  <select (change)="setSelectedAlgorithm($any($event.target).value)" [value]="selectedAlgorithm()" [class]="'select select-sm w-full appearance-none rounded-md py-1 pl-2 pr-7 text-xs ' + effectiveTheme().button + ' ' + effectiveTheme().text" title="Select a raw signal processing algorithm. Bypasses Synergy Drive.">
                     <option value="basic">Basic FFT + Curve</option>
                     <option value="stft-fractal">STFT + Fractal</option>
                     <option value="wavelet-harmonic">Wavelet + Harmonic</option>
@@ -448,7 +459,7 @@
 
                 <div>
                 <label class="block text-sm mb-1">Response Curve</label>
-                <select (change)="setResponseCurve($any($event.target).value)" 
+                <select (change)="setResponseCurve($any($event.target).value)"
                         [value]="responseCurve()"
                         [disabled]="selectedAlgorithm() !== 'basic'"
                         [class]="'select select-sm w-full appearance-none rounded-md py-1 pl-2 pr-7 text-xs ' + effectiveTheme().button + ' ' + effectiveTheme().text"
@@ -496,7 +507,7 @@
                       <label class="relative inline-flex items-center cursor-pointer block text-sm text-black mb-2 w-full" [class.opacity-50]="isStyleFusionOn()" [class.cursor-not-allowed]="isStyleFusionOn()" title="Automatically switch themes at a set interval. Note that if this feature is enabled, then you cannot use the Sync Fusion slider/feature">
                         <input type="checkbox" [checked]="isAutoSwitching()" (change)="toggleAutoSwitch()" [disabled]="isStyleFusionOn()" class="sr-only peer">
                         <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-                      </label>                
+                      </label>
                     </div>
                 </div>
                   @if (isAutoSwitching()) {
@@ -541,7 +552,7 @@
                 </div>
               </div>
             }
-          </div>        
+          </div>
       </div>
     </aside>
   </main>
