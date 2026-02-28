@@ -32,7 +32,7 @@
         <button (click)="toggleCockpits()" 
                 [class]="'btn btn-sm gap-2 shadow-lg ' + effectiveTheme().button"
                 [class.btn-primary]="!showCockpits()">
-          <i class="fa-solid" [class.fa-sliders]="!showCockpits()" [class.fa-xmark]="showCockpits()"></i>
+          <i class="block text-sm mb-1 fa-solid" [class.fa-sliders]="!showCockpits()" [class.fa-xmark]="showCockpits()"></i>
           {{ showCockpits() ? 'Hide Cockpits' : 'Cockpits' }}
         </button>
       </div>
@@ -410,7 +410,7 @@
       <div class="space-y-6" [class.hidden]="isControlsCollapsed() && isMobile()">
           <!-- <h2 class="text-xl font-semibold mb-6 text-center">Controls Cockpit 2</h2>  -->
           <!-- Presets, Sensitivity, etc. -->
-          <div class="space-y-4">
+          <div class="space-y-4 ">
             <!-- Advanced Controls -->
             <h3 class="text-lg font-medium pt-4 w-40">Visualizer Engine</h3>        
               <button (click)="toggleKaleidoscope()" class="px-2 py-2 rounded-md transition-colors w-full h-10 text-xs" [class]="(isKaleidoscope() ? effectiveTheme().highlight : effectiveTheme().button) + ' ' + effectiveTheme().buttonHover" title="Toggle a psychedelic color cycling effect">
@@ -434,25 +434,25 @@
                       }
                     </div>
 
-            <div class="form-control">
-              <label class="label"><span class="label-text">Master Engine</span></label>
+            <div class="form-control block text-sm mb-1">
+              <label class="label block text-sm mb-1"><span class="label-text">Master Engine</span></label>
               <div class="join">
-                  <button (click)="visualizerEngine.set('synergy')" class="btn btn-sm join-item flex-1"  [class]="effectiveTheme().button" [class.btn-active]="visualizerEngine() === 'synergy'" title="Use the intelligent, adaptive Synergy Drive engine.">Synergy Drive</button>
-                  <button (click)="visualizerEngine.set('algorithm')" class="btn btn-sm join-item flex-1"  [class]="effectiveTheme().button" [class.btn-active]="visualizerEngine() === 'algorithm'" title="Use raw, high-impact algorithms from my research.">Algorithm Lab</button>
+                  <button (click)="visualizerEngine.set('synergy')" class="btn btn-sm join-item flex-1 block text-sm mb-1"  [class]="effectiveTheme().button" [class.btn-active]="visualizerEngine() === 'synergy'" title="Use the intelligent, adaptive Synergy Drive engine.">Synergy Drive</button>
+                  <button (click)="visualizerEngine.set('algorithm')" class="btn btn-sm join-item flex-1 block text-sm mb-1"  [class]="effectiveTheme().button" [class.btn-active]="visualizerEngine() === 'algorithm'" title="Use raw, high-impact algorithms from my research.">Algorithm Lab</button>
                 </div>
             </div>
             
             @if (visualizerEngine() === 'synergy') {
               <div class="form-control animate-fade-in">
-                <label class="label"><span class="label-text">Synergy Drive Mode</span></label>
+                <label class="label"><span class="block text-sm mb-1">Synergy Drive Mode</span></label>
                   <p class="text-sm text-center mt-2 text-gray-400">
                     Current mode ON is: <span class="font-medium text-white">{{ synergyDriveMode() | titlecase }}</span>
                   </p>
                 <div class="join" title="Synergy Drive automatically analyzes the music to apply dynamic visual effects.">
                     <button (click)="setSynergyDriveMode('smart')" class="btn btn-sm join-item flex-1"  [class]="effectiveTheme().button" [class.btn-active]="synergyDriveMode() === 'smart'" title="Smart Mode: Automatically switches between Rhythm, Atmosphere, and Transient based on the music.">Smart</button>
-                    <button (click)="setSynergyDriveMode('atmosphere')" class="btn btn-sm join-item flex-1"  [class]="effectiveTheme().button" [class.btn-active]="synergyDriveMode() === 'atmosphere'" title="Atmosphere Mode: Creates smooth, flowing visuals ideal for ambient music.">Atmosphere</button>
-                    <button (click)="setSynergyDriveMode('rhythm')" class="btn btn-sm join-item flex-1"  [class]="effectiveTheme().button" [class.btn-active]="synergyDriveMode() === 'rhythm'" title="Rhythm Mode: Emphasizes the bass and beat for rhythmic music.">Rhythm</button>
-                    <button (click)="setSynergyDriveMode('transient')" class="btn btn-sm join-item flex-1"  [class]="effectiveTheme().button" [class.btn-active]="synergyDriveMode() === 'transient'" title="Transient Mode: Reacts sharply to high-frequency sounds like cymbals and snares.">Super Sense</button>
+                    <button (click)="setSynergyDriveMode('atmosphere')" class="btn btn-sm join-item flex-1 block text-sm mb-1"  [class]="effectiveTheme().button" [class.btn-active]="synergyDriveMode() === 'atmosphere'" title="Atmosphere Mode: Creates smooth, flowing visuals ideal for ambient music.">Atmosphere</button>
+                    <button (click)="setSynergyDriveMode('rhythm')" class="btn btn-sm join-item flex-1 block text-sm mb-1"  [class]="effectiveTheme().button" [class.btn-active]="synergyDriveMode() === 'rhythm'" title="Rhythm Mode: Emphasizes the bass and beat for rhythmic music.">Rhythm</button>
+                    <button (click)="setSynergyDriveMode('transient')" class="btn btn-sm join-item flex-1 block text-sm mb-1"  [class]="effectiveTheme().button" [class.btn-active]="synergyDriveMode() === 'transient'" title="Transient Mode: Reacts sharply to high-frequency sounds like cymbals and snares.">Super Sense</button>
                   </div>
               </div>
             }
@@ -491,7 +491,7 @@
             <div class="flex justify-between items-center mb-1">
               <label class="block text-sm">Sensitivity: {{ effectiveSensitivity().toFixed(1) }}</label>
               <label class="label cursor-pointer p-0 gap-2" title="Automatically adjust sensitivity based on the song's volume.">
-                <span class="label-text text-xs">Auto</span>
+                <span class="block text-sm mb-1">Auto</span>
                 <input type="checkbox" class="toggle toggle-xs toggle-primary" [checked]="autoSensitivity()" (change)="toggleAutoSensitivity()" />
               </label>
             </div>
