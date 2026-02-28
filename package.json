@@ -1,7 +1,7 @@
 {
   "name": "audio-oasis-music-equalizer",
   "private": true,
-  "version": "3.1.1",
+  "version": "3.9.9",
   "type": "module",
   "scripts": {
     "dev": "ng serve",
@@ -17,6 +17,7 @@
     "@angular/core": "^21.1.0",
     "@angular/platform-browser": "^21.1.0",
     "@google/genai": "latest",
+    "three": "^0.183.1",
     "@vercel/analytics": "^1.6.1",
     "audit": "^0.0.6",
     "fix": "^0.0.6",

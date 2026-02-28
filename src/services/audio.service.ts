@@ -53,6 +53,7 @@ export class AudioService {
   beat = signal<{ strength: number, timestamp: number }>({ strength: 0, timestamp: 0 });
   transient = signal<{ intensity: number, timestamp: number }>({ intensity: 0, timestamp: 0 });
   detectedMusicProfile = signal<'atmosphere' | 'rhythm' | 'transient'>('rhythm');
+  peakVolume = signal(0);
 
   currentTrack = computed(() => {
     const idx = this.currentTrackIndex();
@@ -424,7 +425,9 @@ export class AudioService {
     // Set the raw FFT data for spectrum-based visuals
     this.frequencyData.set(dataArray);
 
-    // Run our new advanced detectors
+    // Update peak volume with smoothing
+    const currentMax = Math.max(...dataArray) / 255;
+    this.peakVolume.update(v => v * 0.95 + currentMax * 0.05);
     this.detectBeat(dataArray);
     this.detectTransient(dataArray);
     this.analyzeMusicProfile();

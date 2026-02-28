@@ -62,12 +62,27 @@ export class AppComponent implements OnInit, OnDestroy {
   private dataBuffers: Uint8Array[] = [];
   private readonly BUFFER_HISTORY_SIZE = 3;
 
+  sensitivity = signal(1.2);
+  autoSensitivity = signal(true);
+  effectiveSensitivity = computed(() => {
+    if (!this.autoSensitivity()) return this.sensitivity();
+    const peak = this.audioService.peakVolume();
+    if (peak < 0.01) return this.sensitivity();
+    // Target a normalized peak of ~0.7
+    const target = 0.7;
+    const dynamic = target / peak;
+    // Clamp to reasonable range
+    return Math.min(3.5, Math.max(0.5, dynamic));
+  });
 
-  sensitivity = signal(0.5); //was 1.2 too much
   backgroundImageUrl = signal<string | null>(null);
   decayFactor = signal(0.94);
   isMobile = signal(false);
   isControlsCollapsed = signal(false);
+  showCockpits = signal(true);
+  showCockpitButton = signal(false);
+  private cockpitAutoHideTimeout: any;
+
   private readonly resizeListener = () => {
     this.updateDecayFactor();
     this.isMobile.set(window.innerWidth < 768);
@@ -223,7 +238,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   visualizerBars = computed(() => {
     const data = this.audioService.frequencyData();
-    const sensitivityValue = this.sensitivity();
+    const sensitivityValue = this.effectiveSensitivity();
     const baseDecay = this.decayFactor();
     const driveMode = this.effectiveSynergyDriveMode();
     const beatInfo = this.beat();
@@ -598,6 +613,8 @@ export class AppComponent implements OnInit, OnDestroy {
 bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k'];
 
    themes: EqualizerTheme[] = [
+     { name: 'Voxel Waves', type: 'webgl', webglMode: 'voxel-waves', base: 'bg-black', display: '#000000', bar: '', sliderTrack: 'bg-cyan-900/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-300', accent: '#22d3ee', button: 'bg-cyan-900/70', buttonHover: 'hover:bg-cyan-800/70', highlight: 'bg-cyan-500/50' },
+    { name: 'Quantum Singularity', type: 'webgl', webglMode: 'quantum-singularity', base: 'bg-[#020008]', display: '#000000', bar: '', sliderTrack: 'bg-indigo-900/50', sliderThumb: 'bg-fuchsia-400', text: 'text-fuchsia-300', accent: '#d946ef', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-fuchsia-500/50' },
     { name: 'Cyberdeck', type: 'convex', base: 'cyberdeck-bg', display: 'cyberdeck-display', bar: 'bg-gradient-to-t from-cyan-500 to-orange shadow-[0_0_8px_rgba(34,211,238,0.8),0_0_20px_rgba(34,211,238,0.5)] rounded-t-sm', sliderTrack: 'bg-gray-800/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-200 font-mono', accent: 'text-fuchsia-400', button: 'btn-cyber', buttonHover: '', highlight: 'bg-cyan-400/20' },
     { name: 'Audio Terrain', type: 'webgl', webglMode: 'terrain', base: 'bg-gray-900', display: '#030712', bar: '', sliderTrack: 'bg-emerald-800/50', sliderThumb: 'bg-lime-400', text: 'text-lime-300', accent: '#d71230', button: 'bg-emerald-900/70', buttonHover: 'hover:bg-emerald-800/70', highlight: 'bg-lime-800/50' },
     { name: 'VoxelScape', type: 'webgl', webglMode: 'bars', base: 'bg-gray-900', display: '#2c509e', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: '#33775c', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-violet-500/50' },
@@ -691,14 +708,60 @@ bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k
     }
   }
 
-  onPlayPauseClick(): void { this.audioService.togglePlay(); }
+  onPlayPauseClick(): void { 
+    this.audioService.togglePlay(); 
+    if (this.isPlaying()) {
+      this.stashCockpits();
+    }
+  }
+
+  stashCockpits() {
+    this.showCockpits.set(false);
+    this.scheduleCockpitButtonHide();
+  }
+
+  toggleCockpits() {
+    this.showCockpits.update(v => !v);
+    if (this.showCockpits()) {
+      this.showCockpitButton.set(true);
+      this.scheduleCockpitButtonHide();
+    }
+  }
+
+  onVisualizerInteraction() {
+    this.showCockpitButton.set(true);
+    this.scheduleCockpitButtonHide();
+  }
+
+  private scheduleCockpitButtonHide() {
+    clearTimeout(this.cockpitAutoHideTimeout);
+    this.cockpitAutoHideTimeout = setTimeout(() => {
+      if (!this.showCockpits()) {
+        this.showCockpitButton.set(false);
+      }
+    }, 4000);
+  }
+
   onGainChange(event: Event, index: number) { this.audioService.changeGain(index, parseFloat((event.target as HTMLInputElement).value)); }
   onSeek(event: Event) { this.audioService.seek(parseFloat((event.target as HTMLInputElement).value)); }
-  onSensitivityChange(event: Event) { this.sensitivity.set(parseFloat((event.target as HTMLInputElement).value)); }
+  onSensitivityChange(event: Event) { 
+    this.sensitivity.set(parseFloat((event.target as HTMLInputElement).value)); 
+    this.autoSensitivity.set(false);
+  }
+  toggleAutoSensitivity() { this.autoSensitivity.update(v => !v); }
   onBarCountChange(event: Event) { this.barCount.set(parseInt((event.target as HTMLInputElement).value, 10)); }
   onBarSpacingChange(event: Event) { this.barSpacing.set(parseInt((event.target as HTMLInputElement).value, 10)); }
   setLightSource(position: LightSourcePosition) { this.lightSourcePosition.set(position); }
-  selectTheme(index: string) { const i = parseInt(index, 10); if (!isNaN(i) && i < this.themes.length) this.selectedTheme.set(this.themes[i]); }
+  selectTheme(index: string) { 
+    const i = parseInt(index, 10); 
+    if (!isNaN(i) && i < this.themes.length) {
+      this.selectedTheme.set(this.themes[i]);
+      // If LED theme is selected, automatically stash cockpits for a cleaner look
+      if (this.themes[i].type === 'led') {
+        this.stashCockpits();
+      }
+    }
+  }
   toggleAutoSwitch() { this.isAutoSwitching.update(v => !v); }
   setSwitchInterval(event: Event) { this.switchInterval.set(parseInt((event.target as HTMLSelectElement).value, 10)); }
   setSwitchMode(mode: 'sequential' | 'random') { this.switchMode.set(mode); }
@@ -731,7 +794,7 @@ bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   }
 
-  incrementLedWidth() { this.ledSegmentWidth.update(w => Math.min(16, w + 1)); } //was 18 to not flood the menu bars on the side
+  incrementLedWidth() { this.ledSegmentWidth.update(w => Math.min(24, w + 1)); }
   decrementLedWidth() { this.ledSegmentWidth.update(w => Math.max(2, w - 1)); }
   incrementLedHeight() { this.ledSegmentHeight.update(h => Math.min(16, h + 1)); }
   decrementLedHeight() { this.ledSegmentHeight.update(h => Math.max(1, h - 1)); }
@@ -877,4 +940,3 @@ bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k
       };
   }
 }
-

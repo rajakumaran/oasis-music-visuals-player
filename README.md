@@ -1,6 +1,46 @@
 # oasis-music-visuals-player
 
-# February/3rd/2026 #3:
+#  February/28th/2026
+#  This is a new set of enhancements and fixes that were overdue. Details below.
+I have implemented the requested enhancements and fixes for the Audio Oasis Equalizer.
+Key Changes:
+Cockpit Visibility Management:
+Automatic Stashing: The "Cockpits" (Controls and Player panels) now automatically hide when you click Play, clearing the entire screen for the WebGL visuals.
+Prominent Toggle Button: A new "Cockpits" button appears in the top-left corner. It allows you to bring back the controls at any time.
+Intelligent Autohide: The "Cockpits" button automatically fades out after 4 seconds of inactivity while music is playing, ensuring a truly immersive experience.
+Interaction-Based Reappearance: Simply move your mouse, touch the screen, or click anywhere on the visualizer to make the "Cockpits" button reappear instantly.
+Defect Fixes:
+LED Visual Fix: Resolved the "ugly" layout stashing when the Classic LED theme is active. The cockpits are now stashed cleanly using a smooth transition, allowing the LED bars to occupy the full display area properly.
+Landscape Optimization: The UI now intelligently yields space to the canvas in landscape mode, providing a seamless edge-to-edge visualization experience.
+New Visualizer: Voxel Waves:
+Inspired by the popular VoxelScape, I've crafted a new 3D mode called Voxel Waves.
+It features concentric rings of glowing cubes that pulse, rotate, and float based on the music's frequency ranges.
+You can find this new mode under the Voxel Waves theme in the theme selector.
+How to use:
+Select the Voxel Waves theme to see the new 3D ring visualizer.
+Click Play to enter "Immersive Mode" where the UI stashes away.
+Hover or touch the screen to see the Cockpits button and bring back your controls.
+The application is now more focused on the visual experience while maintaining easy access to its powerful customization tools.
+I have implemented the next-level enhancements you requested, focusing on both intelligent audio analysis and a truly immersive new visualization.
+1. Intelligent Auto-Sensitivity (AGC)
+I've implemented a "Next Level" Auto-Sensitivity engine.
+Dynamic Normalization: The app now continuously analyzes the "Peak Volume" of the current track. If a song is too quiet, it automatically boosts the sensitivity; if it's a high-energy track, it scales it back to prevent visual clipping.
+Smooth Transitions: The sensitivity adjustments are smoothed out so the visuals don't "jump" during sudden volume changes, maintaining a professional, polished look.
+User Control: You'll find a new "Auto" toggle next to the Sensitivity slider. You can turn it off anytime to take manual control, but it's enabled by default for the best "out-of-the-box" experience.
+2. Next-Level Visualizer: "Quantum Singularity"
+To push the boundaries of the visual experience, I've crafted the Quantum Singularity mode. This isn't just bars or waves; it's a simulated celestial event:
+The Singularity Core: A central dark sphere that pulses and glows with the bass. It feels like the heart of the music.
+Accretion Disk: Thousands of particles swirl around the core in a complex, multi-layered disk. The rotation speed and vertical turbulence are tied to the mids and rhythm of the track.
+Hawking Radiation: On every beat and transient, high-energy particles shoot out from the poles of the singularity, creating a dramatic "explosion" effect that perfectly syncs with the music's impact.
+Gravitational Wobble: The entire system subtly tilts and wobbles based on the overall energy, making it feel like a living, breathing entity.
+How to Experience It:
+Open the Theme selector and choose "Quantum Singularity".
+Notice the "Auto" toggle next to the Sensitivity slider—watch it work its magic as different tracks play.
+Click Play and let the cockpits hide to see the full majesty of the singularity on your 40-inch screen.
+These updates bring a new level of sophistication to the Audio Oasis, making it feel more like a high-end scientific instrument than a simple music player. Enjoy the journey into the quantum realm!
+
+
+#  February/3rd/2026 #3:
 this check-in is the one along with the new features!
 Very good. I discovered about the quality of the visualization bars' synchronized dancing. You've already proved that loud and clear and I've tested it with various music albums. Here are my instructions and expectations for u take it to the next level.
 If at all possible try to segregate more ranges if you can, so u can allocate more ranges to each bar group IMO. Right now u have the low mid and hi range I believe. So the bars more intune with the playing music.

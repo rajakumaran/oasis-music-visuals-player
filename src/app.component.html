@@ -4,7 +4,7 @@
       <i class="fa-solid fa-wave-square mr-1"></i>MUSIC & VISUALS OASIS
     </h2>
     <p class="text-sm hidden md:block">
-      Built by Kumar(Muthukumaran) Azhagesan. Linktree:
+      Concept, design, and build by Kumar(Muthukumaran) Azhagesan. Linktree:
       <a href="https://tr.ee/XQ0qKh" target="_blank" class="hover:underline" [class]="effectiveTheme().accent">https://tr.ee/XQ0qKh</a>
     </p>
     <div class="flex items-center gap-4">
@@ -25,6 +25,17 @@
       
     <!-- Visualizer area -->
      <section id="visualizer-section" class="flex-1 relative flex flex-col min-h-0">
+ <!-- Cockpits Toggle Button -->
+      <div class="absolute top-4 left-4 z-50 transition-all duration-500"
+           [class.opacity-0]="!showCockpitButton() && !showCockpits()"
+           [class.pointer-events-none]="!showCockpitButton() && !showCockpits()">
+        <button (click)="toggleCockpits()" 
+                [class]="'btn btn-sm gap-2 shadow-lg ' + effectiveTheme().button"
+                [class.btn-primary]="!showCockpits()">
+          <i class="fa-solid" [class.fa-sliders]="!showCockpits()" [class.fa-xmark]="showCockpits()"></i>
+          {{ showCockpits() ? 'Hide Cockpits' : 'Cockpits' }}
+        </button>
+      </div>
       <div id="visualizer-display-wrapper" class="relative flex-1 bg-cover bg-center" [style.background-image]="backgroundImageUrl() ? 'url(' + backgroundImageUrl()! + ')' : null">
         <app-fullscreen-toggle targetElementId="visualizer-display-wrapper"></app-fullscreen-toggle>
         <div [class]="'absolute inset-0 transition-opacity ' + effectiveTheme().display"></div>
@@ -236,8 +247,8 @@
       </div>
 
       <!-- Player controls -->
-      @if (audioSource() === 'file') {
-        <footer class="flex-shrink-0 bg-gradient-to-t from-black/80 to-transparent p-6 w-full">
+      @if (audioSource() === 'file' && showCockpits()) {
+        <footer class="flex-shrink-0 bg-gradient-to-t from-black/80 to-transparent p-6 w-full z-20 transition-all duration-500 ease-in-out">
           @if (currentTrack(); as track) {
             <div class="text-center mb-4">
               <h3 class="font-medium truncate" [title]="track.name">{{ track.name }}</h3>
@@ -274,7 +285,7 @@
 
 
     <!-- Visualizer area was here initially -->
-    <aside
+    <aside  *ngIf="showCockpits()" 
       class="w-full md:w-80 bg-gray-900/80 backdrop-blur-sm border-r border-gray-800 p-6 overflow-y-auto transition-all duration-300"
       [class.hidden]="isControlsCollapsed() && isMobile()">
         <div class="flex justify-between items-center mb-4">
@@ -387,7 +398,7 @@
     </aside>
 
     <!-- Cockpit 2 -->
-    <aside
+    <aside  *ngIf="showCockpits()" 
       class="w-full h-full md:w-80 bg-gray-900/80 backdrop-blur-sm border-r border-green-300 p-6 overflow-y-auto transition-all duration-300"
       [class.hidden]="isControlsCollapsed() && isMobile()">
       <div class="flex justify-between items-center mb-4">
@@ -472,10 +483,20 @@
               </div>
             }
 
-            <div>
+            <!--<div>
               <label class="block text-sm mb-1">Sensitivity: {{ sensitivity().toFixed(1) }}</label>
               <input type="range" min="0.5" max="3" step="0.1" [value]="sensitivity()" (input)="onSensitivityChange($event)" class="range range-primary range-sm" title="Adjusts the overall height and reactivity of the visuals." />
+            </div>-->
+             <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-sm">Sensitivity: {{ effectiveSensitivity().toFixed(1) }}</label>
+              <label class="label cursor-pointer p-0 gap-2" title="Automatically adjust sensitivity based on the song's volume.">
+                <span class="label-text text-xs">Auto</span>
+                <input type="checkbox" class="toggle toggle-xs toggle-primary" [checked]="autoSensitivity()" (change)="toggleAutoSensitivity()" />
+              </label>
             </div>
+            <input type="range" min="0.5" max="5" step="0.1" [value]="sensitivity()" (input)="onSensitivityChange($event)" class="range range-primary range-sm" title="Adjusts the overall height and reactivity of the visuals." />
+          </div>
             
             <div>
               <label class="block text-sm mb-1">Bar Density: {{ barCount() }}</label>

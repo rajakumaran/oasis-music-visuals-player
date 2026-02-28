@@ -39,6 +39,11 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
   private baseLightIntensity = 1.5;
   private cubes: THREE.Mesh[] = [];
   private terrainMesh!: THREE.Mesh;
+  private voxelWavesGroup!: THREE.Group;
+  private singularityGroup!: THREE.Group;
+  private singularityCore!: THREE.Mesh;
+  private accretionDisk!: THREE.Points;
+  private hawkingParticles!: THREE.Points;
   private animationFrameId: number | null = null;
   private clock = new THREE.Clock();
   
@@ -82,13 +87,6 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
         const webglMode = this.theme().webglMode || 'bars';
         this.toggleVisualizerMode(webglMode);
     });
-
-    // --- Camera Rotation Effect --- this effect is ugly and not pleasant, hence commentin it out
-    // effect(() => {
-    //     if (this.controls) {
-    //         this.controls.autoRotate = this.isPlaying();
-    //     }
-    // });
   }
 
   ngAfterViewInit(): void {
@@ -182,12 +180,32 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
       this.terrainMesh.geometry.dispose();
       (this.terrainMesh.material as THREE.Material).dispose();
     }
+    if (this.voxelWavesGroup) {
+      this.scene.remove(this.voxelWavesGroup);
+      this.voxelWavesGroup.children.forEach(child => {
+        if (child instanceof THREE.Mesh) {
+          child.geometry.dispose();
+          (child.material as THREE.Material).dispose();
+        }
+      });
+    }
+    if (this.singularityGroup) {
+      this.scene.remove(this.singularityGroup);
+      this.singularityCore.geometry.dispose();
+      (this.singularityCore.material as THREE.Material).dispose();
+      this.accretionDisk.geometry.dispose();
+      (this.accretionDisk.material as THREE.Material).dispose();
+      this.hawkingParticles.geometry.dispose();
+      (this.hawkingParticles.material as THREE.Material).dispose();
+    }
   }
 
   private recreateVisualizers(): void {
     this.disposeSceneContent();
     this.createBarVisualizer();
     this.createTerrainVisualizer();
+    this.createVoxelWavesVisualizer();
+    this.createSingularityVisualizer();
   }
 
   private createBarVisualizer() {
@@ -248,9 +266,105 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
       this.scene.add(this.terrainMesh);
   }
 
-  private toggleVisualizerMode(mode: 'bars' | 'terrain') {
+  private createVoxelWavesVisualizer() {
+    this.voxelWavesGroup = new THREE.Group();
+    const numRings = 8;
+    const cubesPerRing = 16;
+    const geometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+    
+    for (let r = 0; r < numRings; r++) {
+      const radius = (r + 1) * 2.5;
+      for (let i = 0; i < cubesPerRing; i++) {
+        const angle = (i / cubesPerRing) * Math.PI * 2;
+        const material = new THREE.MeshStandardMaterial({
+          color: this.theme().accent,
+          emissive: this.theme().accent,
+          emissiveIntensity: 0.5
+        });
+        const cube = new THREE.Mesh(geometry, material);
+        cube.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+        cube.castShadow = true;
+        cube.receiveShadow = true;
+        this.voxelWavesGroup.add(cube);
+      }
+    }
+    this.scene.add(this.voxelWavesGroup);
+  }
+
+  private createSingularityVisualizer() {
+    this.singularityGroup = new THREE.Group();
+    
+    // Core
+    const coreGeom = new THREE.SphereGeometry(2, 32, 32);
+    const coreMat = new THREE.MeshStandardMaterial({
+      color: 0x000000,
+      roughness: 0,
+      metalness: 1,
+      emissive: this.theme().accent,
+      emissiveIntensity: 0.2
+    });
+    this.singularityCore = new THREE.Mesh(coreGeom, coreMat);
+    this.singularityGroup.add(this.singularityCore);
+    
+    // Accretion Disk
+    const diskCount = 2000;
+    const diskGeom = new THREE.BufferGeometry();
+    const diskPos = new Float32Array(diskCount * 3);
+    const diskColors = new Float32Array(diskCount * 3);
+    const accent = new THREE.Color(this.theme().accent);
+    
+    for (let i = 0; i < diskCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 4 + Math.random() * 8;
+      diskPos[i * 3] = Math.cos(angle) * radius;
+      diskPos[i * 3 + 1] = (Math.random() - 0.5) * 0.5;
+      diskPos[i * 3 + 2] = Math.sin(angle) * radius;
+      
+      diskColors[i * 3] = accent.r;
+      diskColors[i * 3 + 1] = accent.g;
+      diskColors[i * 3 + 2] = accent.b;
+    }
+    diskGeom.setAttribute('position', new THREE.BufferAttribute(diskPos, 3));
+    diskGeom.setAttribute('color', new THREE.BufferAttribute(diskColors, 3));
+    
+    const diskMat = new THREE.PointsMaterial({
+      size: 0.05,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.6,
+      blending: THREE.AdditiveBlending
+    });
+    this.accretionDisk = new THREE.Points(diskGeom, diskMat);
+    this.singularityGroup.add(this.accretionDisk);
+    
+    // Hawking Radiation
+    const hawkingCount = 500;
+    const hawkingGeom = new THREE.BufferGeometry();
+    const hawkingPos = new Float32Array(hawkingCount * 3);
+    for (let i = 0; i < hawkingCount; i++) {
+      hawkingPos[i * 3] = 0;
+      hawkingPos[i * 3 + 1] = 0;
+      hawkingPos[i * 3 + 2] = 0;
+    }
+    hawkingGeom.setAttribute('position', new THREE.BufferAttribute(hawkingPos, 3));
+    const hawkingMat = new THREE.PointsMaterial({
+      size: 0.1,
+      color: this.theme().accent,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending
+    });
+    this.hawkingParticles = new THREE.Points(hawkingGeom, hawkingMat);
+    this.singularityGroup.add(this.hawkingParticles);
+    
+    this.scene.add(this.singularityGroup);
+  }
+
+  private toggleVisualizerMode(mode: 'bars' | 'terrain' | 'voxel-waves' | 'quantum-singularity') {
       this.cubes.forEach(c => c.visible = mode === 'bars');
       if (this.terrainMesh) this.terrainMesh.visible = mode === 'terrain';
+      if (this.voxelWavesGroup) this.voxelWavesGroup.visible = mode === 'voxel-waves';
+      if (this.singularityGroup) this.singularityGroup.visible = mode === 'quantum-singularity';
   }
 
   private updateSceneFromTheme(theme: EqualizerTheme, profile: MusicProfile) {
@@ -262,6 +376,21 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
       (cube.material as THREE.MeshStandardMaterial).color.set(accentColor);
       (cube.material as THREE.MeshStandardMaterial).emissive.set(accentColor);
     });
+
+    if (this.voxelWavesGroup) {
+      this.voxelWavesGroup.children.forEach(child => {
+        if (child instanceof THREE.Mesh) {
+          (child.material as THREE.MeshStandardMaterial).color.set(accentColor);
+          (child.material as THREE.MeshStandardMaterial).emissive.set(accentColor);
+        }
+      });
+    }
+
+    if (this.singularityGroup) {
+      (this.singularityCore.material as THREE.MeshStandardMaterial).emissive.set(accentColor);
+      (this.accretionDisk.material as THREE.PointsMaterial).color.set(accentColor);
+      (this.hawkingParticles.material as THREE.PointsMaterial).color.set(accentColor);
+    }
     
     if (this.terrainMesh) {
       (this.terrainMesh.material as THREE.ShaderMaterial).uniforms.colorAccent.value = accentColor;
@@ -281,6 +410,8 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
     const elapsedTime = this.clock.getElapsedTime();
 
     if (this.theme().webglMode === 'terrain') this.animateTerrain(barData);
+    else if (this.theme().webglMode === 'voxel-waves') this.animateVoxelWaves(barData, elapsedTime);
+    else if (this.theme().webglMode === 'quantum-singularity') this.animateSingularity(barData, elapsedTime);
     else this.animateBars(barData);
 
     this.directionalLight.intensity += (this.baseLightIntensity - this.directionalLight.intensity) * 0.05;
@@ -321,6 +452,84 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
       }
       positions.needsUpdate = true;
   }
+
+  private animateVoxelWaves(barData: number[], elapsedTime: number) {
+    if (!this.voxelWavesGroup) return;
+    const children = this.voxelWavesGroup.children;
+    const numRings = 8;
+    const cubesPerRing = 16;
+    
+    children.forEach((child, index) => {
+      const ringIndex = Math.floor(index / cubesPerRing);
+      const cubeIndexInRing = index % cubesPerRing;
+      const barIndex = Math.floor((ringIndex / numRings) * barData.length);
+      const energy = barData[barIndex] || 0;
+      
+      const targetY = energy * 10;
+      child.position.y += (targetY - child.position.y) * 0.1;
+      child.scale.setScalar(1 + energy * 2);
+      child.rotation.y += 0.01 + energy * 0.05;
+      
+      // Floating motion
+      child.position.y += Math.sin(elapsedTime * 2 + ringIndex) * 0.2;
+    });
+    
+    this.voxelWavesGroup.rotation.y += 0.002;
+  }
+
+  private animateSingularity(barData: number[], elapsedTime: number) {
+    if (!this.singularityGroup) return;
+    
+    const bass = barData.slice(0, 4).reduce((a, b) => a + b, 0) / 4;
+    const mids = barData.slice(4, 20).reduce((a, b) => a + b, 0) / 16;
+    const treble = barData.slice(barData.length - 16).reduce((a, b) => a + b, 0) / 16;
+    
+    // Core pulse
+    const coreScale = 1 + bass * 1.5;
+    this.singularityCore.scale.setScalar(coreScale);
+    (this.singularityCore.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.2 + bass * 2;
+    
+    // Accretion Disk rotation and distortion
+    this.accretionDisk.rotation.y += 0.01 + bass * 0.05;
+    this.accretionDisk.rotation.z = Math.sin(elapsedTime * 0.5) * 0.2;
+    
+    const diskPositions = this.accretionDisk.geometry.attributes.position.array as Float32Array;
+    for (let i = 0; i < diskPositions.length / 3; i++) {
+        const yBase = diskPositions[i * 3 + 1];
+        // Add some vertical wobble
+        diskPositions[i * 3 + 1] = Math.sin(elapsedTime * 2 + i) * 0.1 * mids;
+    }
+    this.accretionDisk.geometry.attributes.position.needsUpdate = true;
+    
+    // Hawking Radiation
+    const hawkingPositions = this.hawkingParticles.geometry.attributes.position.array as Float32Array;
+    const beat = this.beat();
+    if (beat.timestamp > this.lastBeatTimestamp) {
+      // Reset some particles to origin and give them velocity
+      for (let i = 0; i < 50; i++) {
+        const idx = Math.floor(Math.random() * (hawkingPositions.length / 3));
+        hawkingPositions[idx * 3] = 0;
+        hawkingPositions[idx * 3 + 1] = (Math.random() - 0.5) * 2;
+        hawkingPositions[idx * 3 + 2] = 0;
+      }
+    }
+    
+    for (let i = 0; i < hawkingPositions.length / 3; i++) {
+      // Move particles outward
+      const speed = 0.1 + treble * 0.5;
+      const y = hawkingPositions[i * 3 + 1];
+      const dir = y >= 0 ? 1 : -1;
+      hawkingPositions[i * 3 + 1] += dir * speed;
+      
+      // Reset if too far
+      if (Math.abs(hawkingPositions[i * 3 + 1]) > 20) {
+        hawkingPositions[i * 3 + 1] = 0;
+      }
+    }
+    this.hawkingParticles.geometry.attributes.position.needsUpdate = true;
+    
+    this.singularityGroup.rotation.z = Math.sin(elapsedTime * 0.2) * 0.1;
+  }
   
   private animateCamera(barData: number[], elapsedTime: number) {
       if (!this.isPlaying()) return;
@@ -353,6 +562,5 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
 
       this.camera.updateProjectionMatrix();
     }
-
-   }
+  }
 }
