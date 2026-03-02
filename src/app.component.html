@@ -37,7 +37,7 @@
         </button>
       </div>
 
-      <div id="visualizer-display-wrapper" class="relative flex-1 bg-cover bg-center" [style.background-image]="backgroundImageUrl() ? 'url(' + backgroundImageUrl()! + ')' : null">
+      <div id="visualizer-display-wrapper" class="relative flex-1 bg-cover bg-center overflow-hidden" [style.background-image]="backgroundImageUrl() ? 'url(' + backgroundImageUrl()! + ')' : null">
         <app-fullscreen-toggle targetElementId="visualizer-display-wrapper"></app-fullscreen-toggle>
         <div [class]="'absolute inset-0 transition-opacity ' + effectiveTheme().display"></div>
         
@@ -59,8 +59,8 @@
                 />
               }
               @case ('aura') {
-                <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-                  <defs><filter id="auraGlow"><feGaussianBlur stdDeviation="1.5"></feGaussianBlur></filter></defs>
+                <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style="overflow:hidden">
+                  <defs><filter id="auraGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.5"></feGaussianBlur></filter></defs>
                   <g class="aura-viz" filter="url(#auraGlow)">
                     @for(ring of auraRings(); track ring.id) {
                       <circle cx="50" cy="50" fill="none" [attr.r]="ring.radius" [style.stroke]="'hsl(' + ring.hue + ', 100%, 70%)'" [style.stroke-width]="ring.thickness" [style.opacity]="ring.opacity"></circle>
@@ -141,9 +141,9 @@
                 </svg>
               }
               @case ('plasma') {
-                <svg class="w-full h-full" viewBox="0 0 320 160" preserveAspectRatio="none">
+                <svg class="w-full h-full" viewBox="0 0 320 160" preserveAspectRatio="none" style="overflow:hidden">
                   <defs>
-                    <filter id="plasmaGlow"><feGaussianBlur stdDeviation="3" result="blur"></feGaussianBlur><feBlend in="SourceGraphic" in2="blur" mode="screen"></feBlend></filter>
+                    <filter id="plasmaGlow" x="-15%" y="-15%" width="130%" height="130%"><feGaussianBlur stdDeviation="3" result="blur"></feGaussianBlur><feBlend in="SourceGraphic" in2="blur" mode="screen"></feBlend></filter>
                   </defs>
                   <g class="plasma-field" filter="url(#plasmaGlow)">
                     @for(path of plasmaPaths(); track path.id) {
@@ -163,9 +163,9 @@
                 </svg>
               }
                @case ('aura') {
-                <svg class="w-full h-full" viewBox="-150 -100 300 200" preserveAspectRatio="xMidYMid meet">
-                  <defs>
-                    <filter id="auraGlow"><feGaussianBlur stdDeviation="3.5" result="coloredBlur"></feGaussianBlur><feMerge><feMergeNode in="coloredBlur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter>
+                  <svg class="w-full h-full" viewBox="-150 -100 300 200" preserveAspectRatio="xMidYMid meet" style="overflow:hidden">
+                    <defs>
+                      <filter id="auraGlow" x="-25%" y="-25%" width="150%" height="150%"><feGaussianBlur stdDeviation="3.5" result="coloredBlur"></feGaussianBlur><feMerge><feMergeNode in="coloredBlur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter>
                     <radialGradient id="auraCoreGradient"><stop offset="0%" stop-color="rgba(255,255,255,0.8)"></stop><stop offset="100%" stop-color="rgba(255,255,255,0)"></stop></radialGradient>
                   </defs>
                   <g class="aura-bloom-viz" filter="url(#auraGlow)">

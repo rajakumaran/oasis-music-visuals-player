@@ -3,6 +3,28 @@
 
 
 #  March/1st/2026
+Latest DONE: 
+Both fixes are in! Here's what was done:
+
+🍎 iOS Audio — Root Cause Found (2nd layer)
+The previous fix unlocked AudioContext correctly, but there were two more hidden issues:
+
+Issue 1 — await before play() broke iOS gesture chain
+
+audioContext.resume()  // ← was awaited! 
+                       // iOS forfeits play() permission across this await boundary
+audio.play()           // ← arrived too late, NotAllowedError
+Fix: audioContext.resume() is now fire-and-forget (no await), so play() is called in the same microtask, still within the gesture window.
+
+Issue 2 — HTMLAudioElement also needs its own gesture unlock The prewarm was only unlocking AudioContext. iOS actually requires both the context AND the audio element to be unlocked within a gesture. Fixed by calling audioElement.play().then(() => audioElement.pause()) silently during first touch.
+
+📺 Visualizer Overflow Fixed
+SVG filter effects (Aura's feGaussianBlur etc.) were bleeding outside their container. Three-layer fix:
+
+#visualizer-display-wrapper → overflow-hidden (HTML layer clip)
+.visualizer-content-host → overflow: hidden (CSS layer clip)
+Aura, Plasma, AuraBloom SVG filters → explicit x/y/width/height to constrain the blur expansion zone
+iPhone test flow after deploying: Open Safari → touch anywhere → tap Play. Should start immediately. If it still doesn't play the first tap, try a second tap — the first tap might be consumed by the prewarm still initializing the audio element.
 
 DONE:
 Both issues are fixed! Here's a summary of everything done across 5 files:

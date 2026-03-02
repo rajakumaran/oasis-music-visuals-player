@@ -93,14 +93,19 @@ export class AudioService {
 
   private async playCurrentTrackWithFadeIn() {
     try {
+      // IMPORTANT FOR iOS: Do NOT await audioContext.resume() before calling play().
+      // Any await before audio.play() breaks the iOS user-gesture chain, causing
+      // "The request is not allowed by the user agent" NotAllowedError.
+      // Instead: fire resume() without awaiting, then call play() immediately.
       if (this.audioContext?.state === 'suspended') {
-        await this.audioContext.resume();
+        this.audioContext.resume(); // fire-and-forget — intentionally no await
       }
 
       if (this.audioElement?.paused) {
-        await this.audioElement?.play();
+        await this.audioElement.play(); // play() is now directly within gesture scope
       }
 
+      // Apply crossfade gain ramp AFTER play has started
       if (this.isCrossfadeEnabled() && this.masterGainNode && this.audioContext) {
         this.masterGainNode.gain.cancelScheduledValues(this.audioContext.currentTime);
         this.masterGainNode.gain.setValueAtTime(this.masterGainNode.gain.value, this.audioContext.currentTime);
@@ -110,9 +115,9 @@ export class AudioService {
       }
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') {
-        // This can happen if the user rapidly clicks play/pause. The new state (e.g. paused) is the desired outcome, so we can ignore this error.
+        // Rapid play/pause clicks — desired state (paused) already achieved.
       } else {
-        console.error("Play failed:", e);
+        console.error('Play failed:', e);
         this.isPlaying.set(false);
       }
     }
@@ -156,17 +161,31 @@ export class AudioService {
   }
 
   /**
-   * Pre-warms the AudioContext on iOS.
-   * iOS Safari requires AudioContext to be created *synchronously* during a user
-   * gesture. Call this on the very first touchstart, before the user taps Play.
-   * Creates the context (unlocking it) then immediately suspends to save battery.
+   * Pre-warms BOTH the AudioContext AND HTMLAudioElement on iOS.
+   *
+   * iOS Safari requires two separate unlocks, each within a user gesture:
+   * 1. AudioContext must be created (and optionally resumed) during a gesture.
+   * 2. HTMLAudioElement.play() must also be called during a gesture to make
+   *    subsequent play() calls work without the NotAllowedError.
+   *
+   * We do a silent play→pause on the audio element to unlock it, then suspend
+   * the AudioContext to save battery. Both happen within the first touchstart.
    */
   async prewarmForIos(): Promise<void> {
     if (this.audioContext) return; // Already initialized
     await this.initAudioContext();
-    // Immediately suspend — we just need to unlock it, not play yet
+
+    // Unlock the HTMLAudioElement: play silence, immediately pause.
+    // This arms iOS to allow future play() calls without a gesture.
+    if (this.audioElement) {
+      this.audioElement.play()
+        .then(() => { this.audioElement!.pause(); })
+        .catch(() => { /* expected — no src loaded yet, ignore */ });
+    }
+
+    // Suspend the AudioContext to save battery — resume() is called on Play.
     if (this.audioContext?.state === 'running') {
-      await this.audioContext.suspend();
+      this.audioContext.suspend();
     }
   }
 

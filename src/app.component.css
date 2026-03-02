@@ -295,6 +295,8 @@ input[type=range].vertical {
 .visualizer-content-host {
   transition: filter 100ms linear;
   will-change: filter;
+  overflow: hidden;
+  /* prevent SVG filter bleed (Aura, plasma glow, etc.) outside panel */
 }
 
 /* --- Holiday Christmas Full Background --- */
@@ -494,6 +496,7 @@ input[type=range].vertical {
 .visualizer-content-host {
   transition: filter 100ms linear;
   will-change: filter;
+  overflow: hidden;
 }
 
 .ford-circles-viz circle {
