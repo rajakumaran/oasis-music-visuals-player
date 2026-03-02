@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, ElementRef, AfterViewInit, OnDestroy, ViewChild, input, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ElementRef, AfterViewInit, OnDestroy, ViewChild, input, effect, output } from '@angular/core';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
@@ -28,6 +28,8 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
   beat = input.required<{ strength: number, timestamp: number }>();
   musicProfile = input.required<MusicProfile>();
 
+  interaction = output<void>();
+
   // Three.js properties
   private renderer!: THREE.WebGLRenderer;
   private scene!: THREE.Scene;
@@ -46,6 +48,8 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
   private hawkingParticles!: THREE.Points;
   private animationFrameId: number | null = null;
   private clock = new THREE.Clock();
+  private isUserInteracting = false;
+  private lastInteractionTime = 0;
   
   // Bar physics state
   private cubeStates: { velocity: number }[] = [];
@@ -69,7 +73,7 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
              const beatImpulse = currentBeat.strength * 0.1; // Slightly increased impulse //WAS 0.35 Google suggests 0.4//
             this.cubeStates.forEach((state, i) => {
                 // Stronger impulse for lower frequency bars
-                const impulseFactor = Math.max(0, 1 - (i / this.cubes.length) * 0.1); //Google suggests 0.7
+                const impulseFactor = Math.max(0, 1 - (i / this.cubes.length) * 0.7); //Google suggests 0.7
                 state.velocity += beatImpulse * impulseFactor;
             });
         }
@@ -133,6 +137,17 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
     this.controls.maxPolarAngle = Math.PI / 2 - 0.05;
     this.controls.target.set(0, 2, 0);
     this.controls.autoRotate = this.isPlaying(); this.controls.autoRotateSpeed = 0.5;
+    
+    this.controls.addEventListener('start', () => {
+      this.isUserInteracting = true;
+      this.lastInteractionTime = performance.now();
+      this.interaction.emit();
+    });
+    this.controls.addEventListener('end', () => {
+      this.isUserInteracting = false;
+      this.lastInteractionTime = performance.now();
+    });
+
     this.controls.update();
     this.initialCameraDistance = this.camera.position.distanceTo(this.controls.target);
   }
@@ -465,13 +480,16 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
       const barIndex = Math.floor((ringIndex / numRings) * barData.length);
       const energy = barData[barIndex] || 0;
       
-      const targetY = energy * 10;
+      // Respect view area: limit Y height
+      const targetY = energy * 6;
       child.position.y += (targetY - child.position.y) * 0.1;
-      child.scale.setScalar(1 + energy * 2);
+      
+      // Limit scaling
+      child.scale.setScalar(1 + energy * 1.5);
       child.rotation.y += 0.01 + energy * 0.05;
       
       // Floating motion
-      child.position.y += Math.sin(elapsedTime * 2 + ringIndex) * 0.2;
+      child.position.y += Math.sin(elapsedTime * 2 + ringIndex) * 0.15;
     });
     
     this.voxelWavesGroup.rotation.y += 0.002;
@@ -533,20 +551,31 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
   
   private animateCamera(barData: number[], elapsedTime: number) {
       if (!this.isPlaying()) return;
+      
+      // If user is interacting or recently interacted, don't override camera position
+      const timeSinceInteraction = performance.now() - this.lastInteractionTime;
+      if (this.isUserInteracting || timeSinceInteraction < 3000) {
+        this.controls.autoRotate = false;
+        return;
+      }
+
+      this.controls.autoRotate = true;
       const avgBarHeight = barData.length > 0 ? barData.reduce((a, b) => a + b, 0) / barData.length : 0;
       this.controls.autoRotateSpeed = 0.2 + avgBarHeight * 0.8;
       
-      // Periodic zoom ("breathing") effect
-      const zoomAmplitude = 2.5;
-      const zoomFrequency = 0.15;
-      const zoomOffset = Math.sin(elapsedTime * 0.15) * 2.5;
+      // Subtle zoom effect that respects the current distance
+      const zoomOffset = Math.sin(elapsedTime * 0.15) * 1.5;
       const targetDistance = this.initialCameraDistance + zoomOffset;
       
       const currentDistance = this.camera.position.distanceTo(this.controls.target);
       const newDistance = THREE.MathUtils.lerp(currentDistance, targetDistance, 0.05); // Smooth interpolation
       
-      const direction = this.camera.position.clone().sub(this.controls.target).normalize();
-      this.camera.position.copy(this.controls.target.clone().add(direction.multiplyScalar(newDistance)));
+      // Only lerp if we are reasonably close to the target distance to avoid "snapping"
+      if (Math.abs(currentDistance - targetDistance) < 10) {
+        const newDistance = THREE.MathUtils.lerp(currentDistance, targetDistance, 0.02);
+        const direction = this.camera.position.clone().sub(this.controls.target).normalize();
+        this.camera.position.copy(this.controls.target.clone().add(direction.multiplyScalar(newDistance)));
+      }
   }
   // Handle canvas resizing
   private handleResize() {

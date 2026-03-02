@@ -446,7 +446,6 @@ export class AudioService {
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
-      // Clear the bars when visualization stops
       this.frequencyData.set(new Uint8Array(FFT_SIZE / 2));
       this.lastFftFrame = null;
       this.beatHistory.bass.fill(0);

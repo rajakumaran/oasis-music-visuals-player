@@ -88,6 +88,10 @@ export class AppComponent implements OnInit, OnDestroy {
     this.isMobile.set(window.innerWidth < 768);
   };
 
+  private readonly globalTouchListener = () => {
+    this.onVisualizerInteraction();
+  };
+
   barCount = signal(window.innerWidth > 1024 ? 96 : 64); // Adaptive bar count
   barSpacing = signal(2);
   private smoothedBars: number[] = [];
@@ -178,12 +182,14 @@ export class AppComponent implements OnInit, OnDestroy {
     this.isMobile.set(window.innerWidth < 768);
     this.updateDecayFactor();
     window.addEventListener('resize', this.resizeListener);
+    window.addEventListener('touchstart', this.globalTouchListener, { passive: true });
     this.setupTicker();
     this.scheduleOpportunisticTicker();
   }
 
   ngOnDestroy(): void {
     window.removeEventListener('resize', this.resizeListener);
+    window.removeEventListener('touchstart', this.globalTouchListener);
     if (this.tickerInterval) clearInterval(this.tickerInterval);
     this.stopAutoSwitching();
     this.stopKaleidoscope();
@@ -617,6 +623,9 @@ bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k
     { name: 'Quantum Singularity', type: 'webgl', webglMode: 'quantum-singularity', base: 'bg-[#020008]', display: '#000000', bar: '', sliderTrack: 'bg-indigo-900/50', sliderThumb: 'bg-fuchsia-400', text: 'text-fuchsia-300', accent: '#d946ef', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-fuchsia-500/50' },
     { name: 'Cyberdeck', type: 'convex', base: 'cyberdeck-bg', display: 'cyberdeck-display', bar: 'bg-gradient-to-t from-cyan-500 to-orange shadow-[0_0_8px_rgba(34,211,238,0.8),0_0_20px_rgba(34,211,238,0.5)] rounded-t-sm', sliderTrack: 'bg-gray-800/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-200 font-mono', accent: 'text-fuchsia-400', button: 'btn-cyber', buttonHover: '', highlight: 'bg-cyan-400/20' },
     { name: 'Audio Terrain', type: 'webgl', webglMode: 'terrain', base: 'bg-gray-900', display: '#030712', bar: '', sliderTrack: 'bg-emerald-800/50', sliderThumb: 'bg-lime-400', text: 'text-lime-300', accent: '#d71230', button: 'bg-emerald-900/70', buttonHover: 'hover:bg-emerald-800/70', highlight: 'bg-lime-800/50' },
+ { name: 'Glyph Weaver', type: 'glyphs', base: 'bg-[#100c24]', display: 'bg-black/50', bar: '', sliderTrack: 'bg-teal-800/60', sliderThumb: 'bg-lime-300', text: 'text-teal-200', accent: 'text-lime-300', button: 'bg-teal-900/70', buttonHover: 'hover:bg-teal-800/70', highlight: 'bg-lime-500/50' },
+    { name: 'Aura', type: 'aura', base: 'bg-gradient-to-br from-[#0f172a] to-[#2a1a45]', display: 'bg-black/20', bar: '', sliderTrack: 'bg-sky-800/60', sliderThumb: 'bg-fuchsia-400', text: 'text-sky-200', accent: 'text-fuchsia-300', button: 'bg-sky-900/70', buttonHover: 'hover:bg-sky-800/70', highlight: 'bg-fuchsia-500/50' },
+  { name: 'Liquid Crystal', type: 'liquid', base: 'bg-gray-900', display: 'bg-black', bar: '', sliderTrack: 'bg-gray-700/60', sliderThumb: 'bg-white', text: 'text-gray-300', accent: 'text-white', button: 'bg-gray-800/70', buttonHover: 'hover:bg-gray-700/70', highlight: 'bg-gray-500/50' },
     { name: 'VoxelScape', type: 'webgl', webglMode: 'bars', base: 'bg-gray-900', display: '#2c509e', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: '#33775c', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-violet-500/50' },
     { name: 'Borderless LED Rectangular', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-gray-700 border-none shadow-none rounded-none', sliderTrack: 'bg-gray-600 border-none shadow-none rounded-none', sliderThumb: 'bg-gray-400 border-none shadow-none rounded-none', text: 'text-gray-300', accent: 'text-green-400', button: 'bg-gray-700 border-none shadow-none rounded-none', buttonHover: 'hover:bg-gray-600', highlight: 'bg-green-600/50 border-none shadow-none rounded-none' },
     // More innovative gradients based on existing ones, mutating with multi-stop gradients, radial elements, and dynamic shadows
