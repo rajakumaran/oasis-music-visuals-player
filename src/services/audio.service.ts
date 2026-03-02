@@ -9,11 +9,11 @@ const CROSSFADE_DURATION = 3.75; // seconds
 export class AudioService {
   private audioContext: AudioContext | null = null;
   private audioElement: HTMLAudioElement | null = null;
-  
+
   private mediaElementSourceNode: MediaElementAudioSourceNode | null = null;
   private micSourceNode: MediaStreamAudioSourceNode | null = null;
   private micStream: MediaStream | null = null;
-  
+
   private analyserNode: AnalyserNode | null = null;
   private gainNodes: BiquadFilterNode[] = [];
   private masterGainNode: GainNode | null = null;
@@ -41,14 +41,14 @@ export class AudioService {
   isPlaying = signal(false);
   currentTime = signal(0);
   duration = signal(0);
-  
+
   audioSource = signal<'file' | 'microphone'>('file');
   isMicrophonePermissionGranted = signal<boolean | null>(null);
   isCrossfadeEnabled = signal(true);
 
   gainValues = signal<number[]>(BANDS.map(() => 0));
   frequencyData: WritableSignal<Uint8Array> = signal(new Uint8Array(FFT_SIZE / 2));
-  
+
   // --- Synergy Drive Signals ---
   beat = signal<{ strength: number, timestamp: number }>({ strength: 0, timestamp: 0 });
   transient = signal<{ intensity: number, timestamp: number }>({ intensity: 0, timestamp: 0 });
@@ -75,7 +75,7 @@ export class AudioService {
           audioEl.src = track.url;
           audioEl.load();
         }
-        
+
         if (this.isPlaying()) {
           this.playCurrentTrackWithFadeIn();
         }
@@ -90,7 +90,7 @@ export class AudioService {
       }
     });
   }
-  
+
   private async playCurrentTrackWithFadeIn() {
     try {
       if (this.audioContext?.state === 'suspended') {
@@ -123,14 +123,17 @@ export class AudioService {
 
     this.audioContext = new AudioContext();
     this.audioElement = new Audio();
-    this.audioElement.crossOrigin = 'anonymous';
+    // NOTE: Do NOT set crossOrigin = 'anonymous' here.
+    // On iOS Safari, CORS mode causes silent playback failure when the CDN
+    // doesn't send matching Access-Control-Allow-Origin headers.
+    // The MediaElementSourceNode Web Audio approach works without CORS mode.
 
     this.mediaElementSourceNode = this.audioContext.createMediaElementSource(this.audioElement);
     this.analyserNode = this.audioContext.createAnalyser();
     this.analyserNode.fftSize = FFT_SIZE;
     this.analyserNode.smoothingTimeConstant = 0.6; // Tuned for better responsiveness
     this.masterGainNode = this.audioContext.createGain();
-    
+
     let lastNode: AudioNode = this.mediaElementSourceNode;
     this.gainNodes = BANDS.map(frequency => {
       const filter = this.audioContext!.createBiquadFilter();
@@ -152,6 +155,21 @@ export class AudioService {
     this.audioElement.addEventListener('ended', () => this.next());
   }
 
+  /**
+   * Pre-warms the AudioContext on iOS.
+   * iOS Safari requires AudioContext to be created *synchronously* during a user
+   * gesture. Call this on the very first touchstart, before the user taps Play.
+   * Creates the context (unlocking it) then immediately suspends to save battery.
+   */
+  async prewarmForIos(): Promise<void> {
+    if (this.audioContext) return; // Already initialized
+    await this.initAudioContext();
+    // Immediately suspend — we just need to unlock it, not play yet
+    if (this.audioContext?.state === 'running') {
+      await this.audioContext.suspend();
+    }
+  }
+
   private loadDefaultPlaylist() {
     this.playlist.set([
       { name: 'Ambient Classical Guitar', url: 'https://cdn.pixabay.com/audio/2022/08/04/audio_2dde6b9975.mp3', duration: '...' },
@@ -164,12 +182,12 @@ export class AudioService {
     if (!this.audioContext) await this.initAudioContext();
     // Limit to 10 files
     const limitedFiles = Array.from(files).slice(0, 10);
-    
+
     this.playlist().forEach(track => track.file && URL.revokeObjectURL(track.url));
     const newTracks: Track[] = limitedFiles
       .filter(file => file.type.startsWith('audio/') || file.type === 'video/mp4')
       .map(file => ({ file, name: file.name, url: URL.createObjectURL(file), duration: '...' }));
-      
+
     this.playlist.set(newTracks);
     if (newTracks.length > 0) {
       this.currentTrackIndex.set(0);
@@ -185,7 +203,7 @@ export class AudioService {
         await this.togglePlay();
       } else {
         const wasPlaying = this.isPlaying();
-        
+
         if (this.pauseTimeout) {
           clearTimeout(this.pauseTimeout);
           this.pauseTimeout = null;
@@ -203,10 +221,10 @@ export class AudioService {
       }
     }
   }
-  
+
   async togglePlay() {
     if (!this.currentTrack() && this.playlist().length > 0) {
-        this.currentTrackIndex.set(0);
+      this.currentTrackIndex.set(0);
     }
     if (!this.currentTrack()) return;
     if (!this.audioContext) await this.initAudioContext();
@@ -217,7 +235,7 @@ export class AudioService {
     }
 
     this.isPlaying.update(p => !p);
-    
+
     if (this.isPlaying()) {
       if (this.audioElement && this.audioElement.src !== this.currentTrack()!.url) {
         this.audioElement.src = this.currentTrack()!.url;
@@ -227,15 +245,15 @@ export class AudioService {
       this.startVisualization();
     } else {
       if (this.isCrossfadeEnabled() && this.masterGainNode && this.audioContext) {
-         this.masterGainNode.gain.cancelScheduledValues(this.audioContext.currentTime);
-         this.masterGainNode.gain.setValueAtTime(this.masterGainNode.gain.value, this.audioContext.currentTime);
-         this.masterGainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + CROSSFADE_DURATION);
-         this.pauseTimeout = setTimeout(() => {
-            this.audioElement?.pause();
-            this.pauseTimeout = null;
-          }, CROSSFADE_DURATION * 1000);
+        this.masterGainNode.gain.cancelScheduledValues(this.audioContext.currentTime);
+        this.masterGainNode.gain.setValueAtTime(this.masterGainNode.gain.value, this.audioContext.currentTime);
+        this.masterGainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + CROSSFADE_DURATION);
+        this.pauseTimeout = setTimeout(() => {
+          this.audioElement?.pause();
+          this.pauseTimeout = null;
+        }, CROSSFADE_DURATION * 1000);
       } else {
-         this.audioElement?.pause();
+        this.audioElement?.pause();
       }
       this.stopVisualization();
     }
@@ -267,7 +285,7 @@ export class AudioService {
     try {
       this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       this.isMicrophonePermissionGranted.set(true);
-      
+
       if (this.isPlaying()) {
         await this.togglePlay(); // Pause file playback gracefully
       }
@@ -275,12 +293,12 @@ export class AudioService {
       this.micSourceNode = this.audioContext!.createMediaStreamSource(this.micStream);
       this.mediaElementSourceNode?.disconnect();
       this.micSourceNode.connect(this.gainNodes[0]);
-      
+
       if (this.masterGainNode) {
         this.masterGainNode.gain.cancelScheduledValues(this.audioContext!.currentTime);
         this.masterGainNode.gain.value = 1;
       }
-      
+
       this.startVisualization();
 
     } catch (err) {
@@ -300,11 +318,11 @@ export class AudioService {
     }
     if (!this.isPlaying()) this.stopVisualization();
   }
-  
+
   private detectBeat(dataArray: Uint8Array) {
     const now = performance.now();
     // Cooldown to avoid beat "flutter" on things like bass rolls or very fast kicks
-        if (now - this.lastBeatTime < 80) return;
+    if (now - this.lastBeatTime < 80) return;
 
     // --- Band Definitions (based on 1024 bins, ~23Hz/bin with 48k sample rate) ---
     const BASS_START = 1, BASS_END = 12;     // ~23Hz - 276Hz (Kick drum fundamental)
@@ -312,32 +330,32 @@ export class AudioService {
 
     let bassEnergy = 0;
     for (let i = BASS_START; i <= BASS_END; i++) {
-        bassEnergy += dataArray[i];
+      bassEnergy += dataArray[i];
     }
     bassEnergy /= (BASS_END - BASS_START + 1);
 
     let midsEnergy = 0;
     for (let i = MIDS_START; i <= MIDS_END; i++) {
-        midsEnergy += dataArray[i];
+      midsEnergy += dataArray[i];
     }
     midsEnergy /= (MIDS_END - MIDS_START + 1);
-    
+
     // --- Dynamic Thresholding based on recent energy history ---
     const avgBass = this.beatHistory.bass.reduce((s, v) => s + v, 0) / this.beatHistory.bass.length;
     const avgMids = this.beatHistory.mids.reduce((s, v) => s + v, 0) / this.beatHistory.mids.length;
-    
-    const bassThreshold = avgBass * 1.3 + 20; 
+
+    const bassThreshold = avgBass * 1.3 + 20;
     const midsThreshold = avgMids * 1.3 + 15;
 
     let beatDetected = false;
     let beatStrength = 0;
-    
+
     if (bassEnergy > bassThreshold) {
-        beatDetected = true;
-        beatStrength = (bassEnergy - avgBass) / 255 * 1.5;
+      beatDetected = true;
+      beatStrength = (bassEnergy - avgBass) / 255 * 1.5;
     } else if (midsEnergy > midsThreshold) {
-        beatDetected = true;
-        beatStrength = (midsEnergy - avgMids) / 255;
+      beatDetected = true;
+      beatStrength = (midsEnergy - avgMids) / 255;
     }
 
     if (beatDetected) {
@@ -345,29 +363,29 @@ export class AudioService {
       this.lastBeatTime = now;
       this.beatTimes.push(now);
     }
-    
+
     // Update history buffers
     this.beatHistory.bass[this.beatHistoryIndex] = bassEnergy;
     this.beatHistory.mids[this.beatHistoryIndex] = midsEnergy;
     this.beatHistoryIndex = (this.beatHistoryIndex + 1) % this.beatHistory.bass.length;
   }
-  
+
   private detectTransient(dataArray: Uint8Array) {
     if (!this.lastFftFrame) {
       this.lastFftFrame = new Uint8Array(dataArray);
       return;
     }
-    
+
     let flux = 0;
     const startBin = 180;
     for (let i = startBin; i < dataArray.length; i++) {
       const diff = dataArray[i] - this.lastFftFrame[i];
       if (diff > 0) flux += diff;
     }
-    
+
     // Normalize the flux value for consistent reactivity
     const normalizedFlux = flux / (dataArray.length - startBin) / 255;
-    
+
     // Adjusted sensitivity for the more volatile high-frequency range.
     if (normalizedFlux > 0.035) {
       const now = performance.now();
@@ -387,7 +405,7 @@ export class AudioService {
 
     const transientDensity = this.transientTimes.length / (this.ANALYSIS_WINDOW / 1000);
     const beatCount = this.beatTimes.length;
-    
+
     let rhythmScore = 0;
     if (beatCount > 2) {
       const intervals = [];
@@ -415,13 +433,13 @@ export class AudioService {
     if (!this.analyserNode) return;
     // This guard clause correctly stops the loop only for file mode when paused.
     if (this.audioSource() === 'file' && !this.isPlaying()) {
-        this.stopVisualization();
-        return;
+      this.stopVisualization();
+      return;
     };
 
     const dataArray = new Uint8Array(this.analyserNode.frequencyBinCount);
     this.analyserNode.getByteFrequencyData(dataArray);
-    
+
     // Set the raw FFT data for spectrum-based visuals
     this.frequencyData.set(dataArray);
 
@@ -431,15 +449,15 @@ export class AudioService {
     this.detectBeat(dataArray);
     this.detectTransient(dataArray);
     this.analyzeMusicProfile();
-    
+
     this.animationFrameId = requestAnimationFrame(() => this.visualize());
   }
 
-  private startVisualization() { 
-      if (!this.analyserNode) return;
-      if (this.animationFrameId === null) {
-        this.visualize(); 
-      }
+  private startVisualization() {
+    if (!this.analyserNode) return;
+    if (this.animationFrameId === null) {
+      this.visualize();
+    }
   }
 
   private stopVisualization() {
