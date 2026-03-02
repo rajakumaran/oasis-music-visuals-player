@@ -1,5 +1,135 @@
 # oasis-music-visuals-player
 
+
+
+#  March/1st/2026
+
+DONE:
+Both issues are fixed! Here's a summary of everything done across 5 files:
+
+🎛️ Presets Bug Fixed — preset.service.ts
+The root cause: all 12 default presets had 7-band gain arrays but your EQ runs 10 bands. The strict length-check guard (gains.length === gainValues.length) was silently rejecting every single preset and applying flat EQ instead.
+
+Fixes:
+
+All 12 presets updated with correct 10-value arrays (32Hz → 16kHz)
+loadPresets() now auto-migrates any old 7-band presets cached in localStorage (pads missing high-freq bands with 0 dB)
+applyPreset() is now resilient — no more hard failing on length mismatch
+📱 Mobile Orientation Fixes
+File	Change
+index.html	Added maximum-scale=1, user-scalable=no, viewport-fit=cover to viewport meta — prevents iOS auto-zoom on rotation
+app.component.ts	Added orientationchange + modern screen.orientation 'change' listeners; updates isMobile, barCount and decayFactor 150ms after rotation
+app.component.css	Added -webkit-text-size-adjust: 100% (stops iOS font inflation on rotation) and safe-area inset CSS for notched phones in landscape
+fullscreen-toggle.component.ts	On Android: locks to landscape on fullscreen entry via screen.orientation.lock('landscape'), unlocks on exit
+⚠️ One heads-up on presets for existing users: If someone has the old 7-band presets cached in their browser localStorage, they'll be automatically migrated — but the built-in defaults (Rock, Bass Boost, etc.) will still show the migrated version (padded with 0 dB for the top 3 bands) rather than the freshly tuned 10-band values. They can fix this by: going to the Presets section, deleting old presets and re-saving, or clearing site storage in browser settings to get the new defaults. This only affects returning users — new users will get the correct 10-band presets immediately.
+
+Walkthrough: Preset Fix + Mobile Orientation Handling
+Changes Made
+1. EQ Presets Fixed (
+preset.service.ts
+)
+Root cause: All 12 default presets had 7 gain values, but the EQ runs on 10 bands (BANDS = [32, 64, 125, 250, 500, 1k, 2k, 4k, 8k, 16k Hz]). The 
+applyPreset
+ guard gains.length === gainValues.length was always false (7 ≠ 10), so it silently applied a flat EQ instead.
+
+Fixes:
+
+All 12 default presets updated to correct 10-value gain arrays
+loadPresets()
+ now migrates stale presets from localStorage — pads with zeros or truncates to match current band count
+applyPreset()
+ is now resilient — uses 
+normalizeBands()
+ instead of hard-failing
+Added private 
+normalizeBands(gains, targetLength)
+ helper
+⚠️ Note for existing users: On first load after this fix, if localStorage has the old 7-band presets cached, they will be automatically migrated (3 missing high-frequency bands padded to 0dB). The built-in defaults (Flat, Rock, Pop, etc.) will be reset on the next time the user clears storage or on a fresh install — existing users with localStorage will get migrated presets.
+
+2. Viewport Meta Tag (
+index.html
+)
+diff
+-<meta name="viewport" content="width=device-width, initial-scale=1.0">
++<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+maximum-scale=1.0 + user-scalable=no: Stops iOS Safari from auto-zooming when rotating
+viewport-fit=cover: Enables env(safe-area-inset-*) for notched phones (iPhone X+, Dynamic Island, Android punch-hole)
+3. Orientation Change Listeners (
+app.component.ts
+)
+Added orientationChangeListener (fires 150ms after rotation to let the browser finish repainting) that updates:
+
+isMobile signal
+decayFactor
+barCount (adapts bar density to new viewport width)
+Registered on both:
+
+window.addEventListener('orientationchange', ...) — legacy, iOS Safari
+screen.orientation.addEventListener('change', ...) — modern API, Android Chrome/Firefox
+Also updated resizeListener to sync barCount on desktop resize.
+
+4. Safe-Area CSS + Text Size Fix (
+app.component.css
+)
+css
+/* Prevent iOS text inflation on rotation */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+/* Safe-area insets for notched phones in landscape */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+Also fixed a pre-existing lint warning: added appearance: slider-vertical alongside the -webkit-appearance prefixed version.
+
+5. Fullscreen + Orientation Lock (
+fullscreen-toggle.component.ts
+)
+On Android Chrome (non-iOS): when entering fullscreen via requestFullscreen(), attempts to lock to landscape via screen.orientation.lock('landscape'). On exit, calls screen.orientation.unlock(). Both wrapped in try/catch since the API is not universally supported.
+
+Also registered screen.orientation 'change' listener to keep the isFullscreen signal accurate on Android after programmatic orientation changes.
+
+How to Verify
+Scenario	Expected
+Click a preset (Rock, Bass Boost, etc.)	EQ faders move to correct positions
+Rotate phone portrait → landscape	Layout reflows without needing pinch-to-zoom
+Rotate phone landscape → portrait	Layout reflows without needing pinch-to-zoom
+Tap fullscreen (Android Chrome)	Goes fullscreen + attempts landscape lock
+Tap fullscreen (iOS Safari)	CSS fullscreen activates, rotation doesn't break layout
+iPhone X/14 in landscape	Notch area not covering content
+
+Verification Plan
+Manual Verification (Mobile Browser)
+Portrait → Landscape rotation (no fullscreen)
+
+Open the app on a physical Android or iPhone
+Confirm the layout adapts without needing to pinch-to-zoom
+Visualizer bars and controls should fill the screen width/height
+Fullscreen on Android Chrome
+
+Tap the fullscreen expand button
+App should go fullscreen and if the device is in portrait, the screen should rotate to landscape (or stay in whatever orientation the device is)
+Rotating while in fullscreen should not break the layout
+Fullscreen on iOS Safari (iPhone)
+
+Tap the fullscreen expand button
+The CSS-class based fullscreen (fullscreen-ios) should activate
+Rotating the device should not require pinch-to-zoom
+Notch/Safe Area (iPhone X+ or Android with punch-hole)
+
+Rotate to landscape while in normal mode
+Content should not be hidden behind the notch
+Browser DevTools Simulation
+In Chrome DevTools → Device Toolbar → select "iPhone 14 Pro" or "Pixel 7"
+Toggle orientation using the rotate button in the toolbar
+Confirm no zoom shift occurs and the layout adapts correctly
+
+
+
 #  February/28th/2026
 #  This is a new set of enhancements and fixes that were overdue. Details below.
 I have implemented the requested enhancements and fixes for the Audio Oasis Equalizer.

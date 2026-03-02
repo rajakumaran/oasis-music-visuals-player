@@ -29,7 +29,7 @@ export class AppComponent implements OnInit, OnDestroy {
   audioService = inject(AudioService);
   holidayService = inject(HolidayService);
   presetService = inject(PresetService);
-  
+
   playlist = this.audioService.playlist;
   currentTrackIndex = this.audioService.currentTrackIndex;
   isPlaying = this.audioService.isPlaying;
@@ -43,7 +43,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // --- Visualizer Engine State ---
   visualizerEngine = signal<VisualizerEngine>('synergy');
-  
+
   // Synergy Drive Engine State
   synergyDriveMode = signal<SynergyDriveSetting>('smart');
   effectiveSynergyDriveMode = computed(() => {
@@ -54,10 +54,10 @@ export class AppComponent implements OnInit, OnDestroy {
   // Algorithm Lab Engine State
   selectedAlgorithm = signal<Algorithm>('basic');
   responseCurve = signal<'linear' | 'polynomial' | 'fractal'>('polynomial');
-  
+
   private lastBeatTimestamp = 0;
   private lastTransientTimestamp = 0;
-  
+
 
   private dataBuffers: Uint8Array[] = [];
   private readonly BUFFER_HISTORY_SIZE = 3;
@@ -86,6 +86,16 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly resizeListener = () => {
     this.updateDecayFactor();
     this.isMobile.set(window.innerWidth < 768);
+    this.barCount.set(window.innerWidth > 1024 ? 96 : 64);
+  };
+
+  private readonly orientationChangeListener = () => {
+    // Delay slightly to let the browser finish repainting after rotation
+    setTimeout(() => {
+      this.isMobile.set(window.innerWidth < 768);
+      this.updateDecayFactor();
+      this.barCount.set(window.innerWidth > 1024 ? 96 : 64);
+    }, 150);
   };
 
   private readonly globalTouchListener = () => {
@@ -107,7 +117,7 @@ export class AppComponent implements OnInit, OnDestroy {
   tickerDirection = signal<'left' | 'right'>('left');
   private tickerInterval: any;
   animationClass = computed(() => 'animate-' + this.tickerDirection());
-  
+
   isAutoSwitching = signal(false);
   switchInterval = signal(10000);
   switchMode = signal<'sequential' | 'random'>('sequential');
@@ -119,12 +129,12 @@ export class AppComponent implements OnInit, OnDestroy {
   isKaleidoscope = signal(false);
   kaleidoscopeHueShift = signal(0);
   private kaleidoscopeAnimFrameId: number | null = null;
-  
-    // --- Style Fusion ---
+
+  // --- Style Fusion ---
   isStyleFusionOn = signal(false);
   private fusionIntervalId: any = null;
   fusionInterval = signal(10000); // New signal for fusion interval
-  
+
   showOpportunisticTicker = signal(false);
   opportunisticTickerMessage = signal('Audio Oasis :: Built by Muthukumaran Azhagesan (Kumar). Check his Linktree for more projects!');
   private showTickerTimeout: any;
@@ -134,7 +144,7 @@ export class AppComponent implements OnInit, OnDestroy {
   isHolidayAvailable = this.holidayService.isHolidayAvailable;
   isHolidayThemeOn = this.holidayService.holidayThemeEnabled;
   detectedHoliday = this.holidayService.detectedHoliday;
-  
+
   lightSourcePosition = signal<LightSourcePosition>('none');
   isLightingControlVisible = computed(() => !['led', 'webgl'].includes(this.effectiveTheme().type));
   lightingOverlayStyle = computed(() => {
@@ -147,12 +157,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
     let positionCss = '';
     switch (position) {
-      case 'top-left':     positionCss = `radial-gradient(circle at 0% 0%, ${lightColor} 0%, ${endColor} 60%)`; break;
-      case 'top-right':    positionCss = `radial-gradient(circle at 100% 0%, ${lightColor} 0%, ${endColor} 60%)`; break;
-      case 'bottom-left':  positionCss = `radial-gradient(circle at 0% 100%, ${lightColor} 0%, ${endColor} 60%)`; break;
+      case 'top-left': positionCss = `radial-gradient(circle at 0% 0%, ${lightColor} 0%, ${endColor} 60%)`; break;
+      case 'top-right': positionCss = `radial-gradient(circle at 100% 0%, ${lightColor} 0%, ${endColor} 60%)`; break;
+      case 'bottom-left': positionCss = `radial-gradient(circle at 0% 100%, ${lightColor} 0%, ${endColor} 60%)`; break;
       case 'bottom-right': positionCss = `radial-gradient(circle at 100% 100%, ${lightColor} 0%, ${endColor} 60%)`; break;
       case 'center-stage': positionCss = `radial-gradient(ellipse at 50% 50%, ${lightColor} 0%, ${endColor} 70%)`; break;
-      case 'top-center':   positionCss = `radial-gradient(ellipse at 50% -40%, ${lightColor} 0%, ${endColor} 65%)`; break;
+      case 'top-center': positionCss = `radial-gradient(ellipse at 50% -40%, ${lightColor} 0%, ${endColor} 65%)`; break;
     }
     return positionCss;
   });
@@ -182,6 +192,9 @@ export class AppComponent implements OnInit, OnDestroy {
     this.isMobile.set(window.innerWidth < 768);
     this.updateDecayFactor();
     window.addEventListener('resize', this.resizeListener);
+    window.addEventListener('orientationchange', this.orientationChangeListener);
+    // Modern API (Android Chrome, Firefox) — fires on programmatic + physical rotation
+    screen.orientation?.addEventListener('change', this.orientationChangeListener);
     window.addEventListener('touchstart', this.globalTouchListener, { passive: true });
     this.setupTicker();
     this.scheduleOpportunisticTicker();
@@ -189,6 +202,8 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     window.removeEventListener('resize', this.resizeListener);
+    window.removeEventListener('orientationchange', this.orientationChangeListener);
+    screen.orientation?.removeEventListener('change', this.orientationChangeListener);
     window.removeEventListener('touchstart', this.globalTouchListener);
     if (this.tickerInterval) clearInterval(this.tickerInterval);
     this.stopAutoSwitching();
@@ -255,7 +270,7 @@ export class AppComponent implements OnInit, OnDestroy {
     const output = new Array(bars);
     const logLength = Math.log(data.length);
     let lastIndex = 0;
-    
+
     const avgData = this.averageDataBuffers(data);
 
     if (engine === 'synergy') {
@@ -287,7 +302,7 @@ export class AppComponent implements OnInit, OnDestroy {
         const index = Math.max(lastIndex + 1, Math.floor(Math.exp(((i + 1) / bars) * logLength)));
         const slice = data.slice(lastIndex, index);
         let normalizedValue = slice.length > 0 ? (Math.max(...slice) / 255) : 0;
-        
+
         const barProgress = i / (bars - 1);
         let finalDecay = baseDecay;
         let finalSensitivity = sensitivityValue;
@@ -342,7 +357,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
     return output;
   });
-  
+
   fractalCircles = computed(() => {
     const bars = this.visualizerBars();
     const count = this.barCount();
@@ -375,25 +390,25 @@ export class AppComponent implements OnInit, OnDestroy {
       const radius = bars[barIndex] * (viewboxHeight / 4) * beatPulse;
       const x = (i / (count - 1)) * viewboxWidth;
       const y = viewboxHeight - radius;
-      circles.push({ 
-        id: `ford-${i}`, 
-        cx: x, 
-        cy: y, 
+      circles.push({
+        id: `ford-${i}`,
+        cx: x,
+        cy: y,
         r: Math.max(1, radius),
         opacity: 0.5 + bars[barIndex] * 0.5
       });
     }
     return circles;
   });
-  
+
   auraRings = computed(() => {
     const rings = 10;
     const bars = this.visualizerBars();
-    const bass = bars.slice(0, 4).reduce((a,b)=>a+b,0)/4;
-    const mids = bars.slice(4, 20).reduce((a,b)=>a+b,0)/16;
+    const bass = bars.slice(0, 4).reduce((a, b) => a + b, 0) / 4;
+    const mids = bars.slice(4, 20).reduce((a, b) => a + b, 0) / 16;
     const time = performance.now() / 3000;
 
-    return Array.from({length: rings}, (_, i) => {
+    return Array.from({ length: rings }, (_, i) => {
       const progress = (time + i / rings) % 1;
       const barIndex = Math.floor(i / rings * bars.length);
       const energy = bars[barIndex] || 0;
@@ -419,10 +434,10 @@ export class AppComponent implements OnInit, OnDestroy {
     const beat = this.beat();
     const transient = this.transient();
     let beatGlow = 0;
-    if(beat.timestamp > this.lastBeatTimestamp) beatGlow = beat.strength;
+    if (beat.timestamp > this.lastBeatTimestamp) beatGlow = beat.strength;
     let transientSpike = 0;
-    if(transient.timestamp > this.lastTransientTimestamp) transientSpike = transient.intensity;
-    
+    if (transient.timestamp > this.lastTransientTimestamp) transientSpike = transient.intensity;
+
     return this.GLYPH_PATHS.slice(0, count).map((path, i) => {
       const barIndex = Math.floor(i / count * bars.length);
       const energy = bars[barIndex] || 0;
@@ -431,7 +446,7 @@ export class AppComponent implements OnInit, OnDestroy {
         d: path,
         opacity: 0.3 + energy * 0.7,
         strokeWidth: 0.5 + energy * 2 + beatGlow * 2,
-        dashOffset: 1000 - ((performance.now()/10) + (transientSpike * 500)) % 2000,
+        dashOffset: 1000 - ((performance.now() / 10) + (transientSpike * 500)) % 2000,
         glow: beatGlow
       }
     })
@@ -540,7 +555,7 @@ export class AppComponent implements OnInit, OnDestroy {
       return { id: `lane-${i}`, x: centerX - width / 2, y: centerY - height / 2, width: width, height: height, stroke: `hsl(${layer.hue}, 100%, ${brightness}%)`, opacity: perspective * 0.8 };
     }).sort((a, b) => a.opacity - b.opacity);
   });
-  
+
   private auraState = {
     rings: new Array(10).fill(0).map((_, i) => ({ id: i, radius: 0, opacity: 0, thickness: 0, hue: 0 })),
     particles: new Array(30).fill(0).map((_, i) => ({ id: i, x: 0, y: 0, opacity: 0, size: 0 })),
@@ -548,11 +563,11 @@ export class AppComponent implements OnInit, OnDestroy {
   };
   auraBloom = computed(() => {
     const bars = this.visualizerBars();
-    const bass = bars.slice(0, 4).reduce((a,b)=>a+b,0)/4;
-    const mids = bars.slice(10, 20).reduce((a,b)=>a+b,0)/10;
-    const highs = bars.slice(bars.length-10).reduce((a,b)=>a+b,0)/10;
+    const bass = bars.slice(0, 4).reduce((a, b) => a + b, 0) / 4;
+    const mids = bars.slice(10, 20).reduce((a, b) => a + b, 0) / 10;
+    const highs = bars.slice(bars.length - 10).reduce((a, b) => a + b, 0) / 10;
     const beat = this.beat();
-    
+
     if (beat.timestamp > this.auraState.lastBeat && beat.strength > 0.3) {
       this.auraState.lastBeat = beat.timestamp;
       const ring = this.auraState.rings.find(r => r.opacity <= 0);
@@ -593,10 +608,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private glyphsState = { lastUpdate: 0 };
   rhythmicGlyphs = computed(() => {
-    const bass = this.visualizerBars().slice(0, 4).reduce((a,b)=>a+b,0)/4;
+    const bass = this.visualizerBars().slice(0, 4).reduce((a, b) => a + b, 0) / 4;
     const beat = this.beat();
-    if(beat.timestamp > this.glyphsState.lastUpdate) {
-        this.glyphsState.lastUpdate = beat.timestamp;
+    if (beat.timestamp > this.glyphsState.lastUpdate) {
+      this.glyphsState.lastUpdate = beat.timestamp;
     }
     const t = beat.timestamp / 1000;
     return {
@@ -608,24 +623,24 @@ export class AppComponent implements OnInit, OnDestroy {
   });
 
   liquifyParams = computed(() => {
-    const bass = this.visualizerBars().slice(0, 4).reduce((a,b)=>a+b,0)/4;
-    const highs = this.visualizerBars().slice(this.barCount()-16).reduce((a,b)=>a+b,0)/16;
+    const bass = this.visualizerBars().slice(0, 4).reduce((a, b) => a + b, 0) / 4;
+    const highs = this.visualizerBars().slice(this.barCount() - 16).reduce((a, b) => a + b, 0) / 16;
     return {
       turbulence: 0.005 + highs * 0.015,
       scale: 10 + bass * 40
     };
   });
 
-bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k'];
+  bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k'];
 
-   themes: EqualizerTheme[] = [
-     { name: 'Voxel Waves', type: 'webgl', webglMode: 'voxel-waves', base: 'bg-black', display: '#000000', bar: '', sliderTrack: 'bg-cyan-900/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-300', accent: '#22d3ee', button: 'bg-cyan-900/70', buttonHover: 'hover:bg-cyan-800/70', highlight: 'bg-cyan-500/50' },
+  themes: EqualizerTheme[] = [
+    { name: 'Voxel Waves', type: 'webgl', webglMode: 'voxel-waves', base: 'bg-black', display: '#000000', bar: '', sliderTrack: 'bg-cyan-900/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-300', accent: '#22d3ee', button: 'bg-cyan-900/70', buttonHover: 'hover:bg-cyan-800/70', highlight: 'bg-cyan-500/50' },
     { name: 'Quantum Singularity', type: 'webgl', webglMode: 'quantum-singularity', base: 'bg-[#020008]', display: '#000000', bar: '', sliderTrack: 'bg-indigo-900/50', sliderThumb: 'bg-fuchsia-400', text: 'text-fuchsia-300', accent: '#d946ef', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-fuchsia-500/50' },
     { name: 'Cyberdeck', type: 'convex', base: 'cyberdeck-bg', display: 'cyberdeck-display', bar: 'bg-gradient-to-t from-cyan-500 to-orange shadow-[0_0_8px_rgba(34,211,238,0.8),0_0_20px_rgba(34,211,238,0.5)] rounded-t-sm', sliderTrack: 'bg-gray-800/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-200 font-mono', accent: 'text-fuchsia-400', button: 'btn-cyber', buttonHover: '', highlight: 'bg-cyan-400/20' },
     { name: 'Audio Terrain', type: 'webgl', webglMode: 'terrain', base: 'bg-gray-900', display: '#030712', bar: '', sliderTrack: 'bg-emerald-800/50', sliderThumb: 'bg-lime-400', text: 'text-lime-300', accent: '#d71230', button: 'bg-emerald-900/70', buttonHover: 'hover:bg-emerald-800/70', highlight: 'bg-lime-800/50' },
- { name: 'Glyph Weaver', type: 'glyphs', base: 'bg-[#100c24]', display: 'bg-black/50', bar: '', sliderTrack: 'bg-teal-800/60', sliderThumb: 'bg-lime-300', text: 'text-teal-200', accent: 'text-lime-300', button: 'bg-teal-900/70', buttonHover: 'hover:bg-teal-800/70', highlight: 'bg-lime-500/50' },
+    { name: 'Glyph Weaver', type: 'glyphs', base: 'bg-[#100c24]', display: 'bg-black/50', bar: '', sliderTrack: 'bg-teal-800/60', sliderThumb: 'bg-lime-300', text: 'text-teal-200', accent: 'text-lime-300', button: 'bg-teal-900/70', buttonHover: 'hover:bg-teal-800/70', highlight: 'bg-lime-500/50' },
     { name: 'Aura', type: 'aura', base: 'bg-gradient-to-br from-[#0f172a] to-[#2a1a45]', display: 'bg-black/20', bar: '', sliderTrack: 'bg-sky-800/60', sliderThumb: 'bg-fuchsia-400', text: 'text-sky-200', accent: 'text-fuchsia-300', button: 'bg-sky-900/70', buttonHover: 'hover:bg-sky-800/70', highlight: 'bg-fuchsia-500/50' },
-  { name: 'Liquid Crystal', type: 'liquid', base: 'bg-gray-900', display: 'bg-black', bar: '', sliderTrack: 'bg-gray-700/60', sliderThumb: 'bg-white', text: 'text-gray-300', accent: 'text-white', button: 'bg-gray-800/70', buttonHover: 'hover:bg-gray-700/70', highlight: 'bg-gray-500/50' },
+    { name: 'Liquid Crystal', type: 'liquid', base: 'bg-gray-900', display: 'bg-black', bar: '', sliderTrack: 'bg-gray-700/60', sliderThumb: 'bg-white', text: 'text-gray-300', accent: 'text-white', button: 'bg-gray-800/70', buttonHover: 'hover:bg-gray-700/70', highlight: 'bg-gray-500/50' },
     { name: 'VoxelScape', type: 'webgl', webglMode: 'bars', base: 'bg-gray-900', display: '#2c509e', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: '#33775c', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-violet-500/50' },
     { name: 'Borderless LED Rectangular', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-gray-700 border-none shadow-none rounded-none', sliderTrack: 'bg-gray-600 border-none shadow-none rounded-none', sliderThumb: 'bg-gray-400 border-none shadow-none rounded-none', text: 'text-gray-300', accent: 'text-green-400', button: 'bg-gray-700 border-none shadow-none rounded-none', buttonHover: 'hover:bg-gray-600', highlight: 'bg-green-600/50 border-none shadow-none rounded-none' },
     // More innovative gradients based on existing ones, mutating with multi-stop gradients, radial elements, and dynamic shadows
@@ -700,13 +715,13 @@ bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k
     { name: 'Marantz Concave Gold', type: 'concave', base: 'bg-amber-100', display: 'bg-black/80', bar: 'bg-gradient-to-t from-amber-700 to-amber-500 shadow-[0_0_8px_#fbbf24] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-amber-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },
     { name: 'Classic LED Neon Blue', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-blue-700 shadow-[0_0_6px_#3b82f6]', sliderTrack: 'bg-blue-600', sliderThumb: 'bg-blue-400', text: 'text-blue-300', accent: 'text-blue-400', button: 'bg-blue-700', buttonHover: 'hover:bg-blue-600', highlight: 'bg-blue-600/50' },
     { name: 'Pioneer Convex Fuchsia', type: 'convex', base: 'bg-slate-200', display: 'bg-fuchsia-900/80', bar: 'bg-gradient-to-t from-fuchsia-600 to-fuchsia-400 shadow-[0_0_8px_#d946ef] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-fuchsia-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
-    { name: 'Marantz Retro Green', type: 'shadow', base: 'bg-amber-100', display: 'bg-black/80', bar: 'bg-gradient-to-t from-green-700 to-green-500 shadow-[0_0_8px_#22c55e,-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-green-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },        
+    { name: 'Marantz Retro Green', type: 'shadow', base: 'bg-amber-100', display: 'bg-black/80', bar: 'bg-gradient-to-t from-green-700 to-green-500 shadow-[0_0_8px_#22c55e,-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-gray-700', text: 'text-gray-800', accent: 'text-green-700', button: 'bg-gray-300', buttonHover: 'hover:bg-gray-400', highlight: 'bg-amber-200' },
   ];
 
   selectedTheme: WritableSignal<EqualizerTheme> = signal(this.themes[0]);
   effectiveTheme = computed(() => this.activeHoliday()?.theme ?? this.selectedTheme());
   selectedThemeIndex = computed(() => this.themes.findIndex(t => t.name === this.selectedTheme().name));
-  
+
   onFileChange(event: Event) { this.audioService.loadFiles((event.target as HTMLInputElement).files!); }
   onBgImageChange(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -717,8 +732,8 @@ bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k
     }
   }
 
-  onPlayPauseClick(): void { 
-    this.audioService.togglePlay(); 
+  onPlayPauseClick(): void {
+    this.audioService.togglePlay();
     if (this.isPlaying()) {
       this.stashCockpits();
     }
@@ -753,16 +768,16 @@ bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k
 
   onGainChange(event: Event, index: number) { this.audioService.changeGain(index, parseFloat((event.target as HTMLInputElement).value)); }
   onSeek(event: Event) { this.audioService.seek(parseFloat((event.target as HTMLInputElement).value)); }
-  onSensitivityChange(event: Event) { 
-    this.sensitivity.set(parseFloat((event.target as HTMLInputElement).value)); 
+  onSensitivityChange(event: Event) {
+    this.sensitivity.set(parseFloat((event.target as HTMLInputElement).value));
     this.autoSensitivity.set(false);
   }
   toggleAutoSensitivity() { this.autoSensitivity.update(v => !v); }
   onBarCountChange(event: Event) { this.barCount.set(parseInt((event.target as HTMLInputElement).value, 10)); }
   onBarSpacingChange(event: Event) { this.barSpacing.set(parseInt((event.target as HTMLInputElement).value, 10)); }
   setLightSource(position: LightSourcePosition) { this.lightSourcePosition.set(position); }
-  selectTheme(index: string) { 
-    const i = parseInt(index, 10); 
+  selectTheme(index: string) {
+    const i = parseInt(index, 10);
     if (!isNaN(i) && i < this.themes.length) {
       this.selectedTheme.set(this.themes[i]);
       // If LED theme is selected, automatically stash cockpits for a cleaner look
@@ -794,7 +809,7 @@ bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k
     }
     this.selectedTheme.set(this.themes[nextIndex]);
   }
-   
+
 
   formatTime(seconds: number): string {
     if (isNaN(seconds) || seconds < 0) return '00:00';
@@ -811,8 +826,8 @@ bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k
 
   toggleStyleFusion() { this.isStyleFusionOn.update(f => !f); }
   setFusionInterval(event: Event) { this.fusionInterval.set(parseInt((event.target as HTMLSelectElement).value, 10)); }
-  
-    private startKaleidoscope() {
+
+  private startKaleidoscope() {
     this.stopKaleidoscope();
     const animate = () => {
       this.kaleidoscopeHueShift.update(h => (h + 0.5) % 360);
@@ -828,11 +843,11 @@ bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k
   }
   private stopStyleFusion() { if (this.fusionIntervalId) { clearInterval(this.fusionIntervalId); this.fusionIntervalId = null; } }
 
-  
+
   toggleAudioSource() { this.audioService.setAudioSource(this.audioSource() === 'file' ? 'microphone' : 'file'); }
   toggleCrossfade(event: Event) { this.audioService.isCrossfadeEnabled.set((event.target as HTMLInputElement).checked); }
 
-    // --- Preset Methods ---
+  // --- Preset Methods ---
   savePreset() {
     const name = this.newPresetName().trim();
     if (name) {
@@ -864,88 +879,88 @@ bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k
     event.preventDefault();
     const startIndex = this.draggedTrackIndex();
     if (startIndex === null || startIndex === dropIndex) return;
-    
+
     this.playlist.update(list => {
       const newList = [...list];
       const [removed] = newList.splice(startIndex, 1);
       newList.splice(dropIndex, 0, removed);
       return newList;
     });
-    
+
     const currentIdx = this.currentTrackIndex();
     if (currentIdx === startIndex) this.currentTrackIndex.set(dropIndex);
     else if (currentIdx !== null && startIndex < currentIdx && dropIndex >= currentIdx) this.currentTrackIndex.update(i => i! - 1);
     else if (currentIdx !== null && startIndex > currentIdx && dropIndex <= currentIdx) this.currentTrackIndex.update(i => i! + 1);
-    
+
     this.draggedTrackIndex.set(null);
-  } 
+  }
   onDragEnd() { this.draggedTrackIndex.set(null); }
-  
+
   private _reimplementUnchanged() {
-      // This block contains methods that were not directly part of the user's request,
-      // but are kept to maintain existing functionality.
-      this.startAutoSwitching = () => {
-        this.stopAutoSwitching();
-        this.themeSwitchIntervalId = setInterval(() => this.selectNextTheme(), this.switchInterval());
+    // This block contains methods that were not directly part of the user's request,
+    // but are kept to maintain existing functionality.
+    this.startAutoSwitching = () => {
+      this.stopAutoSwitching();
+      this.themeSwitchIntervalId = setInterval(() => this.selectNextTheme(), this.switchInterval());
+    };
+    this.stopAutoSwitching = () => { if (this.themeSwitchIntervalId) { clearInterval(this.themeSwitchIntervalId); this.themeSwitchIntervalId = null; } };
+    this.selectNextTheme = () => {
+      const currentIndex = this.themes.findIndex(t => t.name === this.selectedTheme().name);
+      let nextIndex: number;
+      if (this.switchMode() === 'random') {
+        do { nextIndex = Math.floor(Math.random() * this.themes.length); } while (nextIndex === currentIndex && this.themes.length > 1);
+      } else {
+        nextIndex = (currentIndex + 1) % this.themes.length;
+      }
+      this.selectedTheme.set(this.themes[nextIndex]);
+    };
+    this.startKaleidoscope = () => {
+      this.stopKaleidoscope();
+      const animate = () => {
+        this.kaleidoscopeHueShift.update(h => (h + 0.5) % 360);
+        this.kaleidoscopeAnimFrameId = requestAnimationFrame(animate);
       };
-      this.stopAutoSwitching = () => { if (this.themeSwitchIntervalId) { clearInterval(this.themeSwitchIntervalId); this.themeSwitchIntervalId = null; } };
-      this.selectNextTheme = () => {
-        const currentIndex = this.themes.findIndex(t => t.name === this.selectedTheme().name);
-        let nextIndex: number;
-        if (this.switchMode() === 'random') {
-          do { nextIndex = Math.floor(Math.random() * this.themes.length); } while (nextIndex === currentIndex && this.themes.length > 1);
-        } else {
-          nextIndex = (currentIndex + 1) % this.themes.length;
-        }
-        this.selectedTheme.set(this.themes[nextIndex]);
-      };
-      this.startKaleidoscope = () => {
-        this.stopKaleidoscope();
-        const animate = () => {
-          this.kaleidoscopeHueShift.update(h => (h + 0.5) % 360);
-          this.kaleidoscopeAnimFrameId = requestAnimationFrame(animate);
-        };
-        animate();
-      };
-      this.stopKaleidoscope = () => { if (this.kaleidoscopeAnimFrameId !== null) { cancelAnimationFrame(this.kaleidoscopeAnimFrameId); this.kaleidoscopeAnimFrameId = null; } };
-      this.savePreset = () => {
-        const name = this.newPresetName().trim();
-        if (name) {
-          this.presetService.savePreset(name, this.gainValues());
-          this.newPresetName.set('');
-        }
-      };
-      this.applyPreset = (event: Event) => {
-        const selectedName = (event.target as HTMLSelectElement).value;
-        const preset = this.presets().find(p => p.name === selectedName);
-        if (preset) {
-          this.selectedPreset.set(preset);
-          this.presetService.applyPreset(preset);
-        }
-      };
-      this.deleteSelectedPreset = () => {
-        const preset = this.selectedPreset();
-        if (preset) {
-          this.presetService.deletePreset(preset.name);
-          this.selectedPreset.set(null);
-        }
-      };
-      this.onDragStart = (index: number) => { this.draggedTrackIndex.set(index); };
-      this.onDrop = (event: DragEvent, dropIndex: number) => {
-        event.preventDefault();
-        const startIndex = this.draggedTrackIndex();
-        if (startIndex === null || startIndex === dropIndex) return;
-        this.playlist.update(list => {
-          const newList = [...list];
-          const [removed] = newList.splice(startIndex, 1);
-          newList.splice(dropIndex, 0, removed);
-          return newList;
-        });
-        const currentIdx = this.currentTrackIndex();
-        if (currentIdx === startIndex) this.currentTrackIndex.set(dropIndex);
-        else if (currentIdx !== null && startIndex < currentIdx && dropIndex >= currentIdx) this.currentTrackIndex.update(i => i! - 1);
-        else if (currentIdx !== null && startIndex > currentIdx && dropIndex <= currentIdx) this.currentTrackIndex.update(i => i! + 1);
-        this.draggedTrackIndex.set(null);
-      };
+      animate();
+    };
+    this.stopKaleidoscope = () => { if (this.kaleidoscopeAnimFrameId !== null) { cancelAnimationFrame(this.kaleidoscopeAnimFrameId); this.kaleidoscopeAnimFrameId = null; } };
+    this.savePreset = () => {
+      const name = this.newPresetName().trim();
+      if (name) {
+        this.presetService.savePreset(name, this.gainValues());
+        this.newPresetName.set('');
+      }
+    };
+    this.applyPreset = (event: Event) => {
+      const selectedName = (event.target as HTMLSelectElement).value;
+      const preset = this.presets().find(p => p.name === selectedName);
+      if (preset) {
+        this.selectedPreset.set(preset);
+        this.presetService.applyPreset(preset);
+      }
+    };
+    this.deleteSelectedPreset = () => {
+      const preset = this.selectedPreset();
+      if (preset) {
+        this.presetService.deletePreset(preset.name);
+        this.selectedPreset.set(null);
+      }
+    };
+    this.onDragStart = (index: number) => { this.draggedTrackIndex.set(index); };
+    this.onDrop = (event: DragEvent, dropIndex: number) => {
+      event.preventDefault();
+      const startIndex = this.draggedTrackIndex();
+      if (startIndex === null || startIndex === dropIndex) return;
+      this.playlist.update(list => {
+        const newList = [...list];
+        const [removed] = newList.splice(startIndex, 1);
+        newList.splice(dropIndex, 0, removed);
+        return newList;
+      });
+      const currentIdx = this.currentTrackIndex();
+      if (currentIdx === startIndex) this.currentTrackIndex.set(dropIndex);
+      else if (currentIdx !== null && startIndex < currentIdx && dropIndex >= currentIdx) this.currentTrackIndex.update(i => i! - 1);
+      else if (currentIdx !== null && startIndex > currentIdx && dropIndex <= currentIdx) this.currentTrackIndex.update(i => i! + 1);
+      this.draggedTrackIndex.set(null);
+    };
   }
 }
