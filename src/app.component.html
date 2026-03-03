@@ -259,14 +259,29 @@
                   {{ currentTickerMessage() }}
                 </p>
               </div>
+              @if (!currentTrackReady()) {
+                <div class="mt-2">
+                  <div class="track-buffering-bar-container">
+                    <div class="track-buffering-bar-fill track-buffering-shimmer"></div>
+                  </div>
+                  <p class="text-xs mt-1 opacity-60">Buffering for iOS… please wait</p>
+                </div>
+              }
             </div>
 
             <div class="flex justify-center items-center gap-6">
               <button (click)="audioService.previous()" [disabled]="playlist().length < 2" [class]="'btn btn-circle btn-ghost btn-3d ' + effectiveTheme().button" title="Previous Track">
                 <i class="fa-solid fa-backward-step"></i>
               </button>
-              <button (click)="onPlayPauseClick()" [disabled]="!currentTrack()" [class]="'btn btn-circle btn-primary btn-lg btn-3d-lg ' + effectiveTheme().button" [title]="isPlaying() ? 'Pause' : 'Play'">
-                <i class="fa-solid text-2xl" [class.fa-play]="!isPlaying()" [class.fa-pause]="isPlaying()"></i>
+              <button (click)="onPlayPauseClick()"
+                [disabled]="!currentTrack() || !currentTrackReady()"
+                [class]="'btn btn-circle btn-primary btn-lg btn-3d-lg ' + effectiveTheme().button"
+                [title]="!currentTrackReady() ? 'Buffering…' : (isPlaying() ? 'Pause' : 'Play')">
+                @if (!currentTrackReady()) {
+                  <i class="fa-solid fa-spinner fa-spin text-2xl"></i>
+                } @else {
+                  <i class="fa-solid text-2xl" [class.fa-play]="!isPlaying()" [class.fa-pause]="isPlaying()"></i>
+                }
               </button>
               <button (click)="audioService.next()" [disabled]="playlist().length < 2" [class]="'btn btn-circle btn-ghost btn-3d ' + effectiveTheme().button" title="Next Track">
                 <i class="fa-solid fa-forward-step"></i>
@@ -352,11 +367,36 @@
                     [class.bg-primary]="currentTrackIndex() === i"
                     [class.text-primary-content]="currentTrackIndex() === i"
                     [class.opacity-50]="draggedTrackIndex() === i"
+                    [class.cursor-not-allowed]="track.isUserUpload && !audioService.getTrackIsReady(track)"
                     title="Click to play, drag to reorder"
                   >
-                    <a (click)="audioService.selectTrack(i)">
-                      @if (currentTrackIndex() === i && isPlaying()) { <i class="fa-solid fa-volume-high w-4"></i> } @else { <i class="fa-solid fa-play w-4"></i> }
-                      <span class="truncate">{{ track.name }}</span>
+                    <a (click)="audioService.selectTrack(i)" class="flex flex-col gap-0.5 w-full">
+                      <div class="flex items-center gap-2">
+                        @if (currentTrackIndex() === i && isPlaying()) {
+                          <i class="fa-solid fa-volume-high w-4 flex-shrink-0"></i>
+                        } @else if (track.isUserUpload && !audioService.getTrackIsReady(track)) {
+                          <i class="fa-solid fa-spinner fa-spin w-4 flex-shrink-0 opacity-60"></i>
+                        } @else {
+                          <i class="fa-solid fa-play w-4 flex-shrink-0"></i>
+                        }
+                        <span class="truncate">{{ track.name }}</span>
+                        @if (audioService.getTrackIsReady(track)) {
+                          <i class="fa-solid fa-circle-check text-green-400 text-xs ml-auto flex-shrink-0" title="Ready"></i>
+                        }
+                      </div>
+                      @let progress = audioService.getTrackLoadProgress(track);
+                      @if (progress !== null && progress < 100) {
+                        <div class="track-progress-bar-container ml-6">
+                          <div class="track-progress-bar-fill track-progress-shimmer"
+                               [style.width.%]="progress > 0 ? progress : 100"
+                               [class.track-progress-shimmer]="progress === 0"
+                               [class.track-progress-fill-animate]="progress > 0">
+                          </div>
+                          @if (progress > 0) {
+                            <span class="track-progress-label">{{ progress }}%</span>
+                          }
+                        </div>
+                      }
                     </a>
                   </li>
                 }

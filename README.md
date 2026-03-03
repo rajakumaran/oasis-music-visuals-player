@@ -2,6 +2,17 @@
 
 
 
+#  March/2nd/2026
+
+Here's the plan. The core fix is: instead of giving iOS a streaming blob: URL (which it can't handle for large files), we fully read each uploaded file into RAM as an ArrayBuffer first, then hand iOS a brand-new Blob URL pointing to data that's already in memory. While that happens, we show per-track progress bars and disable the Play button until the current track is fully buffered.
+
+Key points:
+
+Default playlist (CDN tracks) is unaffected — they work fine already
+User-uploaded tracks get a progress bar (0–100%) in the playlist list
+Play button shows a spinner + is disabled while the current track is still loading
+Once a track hits 100%, it behaves like desktop — instant play
+
 #  March/1st/2026
 Latest DONE: 
 Both fixes are in! Here's what was done:

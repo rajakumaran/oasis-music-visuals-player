@@ -40,6 +40,7 @@ export class AppComponent implements OnInit, OnDestroy {
   audioSource = this.audioService.audioSource;
   beat = this.audioService.beat;
   transient = this.audioService.transient;
+  currentTrackReady = this.audioService.currentTrackReady;
 
   // --- Visualizer Engine State ---
   visualizerEngine = signal<VisualizerEngine>('synergy');
@@ -742,6 +743,8 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   onPlayPauseClick(): void {
+    // Don't attempt play if track is still buffering
+    if (!this.currentTrackReady()) return;
     this.audioService.togglePlay();
     if (this.isPlaying()) {
       this.stashCockpits();

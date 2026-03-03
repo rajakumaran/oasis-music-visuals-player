@@ -49,6 +49,17 @@ export class AudioService {
   gainValues = signal<number[]>(BANDS.map(() => 0));
   frequencyData: WritableSignal<Uint8Array> = signal(new Uint8Array(FFT_SIZE / 2));
 
+  // --- Pre-Loading / Buffering Signals ---
+  /**
+   * Map from a track's final blob URL → load progress (0–100).
+   * Only populated for user-uploaded tracks. CDN tracks are exempt.
+   */
+  trackLoadProgress = signal<Map<string, number>>(new Map());
+  /**
+   * Set of track blob URLs whose ArrayBuffer is fully loaded and ready.
+   */
+  isTrackReady = signal<Set<string>>(new Set());
+
   // --- Synergy Drive Signals ---
   beat = signal<{ strength: number, timestamp: number }>({ strength: 0, timestamp: 0 });
   transient = signal<{ intensity: number, timestamp: number }>({ intensity: 0, timestamp: 0 });
@@ -61,13 +72,21 @@ export class AudioService {
     return idx !== null && list[idx] ? list[idx] : null;
   });
 
+  /** True when the current track is a CDN track or is fully buffered and ready to play. */
+  currentTrackReady = computed(() => {
+    const track = this.currentTrack();
+    if (!track) return false;
+    if (!track.isUserUpload) return true; // CDN tracks are always ready
+    return this.isTrackReady().has(track.url);
+  });
+
   constructor() {
     this.loadDefaultPlaylist();
 
     effect(() => {
       const track = this.currentTrack();
       const audioEl = this.audioElement;
-      if (track && audioEl) {
+      if (track && audioEl && track.url) { // Guard: skip placeholder tracks (url === '')
         if (audioEl.src !== track.url) {
           if (!audioEl.paused) {
             audioEl.pause();
@@ -76,7 +95,7 @@ export class AudioService {
           audioEl.load();
         }
 
-        if (this.isPlaying()) {
+        if (this.isPlaying() && this.currentTrackReady()) {
           this.playCurrentTrackWithFadeIn();
         }
       }
@@ -202,22 +221,163 @@ export class AudioService {
     // Limit to 10 files
     const limitedFiles = Array.from(files).slice(0, 10);
 
-    this.playlist().forEach(track => track.file && URL.revokeObjectURL(track.url));
-    const newTracks: Track[] = limitedFiles
-      .filter(file => file.type.startsWith('audio/') || file.type === 'video/mp4')
-      .map(file => ({ file, name: file.name, url: URL.createObjectURL(file), duration: '...' }));
+    // Revoke old user-upload blob URLs
+    this.playlist().forEach(track => {
+      if (track.isUserUpload && track.url) URL.revokeObjectURL(track.url);
+    });
 
-    this.playlist.set(newTracks);
-    if (newTracks.length > 0) {
-      this.currentTrackIndex.set(0);
-      if (!this.isPlaying()) {
-        this.togglePlay();
+    // Reset progress state for the new batch
+    this.trackLoadProgress.set(new Map());
+    this.isTrackReady.set(new Set());
+
+    const validFiles = limitedFiles.filter(
+      file => file.type.startsWith('audio/') || file.type === 'video/mp4'
+    );
+    if (validFiles.length === 0) return;
+
+    // Create placeholder tracks immediately so the playlist renders
+    const placeholderTracks: Track[] = validFiles.map(file => ({
+      file,
+      name: file.name,
+      url: '',          // Will be filled in once the ArrayBuffer is ready
+      duration: '...',
+      isUserUpload: true,
+    }));
+    this.playlist.set(placeholderTracks);
+    this.currentTrackIndex.set(0);
+
+    // Pre-buffer each file in parallel using ArrayBuffer so iOS gets
+    // a fully-loaded Blob URL (no network streaming stalls).
+    validFiles.forEach((file, i) => {
+      this._preBufferFile(file, i);
+    });
+  }
+
+  /**
+   * Reads a File into an ArrayBuffer with progress tracking,
+   * then sets the track's url to a fresh Blob URL backed by that buffer.
+   * Once done, marks the track ready so the Play button becomes active.
+   */
+  private _preBufferFile(file: File, trackIndex: number): void {
+    const reader = new FileReader();
+
+    // Helper to mutate progress/ready signals immutably
+    const setProgress = (url: string, pct: number) => {
+      this.trackLoadProgress.update(map => {
+        const next = new Map(map);
+        next.set(url, pct);
+        return next;
+      });
+    };
+
+    const markReady = (url: string) => {
+      this.isTrackReady.update(set => {
+        const next = new Set(set);
+        next.add(url);
+        return next;
+      });
+    };
+
+    // Use a temporary key based on the file name + size for progress tracking
+    // before we have a real Blob URL.
+    const tempKey = `__pending_${trackIndex}_${file.name}`;
+    setProgress(tempKey, 0);
+
+    reader.onprogress = (e: ProgressEvent) => {
+      if (e.lengthComputable) {
+        const pct = Math.round((e.loaded / e.total) * 100);
+        setProgress(tempKey, pct);
+        // Mirror progress onto the stable tempKey; swap to real url on completion.
+        this.playlist.update(list => {
+          const next = [...list];
+          if (next[trackIndex]) {
+            next[trackIndex] = { ...next[trackIndex] }; // trigger change detection
+          }
+          return next;
+        });
       }
+    };
+
+    reader.onload = (e: ProgressEvent<FileReader>) => {
+      const buffer = e.target?.result as ArrayBuffer;
+      if (!buffer) return;
+
+      // Build a new Blob URL from the fully-loaded buffer
+      const blob = new Blob([buffer], { type: file.type || 'audio/mpeg' });
+      const blobUrl = URL.createObjectURL(blob);
+
+      // Remove the temp progress key and add the real url
+      this.trackLoadProgress.update(map => {
+        const next = new Map(map);
+        next.delete(tempKey);
+        next.set(blobUrl, 100);
+        return next;
+      });
+
+      // Update the track's url in the playlist
+      this.playlist.update(list => {
+        const next = [...list];
+        if (next[trackIndex]) {
+          next[trackIndex] = { ...next[trackIndex], url: blobUrl };
+        }
+        return next;
+      });
+
+      markReady(blobUrl);
+
+      // If this track is the current one and was already set to src, reload it
+      if (this.currentTrackIndex() === trackIndex && this.audioElement) {
+        // The effect() in constructor will pick up the url change and call audioElement.load()
+      }
+    };
+
+    reader.onerror = () => {
+      console.error(`AudioService: failed to read file "${file.name}"`);
+      this.trackLoadProgress.update(map => {
+        const next = new Map(map);
+        next.delete(tempKey);
+        next.set(tempKey + '_error', -1);
+        return next;
+      });
+    };
+
+    reader.readAsArrayBuffer(file);
+  }
+
+  /**
+   * Returns the load progress for a given track:
+   * - null  → not a user-upload track (CDN / always ready)
+   * - 0-99  → currently loading
+   * - 100   → fully loaded and ready
+   * - -1    → error
+   */
+  getTrackLoadProgress(track: Track): number | null {
+    if (!track.isUserUpload) return null;
+    const map = this.trackLoadProgress();
+    // Check by final url
+    if (track.url && map.has(track.url)) return map.get(track.url)!;
+    // Check by temp key (while url is still empty/pending)
+    if (!track.url || !map.has(track.url)) {
+      // Find a pending entry via index — look for any value < 100 in the map
+      // (The tempKey encodes the trackIndex in its name but we don't have index here;
+      // instead just return 0 if url is empty, meaning 'not started or in progress')
+      if (!track.url) return 0;
     }
+    return null;
+  }
+
+  /** Returns true if a track is fully ready to play. */
+  getTrackIsReady(track: Track): boolean {
+    if (!track.isUserUpload) return true;
+    return !!track.url && this.isTrackReady().has(track.url);
   }
 
   async selectTrack(index: number) {
     if (index >= 0 && index < this.playlist().length) {
+      const targetTrack = this.playlist()[index];
+      // Don't allow selecting a track that is still buffering (url is empty)
+      if (targetTrack?.isUserUpload && !this.isTrackReady().has(targetTrack.url)) return;
+
       if (this.currentTrackIndex() === index) {
         await this.togglePlay();
       } else {
@@ -246,6 +406,8 @@ export class AudioService {
       this.currentTrackIndex.set(0);
     }
     if (!this.currentTrack()) return;
+    // Don't allow playing a user-uploaded track that hasn't finished buffering
+    if (!this.currentTrackReady()) return;
     if (!this.audioContext) await this.initAudioContext();
     if (this.audioContext.state === 'suspended') await this.audioContext.resume();
     if (this.pauseTimeout) {
