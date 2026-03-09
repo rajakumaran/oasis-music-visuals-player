@@ -205,6 +205,7 @@ export class AppComponent implements OnInit, OnDestroy {
     // Modern API (Android Chrome, Firefox) — fires on programmatic + physical rotation
     screen.orientation?.addEventListener('change', this.orientationChangeListener);
     window.addEventListener('touchstart', this.globalTouchListener, { passive: true });
+    window.addEventListener('click', this.globalTouchListener, { once: true });
     this.setupTicker();
     this.scheduleOpportunisticTicker();
   }
@@ -214,6 +215,7 @@ export class AppComponent implements OnInit, OnDestroy {
     window.removeEventListener('orientationchange', this.orientationChangeListener);
     screen.orientation?.removeEventListener('change', this.orientationChangeListener);
     window.removeEventListener('touchstart', this.globalTouchListener);
+    window.removeEventListener('click', this.globalTouchListener);
     if (this.tickerInterval) clearInterval(this.tickerInterval);
     this.stopAutoSwitching();
     this.stopKaleidoscope();

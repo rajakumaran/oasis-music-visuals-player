@@ -19,6 +19,7 @@ export class AudioService {
   private masterGainNode: GainNode | null = null;
   private animationFrameId: number | null = null;
   private pauseTimeout: any = null;
+  private playbackManagedByToggle = false;
 
   // --- Beat & Transient Detection ---
   private beatHistory = {
@@ -95,10 +96,14 @@ export class AudioService {
           audioEl.load();
         }
 
-        if (this.isPlaying() && this.currentTrackReady()) {
+        // Only auto-play from the effect when togglePlay/selectTrack isn't already handling it.
+        // This prevents a race where both the effect and the manual call fire play() simultaneously.
+        if (this.isPlaying() && this.currentTrackReady() && !this.playbackManagedByToggle) {
           this.playCurrentTrackWithFadeIn();
         }
       }
+      // Reset the flag after the effect runs — the toggle's play call has already fired.
+      this.playbackManagedByToggle = false;
     });
 
     effect(() => {
@@ -112,13 +117,7 @@ export class AudioService {
 
   private async playCurrentTrackWithFadeIn() {
     try {
-      // IMPORTANT FOR iOS: Do NOT await audioContext.resume() before calling play().
-      // Any await before audio.play() breaks the iOS user-gesture chain, causing
-      // "The request is not allowed by the user agent" NotAllowedError.
-      // Instead: fire resume() without awaiting, then call play() immediately.
-      if (this.audioContext?.state === 'suspended') {
-        this.audioContext.resume(); // fire-and-forget — intentionally no await
-      }
+      this.ensureAudioContextRunning();
 
       if (this.audioElement?.paused) {
         await this.audioElement.play(); // play() is now directly within gesture scope
@@ -177,6 +176,13 @@ export class AudioService {
     this.audioElement.addEventListener('timeupdate', () => this.currentTime.set(this.audioElement?.currentTime || 0));
     this.audioElement.addEventListener('durationchange', () => this.duration.set(this.audioElement?.duration || 0));
     this.audioElement.addEventListener('ended', () => this.next());
+    this.audioElement.addEventListener('error', () => {
+      console.warn('AudioService: audio element error', this.audioElement?.error);
+      this.isPlaying.set(false);
+    });
+    this.audioElement.addEventListener('stalled', () => {
+      console.warn('AudioService: audio stalled — will retry on next user action');
+    });
   }
 
   /**
@@ -194,12 +200,16 @@ export class AudioService {
     if (this.audioContext) return; // Already initialized
     await this.initAudioContext();
 
-    // Unlock the HTMLAudioElement: play silence, immediately pause.
-    // This arms iOS to allow future play() calls without a gesture.
+    // Unlock the HTMLAudioElement by playing a tiny silent WAV.
+    // Using a real data-URI source (instead of empty src) ensures iOS Safari
+    // actually "unlocks" the element, allowing future play() calls without gesture.
     if (this.audioElement) {
+      const silentWav = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+      this.audioElement.src = silentWav;
+      this.audioElement.load();
       this.audioElement.play()
-        .then(() => { this.audioElement!.pause(); })
-        .catch(() => { /* expected — no src loaded yet, ignore */ });
+        .then(() => { this.audioElement!.pause(); this.audioElement!.src = ''; })
+        .catch(() => { /* silence expected on some browsers */ });
     }
 
     // Suspend the AudioContext to save battery — resume() is called on Play.
@@ -210,9 +220,9 @@ export class AudioService {
 
   private loadDefaultPlaylist() {
     this.playlist.set([
-      { name: 'Ambient Classical Guitar', url: 'https://cdn.pixabay.com/audio/2022/08/04/audio_2dde6b9975.mp3', duration: '...' },
-      { name: 'The Cradle of Your Soul', url: 'https://cdn.pixabay.com/audio/2022/01/20/audio_20a45d31a2.mp3', duration: '...' },
-      { name: 'Smoke', url: 'https://cdn.pixabay.com/audio/2023/04/24/audio_b722a84376.mp3', duration: '...' }
+      // { name: 'Ambient Classical Guitar', url: 'https://cdn.pixabay.com/audio/2022/08/04/audio_2dde6b9975.mp3', duration: '...' },
+      // { name: 'The Cradle of Your Soul', url: 'https://cdn.pixabay.com/audio/2022/01/20/audio_20a45d31a2.mp3', duration: '...' },
+      // { name: 'Smoke', url: 'https://cdn.pixabay.com/audio/2023/04/24/audio_b722a84376.mp3', duration: '...' }
     ]);
   }
 
@@ -388,6 +398,8 @@ export class AudioService {
           this.pauseTimeout = null;
         }
 
+        this.ensureAudioContextRunning();
+
         if (wasPlaying && this.isCrossfadeEnabled() && this.masterGainNode && this.audioContext) {
           this.masterGainNode.gain.cancelScheduledValues(this.audioContext.currentTime);
           this.masterGainNode.gain.setValueAtTime(this.masterGainNode.gain.value, this.audioContext.currentTime);
@@ -395,6 +407,7 @@ export class AudioService {
           await new Promise(resolve => setTimeout(resolve, CROSSFADE_DURATION * 1000));
         }
 
+        this.playbackManagedByToggle = true;
         this.currentTrackIndex.set(index);
         this.isPlaying.set(wasPlaying || true);
       }
@@ -409,18 +422,21 @@ export class AudioService {
     // Don't allow playing a user-uploaded track that hasn't finished buffering
     if (!this.currentTrackReady()) return;
     if (!this.audioContext) await this.initAudioContext();
-    if (this.audioContext.state === 'suspended') await this.audioContext.resume();
+    // Fire-and-forget resume — do NOT await. Awaiting breaks iOS gesture chain.
+    this.ensureAudioContextRunning();
     if (this.pauseTimeout) {
       clearTimeout(this.pauseTimeout);
       this.pauseTimeout = null;
     }
 
+    // Mark that togglePlay is handling playback so the constructor effect doesn't race.
+    this.playbackManagedByToggle = true;
     this.isPlaying.update(p => !p);
 
     if (this.isPlaying()) {
       if (this.audioElement && this.audioElement.src !== this.currentTrack()!.url) {
         this.audioElement.src = this.currentTrack()!.url;
-        await this.audioElement.load();
+        this.audioElement.load(); // don't await — load is sync-enough for src assignment
       }
       this.playCurrentTrackWithFadeIn();
       this.startVisualization();
@@ -457,6 +473,24 @@ export class AudioService {
 
   setAudioSource(source: 'file' | 'microphone') {
     this.audioSource.set(source);
+  }
+
+  /**
+   * Ensures the AudioContext is in a running/resuming state.
+   * Handles 'suspended' (normal), 'interrupted' (iOS backgrounding), and 'closed' (error).
+   * Fire-and-forget — intentionally does NOT await, to preserve iOS gesture chain.
+   */
+  private ensureAudioContextRunning(): void {
+    if (!this.audioContext) return;
+    const state = this.audioContext.state as string; // 'interrupted' is iOS-only, not in TS types
+    if (state === 'suspended' || state === 'interrupted') {
+      this.audioContext.resume().catch(() => { });
+    }
+    if (state === 'closed') {
+      console.warn('AudioService: AudioContext was closed — recreating');
+      this.audioContext = null;
+      this.initAudioContext();
+    }
   }
 
   private async activateMicrophone() {
