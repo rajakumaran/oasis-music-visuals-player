@@ -133,8 +133,8 @@ export class AppComponent implements OnInit, OnDestroy {
   private themeSwitchIntervalId: any = null;
 
   // --- LED Theme Controls ---
-  ledSegmentWidth = signal(8);
-  ledSegmentHeight = signal(4);
+  ledSegmentWidth = signal(16);
+  ledSegmentHeight = signal(8);
   isKaleidoscope = signal(false);
   kaleidoscopeHueShift = signal(0);
   private kaleidoscopeAnimFrameId: number | null = null;

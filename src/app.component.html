@@ -46,7 +46,7 @@
         }
 
         <div class="absolute inset-0 pointer-events-none transition-all duration-500" [style.background]="lightingOverlayStyle()"></div>
-        <div class="visualizer-content-host relative w-full h-full" [style.filter]="isKaleidoscope() && effectiveTheme().type !== 'led' ? 'hue-rotate(' + kaleidoscopeHueShift() + 'deg)' : 'none'">
+        <div class="visualizer-content-host absolute inset-0" [style.filter]="isKaleidoscope() && effectiveTheme().type !== 'led' ? 'hue-rotate(' + kaleidoscopeHueShift() + 'deg)' : 'none'">
             @switch (effectiveTheme().type) {
               @case ('webgl') {
                 <app-webgl-visualizer
