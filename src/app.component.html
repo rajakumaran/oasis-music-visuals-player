@@ -37,7 +37,7 @@
         </button>
       </div>
 
-      <div id="visualizer-display-wrapper" class="relative flex-1 bg-cover bg-center overflow-hidden" [style.background-image]="backgroundImageUrl() ? 'url(' + backgroundImageUrl()! + ')' : null">
+      <div id="visualizer-display-wrapper" class="relative flex-1 min-h-[40vh] bg-cover bg-center overflow-hidden" [style.background-image]="backgroundImageUrl() ? 'url(' + backgroundImageUrl()! + ')' : null">
         <app-fullscreen-toggle targetElementId="visualizer-display-wrapper"></app-fullscreen-toggle>
         <div [class]="'absolute inset-0 transition-opacity ' + effectiveTheme().display"></div>
         
