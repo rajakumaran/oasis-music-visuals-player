@@ -29,7 +29,7 @@ input[type=range].vertical {
 .bar-3d {
   position: relative;
   width: 100%;
-  transition: height 75ms ease-out;
+  transition: height 33ms linear;
   border-radius: 1px;
 }
 
@@ -65,7 +65,7 @@ input[type=range].vertical {
 .bar-glass,
 .bar-convex,
 .bar-concave {
-  transition: height 75ms ease-out;
+  transition: height 33ms linear;
 }
 
 
@@ -240,7 +240,7 @@ input[type=range].vertical {
 
 /* --- Glass Bar Visualizer Styles --- */
 .bar-glass {
-  transition: height 75ms ease-out, box-shadow 300ms ease-out;
+  transition: height 33ms linear, box-shadow 300ms ease-out;
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
@@ -277,7 +277,7 @@ input[type=range].vertical {
 /* --- Concave Bar Style --- */
 .bar-concave {
   position: relative;
-  transition: height 75ms ease-out;
+  transition: height 33ms linear;
 }
 
 .bar-concave::before {
@@ -339,7 +339,7 @@ input[type=range].vertical {
 }
 
 .bar-glass-box {
-  transition: height 75ms ease-out;
+  transition: height 33ms linear;
   border-radius: 1px;
   filter: drop-shadow(0 0 4px currentColor);
   width: 100%;

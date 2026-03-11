@@ -2,7 +2,7 @@ import { Injectable, signal, effect, WritableSignal, computed } from '@angular/c
 import { Track } from '../models/track.model';
 
 const BANDS = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-const FFT_SIZE = 2048; // Increased for better frequency resolution as per research
+const FFT_SIZE = 1024; // Smaller window = lower latency (~23ms vs ~46ms); resolution is still fine for bar visualizers
 const CROSSFADE_DURATION = 3.75; // seconds
 
 @Injectable({ providedIn: 'root' })
@@ -15,6 +15,7 @@ export class AudioService {
   private micStream: MediaStream | null = null;
 
   private analyserNode: AnalyserNode | null = null;
+  private fftBuffer: Uint8Array<ArrayBuffer> | null = null;  // Pre-allocated to avoid per-frame GC
   private gainNodes: BiquadFilterNode[] = [];
   private masterGainNode: GainNode | null = null;
   private animationFrameId: number | null = null;
@@ -154,7 +155,7 @@ export class AudioService {
     this.mediaElementSourceNode = this.audioContext.createMediaElementSource(this.audioElement);
     this.analyserNode = this.audioContext.createAnalyser();
     this.analyserNode.fftSize = FFT_SIZE;
-    this.analyserNode.smoothingTimeConstant = 0.6; // Tuned for better responsiveness
+    this.analyserNode.smoothingTimeConstant = 0.3; // Low smoothing = bars track the music tightly
     this.masterGainNode = this.audioContext.createGain();
 
     let lastNode: AudioNode = this.mediaElementSourceNode;
@@ -652,17 +653,20 @@ export class AudioService {
       return;
     };
 
-    const dataArray = new Uint8Array(this.analyserNode.frequencyBinCount);
-    this.analyserNode.getByteFrequencyData(dataArray);
+    // Reuse pre-allocated buffer to avoid GC pressure on mobile
+    if (!this.fftBuffer || this.fftBuffer.length !== this.analyserNode.frequencyBinCount) {
+      this.fftBuffer = new Uint8Array(this.analyserNode.frequencyBinCount);
+    }
+    this.analyserNode.getByteFrequencyData(this.fftBuffer);
 
     // Set the raw FFT data for spectrum-based visuals
-    this.frequencyData.set(dataArray);
+    this.frequencyData.set(this.fftBuffer);
 
     // Update peak volume with smoothing
-    const currentMax = Math.max(...dataArray) / 255;
+    const currentMax = Math.max(...this.fftBuffer) / 255;
     this.peakVolume.update(v => v * 0.95 + currentMax * 0.05);
-    this.detectBeat(dataArray);
-    this.detectTransient(dataArray);
+    this.detectBeat(this.fftBuffer);
+    this.detectTransient(this.fftBuffer);
     this.analyzeMusicProfile();
 
     this.animationFrameId = requestAnimationFrame(() => this.visualize());

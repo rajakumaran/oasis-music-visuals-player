@@ -60,8 +60,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private lastTransientTimestamp = 0;
 
 
-  private dataBuffers: Uint8Array[] = [];
-  private readonly BUFFER_HISTORY_SIZE = 3;
+  // Removed: dataBuffers + BUFFER_HISTORY_SIZE — double-smoothing on top of AnalyserNode's own smoothing caused ~50ms lag
 
   sensitivity = signal(1.2);
   autoSensitivity = signal(true);
@@ -87,7 +86,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly resizeListener = () => {
     this.updateDecayFactor();
     this.isMobile.set(window.innerWidth < 768);
-    this.barCount.set(window.innerWidth > 1024 ? 96 : 64);
+    this.barCount.set(window.innerWidth > 1024 ? 24 : 64);
   };
 
   private readonly orientationChangeListener = () => {
@@ -95,7 +94,7 @@ export class AppComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       this.isMobile.set(window.innerWidth < 768);
       this.updateDecayFactor();
-      this.barCount.set(window.innerWidth > 1024 ? 96 : 64);
+      this.barCount.set(window.innerWidth > 1024 ? 24 : 64);
     }, 150);
   };
 
@@ -111,8 +110,8 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   };
 
-  barCount = signal(window.innerWidth > 1024 ? 96 : 64); // Adaptive bar count
-  barSpacing = signal(2);
+  barCount = signal(window.innerWidth > 1024 ? 24 : 64); // Adaptive bar count
+  barSpacing = signal(1);
   private smoothedBars: number[] = [];
 
   tickerMessages: string[] = [
@@ -133,7 +132,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private themeSwitchIntervalId: any = null;
 
   // --- LED Theme Controls ---
-  ledSegmentWidth = signal(16);
+  ledSegmentWidth = signal(24);
   ledSegmentHeight = signal(8);
   isKaleidoscope = signal(false);
   kaleidoscopeHueShift = signal(0);
@@ -251,21 +250,20 @@ export class AppComponent implements OnInit, OnDestroy {
     const map = (val: number, in_min: number, in_max: number, out_min: number, out_max: number) =>
       ((val - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min;
 
-    const decay = map(width, 320, 2560, 0.92, 0.97);
-    this.decayFactor.set(clamp(decay, 0.92, 0.97));
+    const decay = map(width, 320, 2560, 0.88, 0.93);
+    this.decayFactor.set(clamp(decay, 0.88, 0.93));
   }
 
-  private averageDataBuffers(currentData: Uint8Array): Uint8Array {
-    this.dataBuffers.push(new Uint8Array(currentData));
-    if (this.dataBuffers.length > this.BUFFER_HISTORY_SIZE) this.dataBuffers.shift();
-    if (this.dataBuffers.length === 0) return new Uint8Array(currentData.length);
-    const avg = new Uint8Array(this.dataBuffers[0].length);
-    this.dataBuffers.forEach(buf => {
-      for (let i = 0; i < avg.length; i++) {
-        avg[i] += buf[i] / this.dataBuffers.length;
-      }
-    });
-    return avg;
+  // averageDataBuffers removed — the AnalyserNode's smoothingTimeConstant (0.3) already
+  // provides frame blending. Averaging on top added ~50ms of perceived lag.
+
+  /** Fast max of a Uint8Array slice without spread operator (avoids stack overflow + GC). */
+  private sliceMax(data: Uint8Array, from: number, to: number): number {
+    let max = 0;
+    for (let i = from; i < to; i++) {
+      if (data[i] > max) max = data[i];
+    }
+    return max;
   }
 
   visualizerBars = computed(() => {
@@ -281,8 +279,6 @@ export class AppComponent implements OnInit, OnDestroy {
     const output = new Array(bars);
     const logLength = Math.log(data.length);
     let lastIndex = 0;
-
-    const avgData = this.averageDataBuffers(data);
 
     if (engine === 'synergy') {
       // --- SYNERGY DRIVE ENGINE ---
@@ -311,8 +307,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
       for (let i = 0; i < bars; i++) {
         const index = Math.max(lastIndex + 1, Math.floor(Math.exp(((i + 1) / bars) * logLength)));
-        const slice = data.slice(lastIndex, index);
-        let normalizedValue = slice.length > 0 ? (Math.max(...slice) / 255) : 0;
+        let normalizedValue = index > lastIndex ? (this.sliceMax(data, lastIndex, index) / 255) : 0;
 
         const barProgress = i / (bars - 1);
         let finalDecay = baseDecay;
@@ -355,8 +350,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
       for (let i = 0; i < bars; i++) {
         let index = Math.max(lastIndex + 1, Math.floor(Math.exp(((i + 1) / bars) * logLength)));
-        let slice = data.slice(lastIndex, index);
-        let normalizedValue = slice.length > 0 ? (Math.max(...slice) / 255) * sensitivityValue : 0;
+        let normalizedValue = index > lastIndex ? (this.sliceMax(data, lastIndex, index) / 255) * sensitivityValue : 0;
         const curve = this.responseCurve();
         if (curve === 'polynomial') normalizedValue = Math.pow(normalizedValue, 2);
 
@@ -386,7 +380,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   fordCircles = computed(() => {
     const bars = this.visualizerBars();
-    const count = this.isMobile() ? 16 : Math.min(32, this.barCount()); // Adaptive count
+    const count = this.isMobile() ? 24 : Math.min(32, this.barCount()); // Adaptive count
     const viewboxWidth = 320;
     const viewboxHeight = 160;
     const beatInfo = this.beat();
@@ -650,11 +644,11 @@ export class AppComponent implements OnInit, OnDestroy {
     { name: 'Cyberdeck', type: 'convex', base: 'cyberdeck-bg', display: 'cyberdeck-display', bar: 'bg-gradient-to-t from-cyan-500 to-orange shadow-[0_0_8px_rgba(34,211,238,0.8),0_0_20px_rgba(34,211,238,0.5)] rounded-t-sm', sliderTrack: 'bg-gray-800/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-200 font-mono', accent: 'text-fuchsia-400', button: 'btn-cyber', buttonHover: '', highlight: 'bg-cyan-400/20' },
     { name: 'VoxelScape', type: 'webgl', webglMode: 'bars', base: 'bg-gray-900', display: '#111827', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: '#a78bfa', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-violet-500/50' },
     { name: 'Audio Terrain', type: 'webgl', webglMode: 'terrain', base: 'bg-gray-900', display: '#030712', bar: '', sliderTrack: 'bg-emerald-800/50', sliderThumb: 'bg-lime-400', text: 'text-lime-300', accent: '#84cc16', button: 'bg-emerald-900/70', buttonHover: 'hover:bg-emerald-800/70', highlight: 'bg-lime-500/50' },
-    { name: 'Glyph Weaver', type: 'glyphs', base: 'bg-[#100c24]', display: 'bg-black/50', bar: '', sliderTrack: 'bg-teal-800/60', sliderThumb: 'bg-lime-300', text: 'text-teal-200', accent: 'text-lime-300', button: 'bg-teal-900/70', buttonHover: 'hover:bg-teal-800/70', highlight: 'bg-lime-500/50' },
-    { name: 'Aura', type: 'aura', base: 'bg-gradient-to-br from-[#0f172a] to-[#2a1a45]', display: 'bg-black/20', bar: '', sliderTrack: 'bg-sky-800/60', sliderThumb: 'bg-fuchsia-400', text: 'text-sky-200', accent: 'text-fuchsia-300', button: 'bg-sky-900/70', buttonHover: 'hover:bg-sky-800/70', highlight: 'bg-fuchsia-500/50' },
-    { name: 'Liquid Crystal', type: 'liquid', base: 'bg-gray-900', display: 'bg-black', bar: '', sliderTrack: 'bg-gray-700/60', sliderThumb: 'bg-white', text: 'text-gray-300', accent: 'text-white', button: 'bg-gray-800/70', buttonHover: 'hover:bg-gray-700/70', highlight: 'bg-gray-500/50' },
+    // { name: 'Glyph Weaver', type: 'glyphs', base: 'bg-[#100c24]', display: 'bg-black/50', bar: '', sliderTrack: 'bg-teal-800/60', sliderThumb: 'bg-lime-300', text: 'text-teal-200', accent: 'text-lime-300', button: 'bg-teal-900/70', buttonHover: 'hover:bg-teal-800/70', highlight: 'bg-lime-500/50' },
+    // { name: 'Aura', type: 'aura', base: 'bg-gradient-to-br from-[#0f172a] to-[#2a1a45]', display: 'bg-black/20', bar: '', sliderTrack: 'bg-sky-800/60', sliderThumb: 'bg-fuchsia-400', text: 'text-sky-200', accent: 'text-fuchsia-300', button: 'bg-sky-900/70', buttonHover: 'hover:bg-sky-800/70', highlight: 'bg-fuchsia-500/50' },
+    // { name: 'Liquid Crystal', type: 'liquid', base: 'bg-gray-900', display: 'bg-black', bar: '', sliderTrack: 'bg-gray-700/60', sliderThumb: 'bg-white', text: 'text-gray-300', accent: 'text-white', button: 'bg-gray-800/70', buttonHover: 'hover:bg-gray-700/70', highlight: 'bg-gray-500/50' },
     { name: 'VoxelScape', type: 'webgl', webglMode: 'bars', base: 'bg-gray-900', display: '#2c509e', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: '#33775c', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-violet-500/50' },
-    { name: 'Borderless LED Rectangular', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-gray-700 border-none shadow-none rounded-none', sliderTrack: 'bg-gray-600 border-none shadow-none rounded-none', sliderThumb: 'bg-gray-400 border-none shadow-none rounded-none', text: 'text-gray-300', accent: 'text-green-400', button: 'bg-gray-700 border-none shadow-none rounded-none', buttonHover: 'hover:bg-gray-600', highlight: 'bg-green-600/50 border-none shadow-none rounded-none' },
+    // { name: 'Borderless LED Rectangular', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-gray-700 border-none shadow-none rounded-none', sliderTrack: 'bg-gray-600 border-none shadow-none rounded-none', sliderThumb: 'bg-gray-400 border-none shadow-none rounded-none', text: 'text-gray-300', accent: 'text-green-400', button: 'bg-gray-700 border-none shadow-none rounded-none', buttonHover: 'hover:bg-gray-600', highlight: 'bg-green-600/50 border-none shadow-none rounded-none' },
     // More innovative gradients based on existing ones, mutating with multi-stop gradients, radial elements, and dynamic shadows
     { name: 'Pioneer Aurora', type: 'shadow', base: 'bg-slate-200', display: 'bg-indigo-900/80', bar: 'bg-gradient-to-t from-indigo-800 via-purple-500 to-pink-300 shadow-[0_0_12px_#a855f7,-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-indigo-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
     { name: 'Pioneer Convex Nebula', type: 'convex', base: 'bg-slate-200', display: 'bg-cyan-900/80', bar: 'bg-gradient-to-t from-cyan-700 via-teal-400 to-blue-200 shadow-[0_0_10px_#06b6d4,inset_0_2px_4px_rgba(255,255,255,0.3)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-cyan-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
@@ -667,7 +661,7 @@ export class AppComponent implements OnInit, OnDestroy {
     { name: 'Gold Standard Fire Opal', type: 'convex', base: 'bg-gray-900', display: 'bg-black/60', bar: 'bg-gradient-to-t from-orange-700 via-red-400 to-pink-100 shadow-[0_0_8px_#ef4444,inset_0_2px_4px_rgba(255,255,255,0.3)] rounded-t-sm', sliderTrack: 'bg-orange-800/50', sliderThumb: 'bg-red-300', text: 'text-red-200', accent: 'text-orange-400', button: 'bg-orange-900/60', buttonHover: 'hover:bg-orange-800/60', highlight: 'bg-red-500/50' },
     { name: 'Pioneer Neon Circuit', type: 'shadow', base: 'bg-slate-200', display: 'bg-lime-900/80', bar: 'bg-gradient-to-t from-lime-800 via-green-500 to-lime-300 shadow-[0_0_12px_#84cc16,-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-lime-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
     // New innovative themes: Drawing board ideas inspired by modern audio visuals, like plasma effects, holographic, metallic sheens, or frequency-reactive illusions. These build on your FFT/polynomial setup by suggesting gradients that could visually map to freq bands (e.g., low freq warm colors, high freq cool). I've assumed types like 'plasma' or 'holo' could be new if your app supports extending types, but stuck to existing for compatibility—feel free to adapt. No new functions needed; your existing audio translation should pair well with these for dynamic visuals.
-    { name: 'Plasma Vortex', type: 'shadow', base: 'bg-black', display: 'bg-purple-950/90', bar: 'bg-gradient-to-t from-purple-900 via-fuchsia-500 to-pink-300 shadow-[0_0_20px_#d946ef,-2px_0_5px_rgba(0,0,0,0.6)] rounded-t-md', sliderTrack: 'bg-purple-800/50', sliderThumb: 'bg-fuchsia-400', text: 'text-pink-200', accent: 'text-fuchsia-500', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-fuchsia-600/40' },
+    // { name: 'Plasma Vortex', type: 'shadow', base: 'bg-black', display: 'bg-purple-950/90', bar: 'bg-gradient-to-t from-purple-900 via-fuchsia-500 to-pink-300 shadow-[0_0_20px_#d946ef,-2px_0_5px_rgba(0,0,0,0.6)] rounded-t-md', sliderTrack: 'bg-purple-800/50', sliderThumb: 'bg-fuchsia-400', text: 'text-pink-200', accent: 'text-fuchsia-500', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-fuchsia-600/40' },
     { name: 'Holographic Spectrum', type: 'convex', base: 'bg-transparent', display: 'bg-blue-950/70', bar: 'bg-gradient-to-t from-cyan-700 via-blue-400 to-indigo-200 shadow-[0_0_15px_#3b82f6,inset_0_2px_4px_rgba(255,255,255,0.5),0_0_5px_rgba(255,255,255,0.2)] rounded-t-sm border border-blue-500/30', sliderTrack: 'bg-blue-800/40', sliderThumb: 'bg-indigo-300', text: 'text-cyan-200', accent: 'text-blue-400', button: 'bg-blue-900/50', buttonHover: 'hover:bg-blue-800/50', highlight: 'bg-indigo-500/30' },
     { name: 'Metallic Forge', type: 'concave', base: 'bg-gray-800', display: 'bg-black/85', bar: 'bg-gradient-to-t from-gray-700 via-orange-500 to-yellow-300 shadow-[inset_0_-2px_4px_rgba(0,0,0,0.3),0_0_10px_#f59e0b] rounded-t-sm', sliderTrack: 'bg-gray-500', sliderThumb: 'bg-orange-400', text: 'text-yellow-200', accent: 'text-orange-500', button: 'bg-gray-600', buttonHover: 'hover:bg-gray-500', highlight: 'bg-orange-600/40' },
     { name: 'Neon Cyber Grid', type: 'led', base: 'bg-black', display: 'bg-cyan-950', bar: 'bg-cyan-500 shadow-[0_0_8px_#06b6d4] border-none rounded-none', sliderTrack: 'bg-cyan-700/60', sliderThumb: 'bg-cyan-300', text: 'text-cyan-200', accent: 'text-cyan-400', button: 'bg-cyan-800/70', buttonHover: 'hover:bg-cyan-700/70', highlight: 'bg-cyan-500/50' },
