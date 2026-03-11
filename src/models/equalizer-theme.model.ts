@@ -16,5 +16,5 @@ export interface EqualizerTheme {
   buttonHover: string;
   highlight: string;
   fragmentShader?: string; // Optional for webgl themes
-  webglMode?: 'bars' | 'terrain' | 'voxel-waves' | 'quantum-singularity';
+  webglMode?: 'bars' | 'terrain' | 'voxel-waves' | 'quantum-singularity' | 'webgl-metropolis';
 }

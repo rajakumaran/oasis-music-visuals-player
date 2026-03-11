@@ -831,6 +831,8 @@ export class AppComponent implements OnInit, OnDestroy {
   bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k'];
 
   themes: EqualizerTheme[] = [
+    // --- Cyber Metropolis: 3D Cityscape ---
+    { name: 'Cyber Metropolis', type: 'webgl', webglMode: 'webgl-metropolis', base: 'bg-[#02000a]', display: '#02000a', bar: '', sliderTrack: 'bg-purple-900/50', sliderThumb: 'bg-pink-500', text: 'text-pink-300', accent: '#ec4899', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-pink-500/50' },
     // --- Nova: the Jobs-inspired "one thing" ---
     { name: 'Nova', type: 'nova', base: 'bg-black', display: 'bg-black', bar: '', sliderTrack: 'bg-gray-800/50', sliderThumb: 'bg-white', text: 'text-gray-200', accent: 'text-white', button: 'bg-gray-800/70', buttonHover: 'hover:bg-gray-700/70', highlight: 'bg-white/20' },
     // --- New creative SVG themes ---

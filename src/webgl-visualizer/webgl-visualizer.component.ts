@@ -46,6 +46,13 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
   private singularityCore!: THREE.Mesh;
   private accretionDisk!: THREE.Points;
   private hawkingParticles!: THREE.Points;
+  // Metropolis State
+  private metropolisGroup!: THREE.Group;
+  private buildingMesh!: THREE.InstancedMesh;
+  private trafficPoints!: THREE.Points;
+  private zenithMesh!: THREE.Mesh;
+  private trafficData: { x: number, y: number, z: number, speed: number, axis: 'x' | 'z', dir: number }[] = [];
+  
   private animationFrameId: number | null = null;
   private clock = new THREE.Clock();
   private isUserInteracting = false;
@@ -213,6 +220,15 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
       this.hawkingParticles.geometry.dispose();
       (this.hawkingParticles.material as THREE.Material).dispose();
     }
+    if (this.metropolisGroup) {
+      this.scene.remove(this.metropolisGroup);
+      this.buildingMesh.geometry.dispose();
+      (this.buildingMesh.material as THREE.Material).dispose();
+      this.trafficPoints.geometry.dispose();
+      (this.trafficPoints.material as THREE.Material).dispose();
+      this.zenithMesh.geometry.dispose();
+      (this.zenithMesh.material as THREE.Material).dispose();
+    }
   }
 
   private recreateVisualizers(): void {
@@ -221,6 +237,7 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
     this.createTerrainVisualizer();
     this.createVoxelWavesVisualizer();
     this.createSingularityVisualizer();
+    this.createMetropolisVisualizer();
   }
 
   private createBarVisualizer() {
@@ -375,11 +392,101 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
     this.scene.add(this.singularityGroup);
   }
 
-  private toggleVisualizerMode(mode: 'bars' | 'terrain' | 'voxel-waves' | 'quantum-singularity') {
+  private createMetropolisVisualizer() {
+    this.metropolisGroup = new THREE.Group();
+    
+    // 1. City Grid (InstancedMesh)
+    const gridSize = 40;
+    const spacing = 1.2;
+    const totalBuildings = gridSize * gridSize;
+    
+    const buildingGeom = new THREE.BoxGeometry(0.8, 1, 0.8);
+    // Move geometry up so it scales from the bottom
+    buildingGeom.translate(0, 0.5, 0); 
+    
+    const buildingMat = new THREE.MeshStandardMaterial({
+      color: 0x0a0a1a,
+      roughness: 0.2,
+      metalness: 0.8,
+      emissive: this.theme().accent,
+      emissiveIntensity: 0
+    });
+    
+    this.buildingMesh = new THREE.InstancedMesh(buildingGeom, buildingMat, totalBuildings);
+    this.buildingMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    
+    const matrix = new THREE.Matrix4();
+    let i = 0;
+    for (let x = 0; x < gridSize; x++) {
+      for (let z = 0; z < gridSize; z++) {
+        const px = (x - gridSize / 2) * spacing;
+        const pz = (z - gridSize / 2) * spacing;
+        matrix.setPosition(px, 0, pz);
+        this.buildingMesh.setMatrixAt(i, matrix);
+        i++;
+      }
+    }
+    this.metropolisGroup.add(this.buildingMesh);
+    
+    // 2. Neon Traffic Streams
+    const numTraffic = 1000;
+    const trafficGeom = new THREE.BufferGeometry();
+    const trafficPos = new Float32Array(numTraffic * 3);
+    this.trafficData = [];
+    
+    for (let t = 0; t < numTraffic; t++) {
+      const isXAxis = Math.random() > 0.5;
+      const lane = (Math.floor(Math.random() * gridSize) - gridSize / 2) * spacing;
+      const startPos = (Math.random() - 0.5) * gridSize * spacing;
+      
+      const x = isXAxis ? startPos : lane + (Math.random() - 0.5) * 0.4;
+      const z = isXAxis ? lane + (Math.random() - 0.5) * 0.4 : startPos;
+      const y = 0.1; // Slightly above ground
+      
+      trafficPos[t*3] = x;
+      trafficPos[t*3+1] = y;
+      trafficPos[t*3+2] = z;
+      
+      this.trafficData.push({
+        x, y, z,
+        speed: 0.05 + Math.random() * 0.1,
+        axis: isXAxis ? 'x' : 'z',
+        dir: Math.random() > 0.5 ? 1 : -1
+      });
+    }
+    trafficGeom.setAttribute('position', new THREE.BufferAttribute(trafficPos, 3));
+    
+    const trafficMat = new THREE.PointsMaterial({
+      color: this.theme().accent,
+      size: 0.15,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending
+    });
+    this.trafficPoints = new THREE.Points(trafficGeom, trafficMat);
+    this.metropolisGroup.add(this.trafficPoints);
+    
+    // 3. The Zenith (Floating Core)
+    const zenithGeom = new THREE.IcosahedronGeometry(5, 1);
+    const zenithMat = new THREE.MeshBasicMaterial({
+      color: this.theme().accent,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.15
+    });
+    this.zenithMesh = new THREE.Mesh(zenithGeom, zenithMat);
+    this.zenithMesh.position.set(0, 20, 0);
+    this.metropolisGroup.add(this.zenithMesh);
+    
+    this.scene.add(this.metropolisGroup);
+  }
+
+  private toggleVisualizerMode(mode: 'bars' | 'terrain' | 'voxel-waves' | 'quantum-singularity' | 'webgl-metropolis') {
       this.cubes.forEach(c => c.visible = mode === 'bars');
       if (this.terrainMesh) this.terrainMesh.visible = mode === 'terrain';
       if (this.voxelWavesGroup) this.voxelWavesGroup.visible = mode === 'voxel-waves';
       if (this.singularityGroup) this.singularityGroup.visible = mode === 'quantum-singularity';
+      if (this.metropolisGroup) this.metropolisGroup.visible = mode === 'webgl-metropolis';
   }
 
   private updateSceneFromTheme(theme: EqualizerTheme, profile: MusicProfile) {
@@ -407,6 +514,13 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
       (this.hawkingParticles.material as THREE.PointsMaterial).color.set(accentColor);
     }
     
+    if (this.metropolisGroup) {
+      (this.buildingMesh.material as THREE.MeshStandardMaterial).color.set(new THREE.Color(0x0a0a1a));
+      (this.buildingMesh.material as THREE.MeshStandardMaterial).emissive.set(accentColor);
+      (this.zenithMesh.material as THREE.MeshBasicMaterial).color.set(accentColor);
+      (this.trafficPoints.material as THREE.PointsMaterial).color.set(accentColor);
+    }
+    
     if (this.terrainMesh) {
       (this.terrainMesh.material as THREE.ShaderMaterial).uniforms.colorAccent.value = accentColor;
     }
@@ -427,6 +541,7 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
     if (this.theme().webglMode === 'terrain') this.animateTerrain(barData);
     else if (this.theme().webglMode === 'voxel-waves') this.animateVoxelWaves(barData, elapsedTime);
     else if (this.theme().webglMode === 'quantum-singularity') this.animateSingularity(barData, elapsedTime);
+    else if (this.theme().webglMode === 'webgl-metropolis') this.animateMetropolis(barData, elapsedTime);
     else this.animateBars(barData);
 
     this.directionalLight.intensity += (this.baseLightIntensity - this.directionalLight.intensity) * 0.05;
@@ -549,6 +664,86 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
     this.singularityGroup.rotation.z = Math.sin(elapsedTime * 0.2) * 0.1;
   }
   
+  private animateMetropolis(barData: number[], elapsedTime: number) {
+    if (!this.metropolisGroup || !this.buildingMesh) return;
+    
+    // 1. Animate Buildings (InstancedMesh)
+    const gridSize = 40;
+    const spacing = 1.2;
+    const matrix = new THREE.Matrix4();
+    const position = new THREE.Vector3();
+    const scale = new THREE.Vector3();
+    const rotation = new THREE.Quaternion();
+    
+    let i = 0;
+    for (let x = 0; x < gridSize; x++) {
+      for (let z = 0; z < gridSize; z++) {
+        // Distance from center determines which frequency band affects it
+        const dx = x - gridSize / 2;
+        const dz = z - gridSize / 2;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        const maxDist = gridSize / Math.sqrt(2);
+        
+        // Map distance to array index
+        let barIdx = Math.floor((dist / maxDist) * barData.length);
+        barIdx = Math.max(0, Math.min(barIdx, barData.length - 1));
+        
+        const energy = barData[barIdx] || 0;
+        
+        // High core, lower edges
+        const heightMultiplier = 1 + (1 - dist/maxDist) * 15;
+        const targetHeight = 0.1 + energy * heightMultiplier;
+        
+        this.buildingMesh.getMatrixAt(i, matrix);
+        matrix.decompose(position, rotation, scale);
+        
+        // Smooth scaling
+        scale.y += (targetHeight - scale.y) * 0.2;
+        matrix.compose(position, rotation, scale);
+        this.buildingMesh.setMatrixAt(i, matrix);
+        i++;
+      }
+    }
+    this.buildingMesh.instanceMatrix.needsUpdate = true;
+    
+    // 2. Animate Traffic
+    const beatInfo = this.beat();
+    const isBeat = beatInfo.timestamp > this.lastBeatTimestamp && beatInfo.strength > 0.5;
+    if (isBeat) this.lastBeatTimestamp = beatInfo.timestamp;
+    
+    // Traffic accelerates on beat
+    const beatBoost = isBeat ? beatInfo.strength * 2 : 0;
+    const positions = this.trafficPoints.geometry.attributes.position.array as Float32Array;
+    
+    for (let t = 0; t < this.trafficData.length; t++) {
+      const data = this.trafficData[t];
+      const speed = data.speed * (1 + beatBoost + (barData[5] || 0) * 2); 
+      
+      if (data.axis === 'x') {
+        data.x += speed * data.dir;
+        if (Math.abs(data.x) > (gridSize * spacing) / 2) {
+          data.x = data.x > 0 ? -(gridSize * spacing) / 2 : (gridSize * spacing) / 2;
+        }
+        positions[t*3] = data.x;
+      } else {
+        data.z += speed * data.dir;
+        if (Math.abs(data.z) > (gridSize * spacing) / 2) {
+          data.z = data.z > 0 ? -(gridSize * spacing) / 2 : (gridSize * spacing) / 2;
+        }
+        positions[t*3+2] = data.z;
+      }
+    }
+    this.trafficPoints.geometry.attributes.position.needsUpdate = true;
+    
+    // 3. Animate Zenith
+    const bass = barData.slice(0, 4).reduce((a, b) => a + b, 0) / 4;
+    this.zenithMesh.rotation.y = elapsedTime * 0.1;
+    this.zenithMesh.rotation.z = Math.sin(elapsedTime * 0.2) * 0.2;
+    
+    const targetScale = 1 + bass * 2;
+    this.zenithMesh.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
+  }
+  
   private animateCamera(barData: number[], elapsedTime: number) {
       if (!this.isPlaying()) return;
       
@@ -570,11 +765,29 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
       const currentDistance = this.camera.position.distanceTo(this.controls.target);
       const newDistance = THREE.MathUtils.lerp(currentDistance, targetDistance, 0.05); // Smooth interpolation
       
-      // Only lerp if we are reasonably close to the target distance to avoid "snapping"
-      if (Math.abs(currentDistance - targetDistance) < 10) {
-        const newDistance = THREE.MathUtils.lerp(currentDistance, targetDistance, 0.02);
-        const direction = this.camera.position.clone().sub(this.controls.target).normalize();
-        this.camera.position.copy(this.controls.target.clone().add(direction.multiplyScalar(newDistance)));
+      // Cyber Metropolis special fly-through camera
+      if (this.theme().webglMode === 'webgl-metropolis') {
+        this.controls.autoRotate = false;
+        
+        // Fly down a street
+        const citySize = 40 * 1.2;
+        
+        // A long cycle that goes from one end of the city to the other
+        const cycle = (elapsedTime * 0.05) % 1.0;
+        
+        // Pan through the main avenue
+        const zPos = (cycle - 0.5) * citySize * 1.5;
+        this.camera.position.set(0, 1.5 + Math.sin(elapsedTime * 0.2) * 0.5, zPos);
+        
+        // Look slightly upward at the Zenith
+        this.controls.target.set(0, 5, zPos - 10);
+      } else {
+        // Only lerp if we are reasonably close to the target distance to avoid "snapping"
+        if (Math.abs(currentDistance - targetDistance) < 10) {
+          const newDistance = THREE.MathUtils.lerp(currentDistance, targetDistance, 0.02);
+          const direction = this.camera.position.clone().sub(this.controls.target).normalize();
+          this.camera.position.copy(this.controls.target.clone().add(direction.multiplyScalar(newDistance)));
+        }
       }
   }
   // Handle canvas resizing
