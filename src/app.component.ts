@@ -62,6 +62,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // Removed: dataBuffers + BUFFER_HISTORY_SIZE — double-smoothing on top of AnalyserNode's own smoothing caused ~50ms lag
 
+  // Nova beat shockwave state
+  private novaLastBeatTime = 0;
+  private novaShockwave = 0;
+
   sensitivity = signal(1.2);
   autoSensitivity = signal(true);
   effectiveSensitivity = computed(() => {
@@ -771,9 +775,64 @@ export class AppComponent implements OnInit, OnDestroy {
     return dots;
   });
 
+  // --- Nova ---
+  novaData = computed(() => {
+    const bars = this.visualizerBars();
+    const beatInfo = this.audioService.beat();
+    const profile = this.audioService.detectedMusicProfile();
+    const numRays = Math.min(bars.length, 64);
+    const time = performance.now() / 1000;
+
+    // Energy bands
+    const bass = bars.slice(0, Math.max(1, Math.floor(bars.length * 0.1))).reduce((a, b) => a + b, 0) / Math.max(1, Math.floor(bars.length * 0.1));
+    const mids = bars.slice(Math.floor(bars.length * 0.1), Math.floor(bars.length * 0.6)).reduce((a, b) => a + b, 0) / Math.max(1, Math.floor(bars.length * 0.5));
+    const treble = bars.slice(Math.floor(bars.length * 0.6)).reduce((a, b) => a + b, 0) / Math.max(1, Math.floor(bars.length * 0.4));
+    const overallEnergy = bars.reduce((a, b) => a + b, 0) / Math.max(1, bars.length);
+
+    // Beat shockwave — expands on beat then decays
+    if (beatInfo.timestamp > this.novaLastBeatTime) {
+      this.novaLastBeatTime = beatInfo.timestamp;
+      this.novaShockwave = 1.0;
+    } else {
+      this.novaShockwave *= 0.92; // Fast decay
+    }
+
+    // Core radius: breathes with bass
+    const coreRadius = 4 + bass * 8 + this.novaShockwave * 3;
+
+    // Halo radius: overall energy + shockwave
+    const haloRadius = 15 + overallEnergy * 20 + this.novaShockwave * 15;
+    const haloOpacity = 0.1 + overallEnergy * 0.3 + this.novaShockwave * 0.4;
+
+    // Color temperature based on music profile
+    let hue: number;
+    if (profile === 'rhythm') hue = 20 + bass * 30;       // warm orange/amber
+    else if (profile === 'transient') hue = 160 + treble * 40;  // electric cyan/green
+    else hue = 240 + mids * 40;                           // cool blue/purple
+
+    // Rays: each mapped to a frequency bin
+    const rays: { angle: number; length: number; width: number; opacity: number; id: number }[] = [];
+    for (let i = 0; i < numRays; i++) {
+      const energy = bars[i] || 0;
+      const angle = (i / numRays) * 360;
+      const baseLength = 5;
+      rays.push({
+        angle,
+        length: baseLength + energy * 35 + this.novaShockwave * 8,
+        width: 0.3 + energy * 1.2,
+        opacity: 0.15 + energy * 0.85,
+        id: i
+      });
+    }
+
+    return { coreRadius, haloRadius, haloOpacity, hue, rays, shockwave: this.novaShockwave, overallEnergy };
+  });
+
   bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k'];
 
   themes: EqualizerTheme[] = [
+    // --- Nova: the Jobs-inspired "one thing" ---
+    { name: 'Nova', type: 'nova', base: 'bg-black', display: 'bg-black', bar: '', sliderTrack: 'bg-gray-800/50', sliderThumb: 'bg-white', text: 'text-gray-200', accent: 'text-white', button: 'bg-gray-800/70', buttonHover: 'hover:bg-gray-700/70', highlight: 'bg-white/20' },
     // --- New creative SVG themes ---
     // { name: 'Helix DNA Neon', type: 'helix', base: 'bg-[#050510]', display: 'bg-black/50', bar: '', sliderTrack: 'bg-cyan-900/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-300', accent: 'text-cyan-400', button: 'bg-cyan-900/70', buttonHover: 'hover:bg-cyan-800/70', highlight: 'bg-cyan-500/50' },
     { name: 'Polar Rose Bloom', type: 'polar-rose', base: 'bg-[#0a0014]', display: 'bg-black/40', bar: '', sliderTrack: 'bg-pink-900/50', sliderThumb: 'bg-pink-400', text: 'text-pink-300', accent: 'text-pink-400', button: 'bg-pink-900/70', buttonHover: 'hover:bg-pink-800/70', highlight: 'bg-pink-500/50' },

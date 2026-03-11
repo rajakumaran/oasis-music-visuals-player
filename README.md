@@ -1,6 +1,19 @@
 # oasis-music-visuals-player
 
 
+# March/11th/2026 #2
+
+I love this challenge. Let me think about this the way Jobs would.
+
+Jobs wouldn't add more shapes. He'd strip everything away until there's one thing — one element so perfectly responsive to the music that it feels like the sound has a physical body. Something you can't stop watching because it is the music.
+
+Implementing Nova Visualizer
+Added novaData computed signal (core, rays, halo, beat shockwave, color-temperature shifting) and Nova theme entry. Need HTML @case and CSS.
+
+1.  Implementing a single, hypnotic visualizer theme inspired by Jobs' design philosophy
+2.  Adding the novaData computed signal, SVG template, CSS glow effects, and theme entry
+
+
 # March/11th/2026
 Implementing New Visualizer Themes
 All 5 new SVG visualizer themes implemented and production build passes (exit code 0). Modified 4 files: 
