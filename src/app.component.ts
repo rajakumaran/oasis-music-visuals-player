@@ -636,9 +636,151 @@ export class AppComponent implements OnInit, OnDestroy {
     };
   });
 
+  // --- Helix DNA ---
+  helixData = computed(() => {
+    const bars = this.visualizerBars();
+    const count = Math.min(bars.length, 40);
+    const rungs: { x1: number; y1: number; x2: number; y2: number; opacity: number; id: number }[] = [];
+    const strand1: string[] = [];
+    const strand2: string[] = [];
+    const bass = bars.slice(0, 4).reduce((a, b) => a + b, 0) / 4;
+    const twistSpeed = 0.5 + bass * 2;
+
+    for (let i = 0; i < count; i++) {
+      const t = i / count;
+      const y = 10 + t * 80;
+      const phase = t * Math.PI * 4 + (performance.now() / 1000) * twistSpeed;
+      const amplitude = 15 + bars[Math.min(i, bars.length - 1)] * 20;
+      const x1 = 50 + Math.sin(phase) * amplitude;
+      const x2 = 50 - Math.sin(phase) * amplitude;
+      strand1.push(`${i === 0 ? 'M' : 'L'} ${x1} ${y}`);
+      strand2.push(`${i === 0 ? 'M' : 'L'} ${x2} ${y}`);
+      rungs.push({ x1, y1: y, x2, y2: y, opacity: 0.3 + bars[Math.min(i, bars.length - 1)] * 0.7, id: i });
+    }
+    return { strand1: strand1.join(' '), strand2: strand2.join(' '), rungs };
+  });
+
+  // --- Polar Rose ---
+  polarRoseData = computed(() => {
+    const bars = this.visualizerBars();
+    const numPetals = 8;
+    const binsPerPetal = Math.floor(bars.length / numPetals);
+    const points: string[] = [];
+    const totalPoints = 200;
+    const rotation = (performance.now() / 5000) * 30; // degrees
+
+    for (let i = 0; i <= totalPoints; i++) {
+      const angle = (i / totalPoints) * Math.PI * 2;
+      const petalIndex = Math.floor((i / totalPoints) * numPetals) % numPetals;
+      const petalEnergy = bars.slice(petalIndex * binsPerPetal, (petalIndex + 1) * binsPerPetal)
+        .reduce((a, b) => a + b, 0) / Math.max(1, binsPerPetal);
+      const baseRadius = 15;
+      const r = baseRadius + petalEnergy * 30 * Math.abs(Math.cos(numPetals / 2 * angle));
+      const x = 50 + r * Math.cos(angle);
+      const y = 50 + r * Math.sin(angle);
+      points.push(`${i === 0 ? 'M' : 'L'} ${x} ${y}`);
+    }
+    return { path: points.join(' ') + ' Z', rotation };
+  });
+
+  // --- Diamond Cascade ---
+  diamondData = computed(() => {
+    const bars = this.visualizerBars();
+    const cols = 12;
+    const rows = 6;
+    const diamonds: { cx: number; cy: number; scale: number; opacity: number; hue: number; id: number }[] = [];
+    const scrollOffset = (performance.now() / 50) % 20;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const barIdx = Math.floor((c / cols) * bars.length);
+        const energy = bars[barIdx] || 0;
+        const cx = 8 + (c / (cols - 1)) * 84;
+        const cy = 5 + (r / (rows - 1)) * 90 + scrollOffset;
+        const finalCy = cy > 100 ? cy - 105 : cy;
+        diamonds.push({
+          cx, cy: finalCy,
+          scale: 0.3 + energy * 1.2,
+          opacity: 0.2 + energy * 0.8,
+          hue: (c / cols) * 360,
+          id: r * cols + c
+        });
+      }
+    }
+    return diamonds;
+  });
+
+  // --- Orbit Rings ---
+  orbitsData = computed(() => {
+    const bars = this.visualizerBars();
+    const numOrbits = 6;
+    const binsPerOrbit = Math.floor(bars.length / numOrbits);
+    const time = performance.now() / 1000;
+    const orbits: { rx: number; ry: number; tilt: number; ex: number; ey: number; energy: number; id: number }[] = [];
+
+    for (let i = 0; i < numOrbits; i++) {
+      const energy = bars.slice(i * binsPerOrbit, (i + 1) * binsPerOrbit)
+        .reduce((a, b) => a + b, 0) / Math.max(1, binsPerOrbit);
+      const baseRadius = 12 + i * 7;
+      const rx = baseRadius + energy * 8;
+      const ry = (baseRadius + energy * 8) * 0.35;
+      const eAngleRad = ((time * (1.5 + energy * 4) + i * 60) % 360) * Math.PI / 180;
+      orbits.push({
+        rx,
+        ry,
+        tilt: (i * 30) - 75,
+        ex: 50 + rx * Math.cos(eAngleRad),
+        ey: 50 + ry * Math.sin(eAngleRad),
+        energy,
+        id: i
+      });
+    }
+    return orbits;
+  });
+
+  // --- Ripple Field ---
+  rippleData = computed(() => {
+    const bars = this.visualizerBars();
+    const gridSize = 10;
+    const bass = bars.slice(0, 4).reduce((a, b) => a + b, 0) / 4;
+    const mids = bars.slice(4, 20).reduce((a, b) => a + b, 0) / 16;
+    const treble = bars.length > 16 ? bars.slice(bars.length - 16).reduce((a, b) => a + b, 0) / 16 : 0;
+    const time = performance.now() / 1000;
+    const dots: { cx: number; cy: number; r: number; opacity: number; id: number }[] = [];
+
+    for (let row = 0; row < gridSize; row++) {
+      for (let col = 0; col < gridSize; col++) {
+        const cx = 10 + (col / (gridSize - 1)) * 80;
+        const cy = 10 + (row / (gridSize - 1)) * 80;
+        const dx = cx - 50, dy = cy - 50;
+        const dist = Math.sqrt(dx * dx + dy * dy) / 50;
+        // Ripple displacement
+        const wave = Math.sin(dist * 8 - time * 4) * bass * 6;
+        const secondaryWave = Math.sin(dist * 14 - time * 6) * mids * 3;
+        const shimmer = (1 - dist) * treble * 2;
+        const displacement = wave + secondaryWave;
+        dots.push({
+          cx: cx + displacement * (dx / Math.max(1, Math.sqrt(dx * dx + dy * dy))) * 0.5,
+          cy: cy + displacement * (dy / Math.max(1, Math.sqrt(dx * dx + dy * dy))) * 0.5,
+          r: 1.2 + shimmer + bass * 1.5 * (1 - dist),
+          opacity: 0.3 + (bass * (1 - dist) + treble * dist) * 0.7,
+          id: row * gridSize + col
+        });
+      }
+    }
+    return dots;
+  });
+
   bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k'];
 
   themes: EqualizerTheme[] = [
+    // --- New creative SVG themes ---
+    { name: 'Helix DNA Neon', type: 'helix', base: 'bg-[#050510]', display: 'bg-black/50', bar: '', sliderTrack: 'bg-cyan-900/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-300', accent: 'text-cyan-400', button: 'bg-cyan-900/70', buttonHover: 'hover:bg-cyan-800/70', highlight: 'bg-cyan-500/50' },
+    { name: 'Polar Rose Bloom', type: 'polar-rose', base: 'bg-[#0a0014]', display: 'bg-black/40', bar: '', sliderTrack: 'bg-pink-900/50', sliderThumb: 'bg-pink-400', text: 'text-pink-300', accent: 'text-pink-400', button: 'bg-pink-900/70', buttonHover: 'hover:bg-pink-800/70', highlight: 'bg-pink-500/50' },
+    { name: 'Diamond Cascade', type: 'diamond', base: 'bg-[#08080f]', display: 'bg-black/60', bar: '', sliderTrack: 'bg-violet-900/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: 'text-violet-400', button: 'bg-violet-900/70', buttonHover: 'hover:bg-violet-800/70', highlight: 'bg-violet-500/50' },
+    { name: 'Orbit Rings', type: 'orbits', base: 'bg-[#020810]', display: 'bg-black/50', bar: '', sliderTrack: 'bg-blue-900/50', sliderThumb: 'bg-blue-400', text: 'text-blue-300', accent: 'text-blue-400', button: 'bg-blue-900/70', buttonHover: 'hover:bg-blue-800/70', highlight: 'bg-blue-500/50' },
+    { name: 'Ripple Field', type: 'ripple', base: 'bg-[#040812]', display: 'bg-black/50', bar: '', sliderTrack: 'bg-teal-900/50', sliderThumb: 'bg-teal-400', text: 'text-teal-300', accent: 'text-teal-400', button: 'bg-teal-900/70', buttonHover: 'hover:bg-teal-800/70', highlight: 'bg-teal-500/50' },
+    // --- Existing themes ---
     { name: 'Voxel Waves', type: 'webgl', webglMode: 'voxel-waves', base: 'bg-black', display: '#000000', bar: '', sliderTrack: 'bg-cyan-900/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-300', accent: '#22d3ee', button: 'bg-cyan-900/70', buttonHover: 'hover:bg-cyan-800/70', highlight: 'bg-cyan-500/50' },
     { name: 'Quantum Singularity', type: 'webgl', webglMode: 'quantum-singularity', base: 'bg-[#020008]', display: '#000000', bar: '', sliderTrack: 'bg-indigo-900/50', sliderThumb: 'bg-fuchsia-400', text: 'text-fuchsia-300', accent: '#d946ef', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-fuchsia-500/50' },
     { name: 'Cyberdeck', type: 'convex', base: 'cyberdeck-bg', display: 'cyberdeck-display', bar: 'bg-gradient-to-t from-cyan-500 to-orange shadow-[0_0_8px_rgba(34,211,238,0.8),0_0_20px_rgba(34,211,238,0.5)] rounded-t-sm', sliderTrack: 'bg-gray-800/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-200 font-mono', accent: 'text-fuchsia-400', button: 'btn-cyber', buttonHover: '', highlight: 'bg-cyan-400/20' },

@@ -216,6 +216,60 @@
                   <rect width="100%" height="100%" class="liquify-surface" filter="url(#liquifyFilter)" />
                 </svg>
               }
+              @case ('helix') {
+                <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+                  <defs><filter id="helixGlow"><feGaussianBlur stdDeviation="1" result="blur"></feGaussianBlur><feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter></defs>
+                  <g class="helix-viz" filter="url(#helixGlow)">
+                    <path [attr.d]="helixData().strand1" class="helix-strand helix-strand-1"></path>
+                    <path [attr.d]="helixData().strand2" class="helix-strand helix-strand-2"></path>
+                    @for (rung of helixData().rungs; track rung.id) {
+                      <line [attr.x1]="rung.x1" [attr.y1]="rung.y1" [attr.x2]="rung.x2" [attr.y2]="rung.y2" class="helix-rung" [style.opacity]="rung.opacity"></line>
+                    }
+                  </g>
+                </svg>
+              }
+              @case ('polar-rose') {
+                <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+                  <defs><filter id="roseGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.5"></feGaussianBlur></filter></defs>
+                  <g class="polar-rose-viz" filter="url(#roseGlow)" [attr.transform]="'rotate(' + polarRoseData().rotation + ' 50 50)'">
+                    <path [attr.d]="polarRoseData().path" class="polar-rose-path"></path>
+                  </g>
+                </svg>
+              }
+              @case ('diamond') {
+                <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+                  <defs><filter id="diamondGlow"><feGaussianBlur stdDeviation="0.8" result="blur"></feGaussianBlur><feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter></defs>
+                  <g class="diamond-viz" filter="url(#diamondGlow)">
+                    @for (d of diamondData(); track d.id) {
+                      <polygon [attr.points]="d.cx + ',' + (d.cy - 3 * d.scale) + ' ' + (d.cx + 2.5 * d.scale) + ',' + d.cy + ' ' + d.cx + ',' + (d.cy + 3 * d.scale) + ' ' + (d.cx - 2.5 * d.scale) + ',' + d.cy" class="diamond-facet" [style.opacity]="d.opacity" [style.fill]="'hsl(' + d.hue + ', 80%, 60%)'"></polygon>
+                    }
+                  </g>
+                </svg>
+              }
+              @case ('orbits') {
+                <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+                  <defs><filter id="orbitGlow"><feGaussianBlur stdDeviation="0.6" result="blur"></feGaussianBlur><feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter></defs>
+                  <g filter="url(#orbitGlow)">
+                    @for (orbit of orbitsData(); track orbit.id) {
+                      <g [attr.transform]="'rotate(' + orbit.tilt + ' 50 50)'">
+                        <ellipse cx="50" cy="50" [attr.rx]="orbit.rx" [attr.ry]="orbit.ry" class="orbit-ring" [style.opacity]="0.3 + orbit.energy * 0.7"></ellipse>
+                        <circle [attr.cx]="orbit.ex" [attr.cy]="orbit.ey" [attr.r]="1.5 + orbit.energy * 2" class="orbit-electron"></circle>
+                      </g>
+                    }
+                    <circle cx="50" cy="50" r="3" class="orbit-nucleus"></circle>
+                  </g>
+                </svg>
+              }
+              @case ('ripple') {
+                <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+                  <defs><filter id="rippleGlow"><feGaussianBlur stdDeviation="0.5" result="blur"></feGaussianBlur><feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter></defs>
+                  <g class="ripple-viz" filter="url(#rippleGlow)">
+                    @for (dot of rippleData(); track dot.id) {
+                      <circle [attr.cx]="dot.cx" [attr.cy]="dot.cy" [attr.r]="dot.r" [style.opacity]="dot.opacity" class="ripple-dot"></circle>
+                    }
+                  </g>
+                </svg>
+              }
               @default {
                 <div class="visualizer-content-default p-2 flex items-end justify-center h-full w-full" [style.gap.px]="barSpacing()">
                   @switch (effectiveTheme().type) {
