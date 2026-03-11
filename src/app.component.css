@@ -677,6 +677,12 @@ body.fullscreen-ios-body {
   transition: cx 33ms linear, cy 33ms linear, r 33ms linear;
 }
 
+/* --- Nova Theme --- */
+.nova-ray {
+  stroke-linecap: round;
+  transition: opacity 33ms linear;
+}
+
 .canvas {
   width: 100%;
   height: 100%;

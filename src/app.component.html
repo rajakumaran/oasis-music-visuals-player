@@ -270,6 +270,58 @@
                   </g>
                 </svg>
               }
+              @case ('nova') {
+                <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+                  <defs>
+                    <filter id="novaGlow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="1.5" result="blur"></feGaussianBlur>
+                      <feMerge>
+                        <feMergeNode in="blur"></feMergeNode>
+                        <feMergeNode in="blur"></feMergeNode>
+                        <feMergeNode in="SourceGraphic"></feMergeNode>
+                      </feMerge>
+                    </filter>
+                    <radialGradient id="novaHaloGlow" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" [attr.stop-color]="'hsl(' + novaData().hue + ', 100%, 70%)'" [attr.stop-opacity]="novaData().haloOpacity"></stop>
+                      <stop offset="50%" [attr.stop-color]="'hsl(' + novaData().hue + ', 100%, 50%)'" [attr.stop-opacity]="novaData().haloOpacity * 0.5"></stop>
+                      <stop offset="100%" stop-color="transparent" stop-opacity="0"></stop>
+                    </radialGradient>
+                  </defs>
+                  
+                  <g class="nova-viz" filter="url(#novaGlow)">
+                    <!-- Halo -->
+                    <circle cx="50" cy="50" [attr.r]="novaData().haloRadius" fill="url(#novaHaloGlow)"></circle>
+                    
+                    <!-- Rays -->
+                    <g [attr.transform]="'rotate(' + (novaData().shockwave * 5) + ' 50 50)'">
+                      @for (ray of novaData().rays; track ray.id) {
+                        <line 
+                          [attr.x1]="50" [attr.y1]="50"
+                          [attr.x2]="50 + ray.length * (ray.angle > 90 && ray.angle < 270 ? -1 : 1) * 0.0" 
+                          [attr.transform]="'rotate(' + ray.angle + ' 50 50)'"
+                          class="nova-ray"
+                          [style.stroke]="'hsl(' + novaData().hue + ', 100%, ' + (60 + ray.opacity * 40) + '%)'"
+                          [style.stroke-width]="ray.width"
+                          [style.opacity]="ray.opacity">
+                        </line>
+                        <!-- Ray trick to calculate point without cos/sin: we draw a line and rotate the group -->
+                        <line 
+                          x1="50" y1="50" x2="50" [attr.y2]="50 - ray.length"
+                          [attr.transform]="'rotate(' + ray.angle + ' 50 50)'"
+                          class="nova-ray"
+                          [style.stroke]="'hsl(' + novaData().hue + ', 100%, ' + (60 + ray.opacity * 40) + '%)'"
+                          [style.stroke-width]="ray.width"
+                          [style.opacity]="ray.opacity">
+                        </line>
+                      }
+                    </g>
+                    
+                    <!-- Core -->
+                    <circle cx="50" cy="50" [attr.r]="novaData().coreRadius" [style.fill]="'hsl(' + novaData().hue + ', 100%, 80%)'"></circle>
+                    <circle cx="50" cy="50" [attr.r]="novaData().coreRadius * 0.5" fill="#ffffff" [style.opacity]="0.7 + novaData().shockwave * 0.3"></circle>
+                  </g>
+                </svg>
+              }
               @default {
                 <div class="visualizer-content-default p-2 flex items-end justify-center h-full w-full" [style.gap.px]="barSpacing()">
                   @switch (effectiveTheme().type) {
