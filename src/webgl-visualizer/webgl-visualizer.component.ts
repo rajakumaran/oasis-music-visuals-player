@@ -764,42 +764,10 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
         return;
       }
 
+      // Default: slow orbit that scales with volume. Does NOT reset user pan or zoom!
       this.controls.autoRotate = true;
       const avgBarHeight = barData.length > 0 ? barData.reduce((a, b) => a + b, 0) / barData.length : 0;
       this.controls.autoRotateSpeed = 0.2 + avgBarHeight * 0.8;
-      
-      // Subtle zoom effect that respects the current distance
-      const zoomOffset = Math.sin(elapsedTime * 0.15) * 1.5;
-      const targetDistance = this.initialCameraDistance + zoomOffset;
-      
-      const currentDistance = this.camera.position.distanceTo(this.controls.target);
-      const newDistance = THREE.MathUtils.lerp(currentDistance, targetDistance, 0.05); // Smooth interpolation
-      
-      // Cyber Metropolis special fly-through camera
-      if (this.theme().webglMode === 'webgl-metropolis') {
-        this.controls.autoRotate = false;
-        
-        // Fly down a street: shift camera slightly off center since blocks are at X=0
-        const citySize = 40 * 1.5;
-        
-        // A long cycle that goes from one end of the city to the other
-        const cycle = (elapsedTime * 0.05) % 1.0;
-        
-        // Pan through the main avenue
-        const zPos = (cycle - 0.5) * citySize * 1.5;
-        const xOffset = 0.75; // EXACT center of the street (since spacing = 1.5 and x=0 holds a block)
-        this.camera.position.set(xOffset, 1.5 + Math.sin(elapsedTime * 0.2) * 0.5, zPos);
-        
-        // Look slightly upward at the Zenith
-        this.controls.target.set(xOffset, 5, zPos - 10);
-      } else {
-        // Only lerp if we are reasonably close to the target distance to avoid "snapping"
-        if (Math.abs(currentDistance - targetDistance) < 10) {
-          const newDistance = THREE.MathUtils.lerp(currentDistance, targetDistance, 0.02);
-          const direction = this.camera.position.clone().sub(this.controls.target).normalize();
-          this.camera.position.copy(this.controls.target.clone().add(direction.multiplyScalar(newDistance)));
-        }
-      }
   }
   // Handle canvas resizing
   private handleResize() {

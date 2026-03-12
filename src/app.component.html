@@ -33,17 +33,17 @@
                 [class]="'btn btn-sm gap-2 shadow-lg btn-3d ' + effectiveTheme().button"
                 [class.btn-primary]="!showCockpits()">
           <i class="fa-solid" [class.fa-sliders]="!showCockpits()" [class.fa-xmark]="showCockpits()"></i>
-          {{ showCockpits() ? 'Hide Cockpits' : 'Cockpits' }}
+          {{ showCockpits() ? 'Hide Cockpits' : 'Cockpits' }} 
         </button>
-      </div>
-
+      </div>     
+      <div class="text-center">Active theme: {{ effectiveTheme().name }}</div>
       <div id="visualizer-display-wrapper" class="relative flex-1 min-h-[40vh] bg-cover bg-center overflow-hidden" [style.background-image]="backgroundImageUrl() ? 'url(' + backgroundImageUrl()! + ')' : null">
         <app-fullscreen-toggle targetElementId="visualizer-display-wrapper"></app-fullscreen-toggle>
         <div [class]="'absolute inset-0 transition-opacity ' + effectiveTheme().display"></div>
         
         @if (effectiveTheme().type === 'glass-box') {
           <div class="crystal-case-overlay"></div>
-        }
+        }        
 
         <div class="absolute inset-0 pointer-events-none transition-all duration-500" [style.background]="lightingOverlayStyle()"></div>
         <div class="visualizer-content-host absolute inset-0" [style.filter]="isKaleidoscope() && effectiveTheme().type !== 'led' ? 'hue-rotate(' + kaleidoscopeHueShift() + 'deg)' : 'none'">
