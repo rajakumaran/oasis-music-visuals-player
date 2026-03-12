@@ -157,7 +157,7 @@ export class AppComponent implements OnInit, OnDestroy {
   isHolidayThemeOn = this.holidayService.holidayThemeEnabled;
   detectedHoliday = this.holidayService.detectedHoliday;
 
-  lightSourcePosition = signal<LightSourcePosition>('none');
+  lightSourcePosition = signal<LightSourcePosition>('top-center');
   isLightingControlVisible = computed(() => !['led', 'webgl'].includes(this.effectiveTheme().type));
   lightingOverlayStyle = computed(() => {
     const position = this.lightSourcePosition();
