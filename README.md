@@ -3,6 +3,39 @@
 
 
 
+
+# March/11th/2026 #6
+Prior check-in has the code changes for this task.
+
+Bill Gates Inspired Themes & Camera Fix
+Goal Description
+Stop forced camera movements in WebGL mode. Let the camera slowly auto-rotate based on the music, but never forcefully zoom in, reset distance, or lock into a fly-through path overriding the user's manual pan/zoom.
+Add Bill Gates/Microsoft-inspired visualizer themes. These will be added as variants to the led, shadow (Pioneer), and shadow/concave (Marantz) families, heavily relying on classic retro-computing, enterprise software, and iconic Microsoft design languages.
+Proposed Changes
+src/webgl-visualizer/webgl-visualizer.component.ts
+[MODIFY] 
+animateCamera
+Strip out the zoomOffset, targetDistance, and Cyber Metropolis xOffset tracking mathematics. Reduce the function to only toggle this.controls.autoRotate based on user interaction, and map autoRotateSpeed to the music's volume. This will strictly obey the user's intended zoom and pan limits.
+
+src/app.component.ts
+[MODIFY] themes array
+Append the following 7 new 
+EqualizerTheme
+ objects to the end of the array:
+
+Classic LED MS-DOS: Pure #000000 black, terminal green #00FF00 bars and text. High contrast mono vibes.
+Classic LED PowerShell: Classic #012456 dark blue background, stark white and yellow accents.
+Pioneer Win95: Classic #008080 teal desktop background, vintage flat gray containers, dark navy highlights.
+Pioneer BSOD: Classic #0000AA blue screen of death background, pure white and cyan glowing bars.
+Pioneer Solitaire: Deep felt-green background (bg-green-800), bright card-white/red highlights.
+Marantz Excel Edge: Enterprise productivity green #107C41 (bg-emerald-800), stark gray/white data displays.
+Marantz Azure Cloud: Modern cloud infrastructure blue #0078D4, pristine white interface with glowing cyan computing metrics.
+Verification Plan
+Check that zooming and panning in Cyber Metropolis and VoxelScape no longer snap back to a predefined distance when letting go of the mouse.
+Verify all 7 new Microsoft-inspired themes load and visually function correctly.
+
+
+
 # March/11th/2026 #5
 Got it—thank you for the precise feedback! I investigated both issues and found the core problems.
 
