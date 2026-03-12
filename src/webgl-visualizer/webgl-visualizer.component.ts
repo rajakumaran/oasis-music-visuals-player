@@ -397,23 +397,23 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
     
     // 1. City Grid (InstancedMesh)
     const gridSize = 40;
-    const spacing = 1.2;
+    const spacing = 1.5;
     const totalBuildings = gridSize * gridSize;
     
-    const buildingGeom = new THREE.BoxGeometry(0.8, 1, 0.8);
+    const buildingGeom = new THREE.BoxGeometry(0.6, 1, 0.6);
     // Move geometry up so it scales from the bottom
     buildingGeom.translate(0, 0.5, 0); 
     
-    const buildingMat = new THREE.MeshStandardMaterial({
-      color: 0x0a0a1a,
-      roughness: 0.2,
-      metalness: 0.8,
-      emissive: this.theme().accent,
-      emissiveIntensity: 0
-    });
+    // Pure emissive white base material. Instance colors will multiply this.
+    const buildingMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     
     this.buildingMesh = new THREE.InstancedMesh(buildingGeom, buildingMat, totalBuildings);
     this.buildingMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    
+    // We add an instanceColor buffer so each building can glow appropriately
+    const colors = new Float32Array(totalBuildings * 3);
+    this.buildingMesh.instanceColor = new THREE.InstancedBufferAttribute(colors, 3);
+    this.buildingMesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
     
     const matrix = new THREE.Matrix4();
     let i = 0;
@@ -441,7 +441,7 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
       
       const x = isXAxis ? startPos : lane + (Math.random() - 0.5) * 0.4;
       const z = isXAxis ? lane + (Math.random() - 0.5) * 0.4 : startPos;
-      const y = 0.1; // Slightly above ground
+      const y = 0.5; // Raised slightly so traffic doesn't clip with street
       
       trafficPos[t*3] = x;
       trafficPos[t*3+1] = y;
@@ -515,10 +515,9 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
     }
     
     if (this.metropolisGroup) {
-      (this.buildingMesh.material as THREE.MeshStandardMaterial).color.set(new THREE.Color(0x0a0a1a));
-      (this.buildingMesh.material as THREE.MeshStandardMaterial).emissive.set(accentColor);
-      (this.zenithMesh.material as THREE.MeshBasicMaterial).color.set(accentColor);
-      (this.trafficPoints.material as THREE.PointsMaterial).color.set(accentColor);
+      const accent = new THREE.Color(accentColor);
+      (this.zenithMesh.material as THREE.MeshBasicMaterial).color.set(accent);
+      (this.trafficPoints.material as THREE.PointsMaterial).color.set(accent);
     }
     
     if (this.terrainMesh) {
@@ -669,11 +668,15 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
     
     // 1. Animate Buildings (InstancedMesh)
     const gridSize = 40;
-    const spacing = 1.2;
+    const spacing = 1.5; // Matching updated creating spacing
     const matrix = new THREE.Matrix4();
     const position = new THREE.Vector3();
     const scale = new THREE.Vector3();
     const rotation = new THREE.Quaternion();
+    
+    const baseColor = new THREE.Color(0x020205); // Very dark, barely visible
+    const accentColor = new THREE.Color(this.theme().accent);
+    const colorObj = new THREE.Color();
     
     let i = 0;
     for (let x = 0; x < gridSize; x++) {
@@ -701,10 +704,17 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
         scale.y += (targetHeight - scale.y) * 0.2;
         matrix.compose(position, rotation, scale);
         this.buildingMesh.setMatrixAt(i, matrix);
+        
+        // Apply neon glow to buildings based on energy level
+        const glowLerp = Math.min(1, energy * 1.5);
+        colorObj.copy(baseColor).lerp(accentColor, glowLerp);
+        this.buildingMesh.setColorAt(i, colorObj);
+        
         i++;
       }
     }
     this.buildingMesh.instanceMatrix.needsUpdate = true;
+    if (this.buildingMesh.instanceColor) this.buildingMesh.instanceColor.needsUpdate = true;
     
     // 2. Animate Traffic
     const beatInfo = this.beat();
@@ -769,18 +779,19 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
       if (this.theme().webglMode === 'webgl-metropolis') {
         this.controls.autoRotate = false;
         
-        // Fly down a street
-        const citySize = 40 * 1.2;
+        // Fly down a street: shift camera slightly off center since blocks are at X=0
+        const citySize = 40 * 1.5;
         
         // A long cycle that goes from one end of the city to the other
         const cycle = (elapsedTime * 0.05) % 1.0;
         
         // Pan through the main avenue
         const zPos = (cycle - 0.5) * citySize * 1.5;
-        this.camera.position.set(0, 1.5 + Math.sin(elapsedTime * 0.2) * 0.5, zPos);
+        const xOffset = 0.75; // EXACT center of the street (since spacing = 1.5 and x=0 holds a block)
+        this.camera.position.set(xOffset, 1.5 + Math.sin(elapsedTime * 0.2) * 0.5, zPos);
         
         // Look slightly upward at the Zenith
-        this.controls.target.set(0, 5, zPos - 10);
+        this.controls.target.set(xOffset, 5, zPos - 10);
       } else {
         // Only lerp if we are reasonably close to the target distance to avoid "snapping"
         if (Math.abs(currentDistance - targetDistance) < 10) {

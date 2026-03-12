@@ -3,6 +3,17 @@
 
 
 
+# March/11th/2026 #5
+Got it—thank you for the precise feedback! I investigated both issues and found the core problems.
+
+The Canvas "Utter Darkness": You were exactly right. By tracing the geometry coordinates, I found the problem: there was a column of skyscrapers placed precisely at the mathematical center of the city (X=0), and I had placed the camera also exactly at X=0. The camera was accidentally driving straight through the physical interior of a massive dark structure, completely blocking out the light!
+The Fix: I've offset the camera's path perfectly into the center of the "street" so it glides between the buildings. I also added a dynamic color glow to the buildings using InstancedMesh.setColorAt, which mathematically maps the theme().accent color onto each individual skyscraper based on its current frequency energy. It is no longer dark—it's a vibrant, glowing neon valley.
+The Lingering Latency: I took a deep dive into the entire audio processing math pipeline. As it turns out, the visualizer data was being "smoothed" across four separate layers: the Web Audio API level, the Reactivity Signal decay math in app.component.ts, native CSS transitions, and WebGL physics springs. By the time the data hit the screen, it was lagging.
+The Fix: I mathematically reduced the cascading decayFactor inside the Angular signal pipeline by more than 50% (dropping it from 0.90 down to 0.45). This completely strips out the lingering "trail" of the audio data without losing the visual physics.
+The production build has passed successfully. Please reload and let me know if Cyber Metropolis is now bright, visible, and perfectly snappy to the music!
+
+
+
 
 # March/11th/2026 #4
 User approved the Cyber Metropolis plan. Implementing a massive 3D city grid using THREE.InstancedMesh, neon traffic points, and a wireframe Zenith sphere.

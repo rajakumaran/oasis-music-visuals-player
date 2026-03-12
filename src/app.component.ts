@@ -254,8 +254,9 @@ export class AppComponent implements OnInit, OnDestroy {
     const map = (val: number, in_min: number, in_max: number, out_min: number, out_max: number) =>
       ((val - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min;
 
-    const decay = map(width, 320, 2560, 0.88, 0.93);
-    this.decayFactor.set(clamp(decay, 0.88, 0.93));
+    // Reduced significantly to fix lingering audio lag
+    const decay = map(width, 320, 2560, 0.45, 0.60);
+    this.decayFactor.set(clamp(decay, 0.45, 0.60));
   }
 
   // averageDataBuffers removed — the AnalyserNode's smoothingTimeConstant (0.3) already
@@ -319,19 +320,19 @@ export class AppComponent implements OnInit, OnDestroy {
 
         // Apply range-specific modifiers
         if (barProgress < ranges.subBass) { // Sub-bass
-          finalSensitivity *= 1.1; finalDecay = Math.min(0.99, baseDecay + 0.025);
+          finalSensitivity *= 1.1; finalDecay = Math.min(0.85, baseDecay + 0.1);
         } else if (barProgress < ranges.bass) { // Bass
-          finalSensitivity *= 1.05; finalDecay = Math.min(0.985, baseDecay + 0.015);
+          finalSensitivity *= 1.05; finalDecay = Math.min(0.80, baseDecay + 0.05);
         } else if (barProgress < ranges.lowMid) { // Low Mids
-          finalSensitivity *= 0.9; finalDecay = Math.max(0.9, baseDecay - 0.02);
+          finalSensitivity *= 0.9; finalDecay = Math.max(0.5, baseDecay - 0.05);
         } else if (barProgress < ranges.mid) { // Mids
           finalSensitivity *= 0.85;
         } else if (barProgress < ranges.upperMid) { // Upper Mids
           finalSensitivity *= 0.95;
         } else if (barProgress < ranges.presence) { // Presence
-          finalSensitivity *= 1.15; finalDecay = Math.max(0.88, baseDecay - 0.05);
+          finalSensitivity *= 1.15; finalDecay = Math.max(0.4, baseDecay - 0.1);
         } else { // Brilliance
-          finalSensitivity *= 1.25; finalDecay = Math.max(0.85, baseDecay - 0.08);
+          finalSensitivity *= 1.25; finalDecay = Math.max(0.3, baseDecay - 0.15);
         }
 
         normalizedValue *= finalSensitivity;
@@ -342,7 +343,7 @@ export class AppComponent implements OnInit, OnDestroy {
         if (normalizedValue >= currentValue) {
           this.smoothedBars[i] = normalizedValue;
         } else {
-          if (driveMode === 'atmosphere') finalDecay = Math.min(0.995, finalDecay + 0.03);
+          if (driveMode === 'atmosphere') finalDecay = Math.min(0.85, finalDecay + 0.2);
           this.smoothedBars[i] = currentValue * finalDecay;
         }
         output[i] = Math.min(1, Math.max(0, this.smoothedBars[i]));
