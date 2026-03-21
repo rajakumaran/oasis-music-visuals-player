@@ -195,12 +195,13 @@ export class AppComponent implements OnInit, OnDestroy {
     effect(() => this.isStyleFusionOn() ? this.startStyleFusion() : this.stopStyleFusion());
   }
 
-  enterOasis() {
+  async enterOasis() {
     this.hasEntered.set(true);
-    // Explicitly play music if there's a track
-    if (this.playlist().length > 0 && !this.isPlaying()) {
-      // Toggle play after context starts mapping cleanly via gesture
-      this.audioService.togglePlay();
+
+    // Ensure audio context is initialized within this user gesture
+    // so iOS/Android browsers allow playback
+    if (this.playlist().length > 0) {
+      await this.audioService.togglePlay();
     }
   }
 
@@ -893,7 +894,6 @@ export class AppComponent implements OnInit, OnDestroy {
     { name: 'Cyberdeck', type: 'convex', base: 'cyberdeck-bg', display: 'cyberdeck-display', bar: 'bg-gradient-to-t from-cyan-500 to-orange shadow-[0_0_8px_rgba(34,211,238,0.8),0_0_20px_rgba(34,211,238,0.5)] rounded-t-sm', sliderTrack: 'bg-gray-800/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-200 font-mono', accent: 'text-fuchsia-400', button: 'btn-cyber', buttonHover: '', highlight: 'bg-cyan-400/20' },
     { name: 'VoxelScape', type: 'webgl', webglMode: 'bars', base: 'bg-gray-900', display: '#111827', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: '#a78bfa', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-violet-500/50' },
     { name: 'Audio Terrain', type: 'webgl', webglMode: 'terrain', base: 'bg-gray-900', display: '#030712', bar: '', sliderTrack: 'bg-emerald-800/50', sliderThumb: 'bg-lime-400', text: 'text-lime-300', accent: '#84cc16', button: 'bg-emerald-900/70', buttonHover: 'hover:bg-emerald-800/70', highlight: 'bg-lime-500/50' },
-    { name: 'VoxelScape', type: 'webgl', webglMode: 'bars', base: 'bg-gray-900', display: '#2c509e', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: '#33775c', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-violet-500/50' },
     { name: 'Matrix', type: 'shadow', base: 'bg-black', display: 'bg-black/80', bar: 'bg-gradient-to-t from-emerald-700 to-green-400 shadow-[0_0_10px_#4ade80,-1px_0_4px_rgba(0,0,0,0.7)]', sliderTrack: 'bg-gray-800', sliderThumb: 'bg-green-500', text: 'text-green-400 font-mono', accent: 'text-green-300', button: 'bg-gray-900 border border-green-700', buttonHover: 'hover:bg-gray-800', highlight: 'bg-green-600/50' },
     { name: 'Cosmic Rift 2.0', type: '3d', base: 'cosmic-rift-bg', display: 'bg-black/40', bar: 'bg-gradient-to-t from-fuchsia-500 via-pink-400 to-cyan-300 shadow-[0_0_10px_#a855f7]', sliderTrack: 'bg-purple-800/50', sliderThumb: 'bg-fuchsia-500', text: 'text-purple-300', accent: 'text-cyan-300', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-fuchsia-500/50' },
     { name: 'Celestial Sphere', type: 'fractal', base: 'bg-gradient-to-br from-gray-900 via-blue-900 to-black', display: 'bg-black/40', bar: '', sliderTrack: 'bg-blue-800/50', sliderThumb: 'bg-sky-500', text: 'text-sky-300', accent: 'text-cyan-300', button: 'bg-blue-900/70', buttonHover: 'hover:bg-blue-800/70', highlight: 'bg-sky-500/50' },
@@ -920,7 +920,7 @@ export class AppComponent implements OnInit, OnDestroy {
     { name: 'Muntosh', type: '3d', base: 'bg-gray-900', display: 'bg-black/90', bar: 'bg-gradient-to-t from-sky-600 to-sky-300 shadow-[0_0_6px_#38bdf8]', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-green-500', text: 'text-green-400', accent: 'text-sky-400', button: 'bg-gray-800 border border-gray-600', buttonHover: 'hover:bg-gray-700', highlight: 'bg-gray-700/50' },
     { name: 'Cyberpunk', type: 'shadow', base: 'bg-black', display: 'bg-black/80', bar: 'bar-neon-glow bg-cyan-400', sliderTrack: 'bg-gray-800', sliderThumb: 'bg-fuchsia-500', text: 'text-fuchsia-400 font-mono', accent: 'text-cyan-300', button: 'bg-gray-900 border border-fuchsia-700', buttonHover: 'hover:bg-gray-800', highlight: 'bg-fuchsia-600/50' },
     { name: 'Aqua Gloss', type: 'glossy', base: 'bg-gray-800', display: 'bg-black/50', bar: 'bg-gradient-to-t from-teal-500 to-cyan-400 shadow-[0_0_8px_#67e8f9]', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-cyan-300', text: 'text-gray-200', accent: 'text-cyan-300', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-cyan-600/50' },
-    
+
     // --- Bill Gates Legacy & Microsoft-Inspired Themes ---
     { name: 'Classic LED MS-DOS', type: 'led', base: 'bg-black', display: 'bg-black', bar: 'bg-green-500 shadow-none border-none rounded-none', sliderTrack: 'bg-green-900', sliderThumb: 'bg-green-400', text: 'text-green-500 font-mono', accent: 'text-green-400', button: 'bg-green-950 border border-green-700', buttonHover: 'hover:bg-green-900', highlight: 'bg-green-500/30' },
     { name: 'Classic LED PowerShell', type: 'led', base: 'bg-[#012456]', display: 'bg-[#012456]', bar: 'bg-gray-100 shadow-none border-none rounded-none', sliderTrack: 'bg-blue-900', sliderThumb: 'bg-yellow-400', text: 'text-gray-100 font-mono', accent: 'text-yellow-400', button: 'bg-blue-900 border border-blue-700', buttonHover: 'hover:bg-blue-800', highlight: 'bg-yellow-400/30' },
@@ -1031,22 +1031,22 @@ export class AppComponent implements OnInit, OnDestroy {
   private selectNextTheme(): void {
     const currentIndex = this.themes.findIndex(t => t.name === this.selectedTheme().name);
     let nextIndex: number;
-    
+
     if (this.switchMode() === 'random') {
       if (this.themeRandomBag.length === 0) {
         // Refill bag with all indices EXCEPT the current one
         this.themeRandomBag = this.themes.map((_, i) => i).filter(i => i !== currentIndex);
       }
-      
+
       const randPick = Math.floor(Math.random() * this.themeRandomBag.length);
       nextIndex = this.themeRandomBag[randPick];
-      
+
       // Pluck the chosen theme so it doesn't repeat until bag empties
       this.themeRandomBag.splice(randPick, 1);
     } else {
       nextIndex = (currentIndex + 1) % this.themes.length;
     }
-    
+
     this.selectedTheme.set(this.themes[nextIndex]);
   }
 
@@ -1135,6 +1135,6 @@ export class AppComponent implements OnInit, OnDestroy {
     this.draggedTrackIndex.set(null);
   }
   onDragEnd() { this.draggedTrackIndex.set(null); }
-  
+
   // _reimplementUnchanged has been annihilated to restore class predictability and method stability
 }

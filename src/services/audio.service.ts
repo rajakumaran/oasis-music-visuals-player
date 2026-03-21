@@ -202,9 +202,16 @@ export class AudioService {
 
   private loadDefaultPlaylist() {
     this.playlist.set([
-      { name: 'Ambient Classical Guitar', url: 'https://cdn.pixabay.com/audio/2022/08/04/audio_2dde6b9975.mp3', duration: '...', isUserUpload: false },
-      { name: 'The Cradle of Your Soul', url: 'https://cdn.pixabay.com/audio/2022/01/20/audio_20a45d31a2.mp3', duration: '...', isUserUpload: false },
-      { name: 'Smoke', url: 'https://cdn.pixabay.com/audio/2023/04/24/audio_b722a84376.mp3', duration: '...', isUserUpload: false }
+      { name: 'Music track 1', url: '/music/sample-ai-track1.mp3', duration: '...', isUserUpload: false },
+      { name: 'Music track 2', url: '/music/sample-ai-track2.mp3', duration: '...', isUserUpload: false },
+      { name: 'Music track 3', url: '/music/sample-ai-track3.mp3', duration: '...', isUserUpload: false },
+      { name: 'Music track 4', url: '/music/sample-ai-track4.mp3', duration: '...', isUserUpload: false },
+      { name: 'Music track 5', url: '/music/sample-ai-track5.mp3', duration: '...', isUserUpload: false },
+      { name: 'Music track 6', url: '/music/sample-ai-track6.mp3', duration: '...', isUserUpload: false },
+      { name: 'Music track 7', url: '/music/sample-ai-track7.mp3', duration: '...', isUserUpload: false },
+      { name: 'Music track 8', url: '/music/sample-ai-track8.mp3', duration: '...', isUserUpload: false },
+      { name: 'Music track 9', url: '/music/sample-ai-track9.mp3', duration: '...', isUserUpload: false },
+      { name: 'Music track 10', url: '/music/sample-ai-track10.mp3', duration: '...', isUserUpload: false },
     ]);
   }
 
@@ -638,6 +645,8 @@ export class AudioService {
     if (!this.fftBuffer || this.fftBuffer.length !== this.analyserNode.frequencyBinCount) {
       this.fftBuffer = new Uint8Array(this.analyserNode.frequencyBinCount);
     }
+    this.analyserNode.getByteFrequencyData(this.fftBuffer);
+
     // Use a new Uint8Array reference so that Angular Signal detects the change.
     // This entirely eliminates the massive visual lag because dependencies evaluating
     // visualizer bars were failing equality checks and skipping render frames!
