@@ -42,6 +42,9 @@ export class AppComponent implements OnInit, OnDestroy {
   transient = this.audioService.transient;
   currentTrackReady = this.audioService.currentTrackReady;
 
+  // --- Initial Splash Screen ---
+  hasEntered = signal(false);
+
   // --- Visualizer Engine State ---
   visualizerEngine = signal<VisualizerEngine>('synergy');
 
@@ -197,6 +200,15 @@ export class AppComponent implements OnInit, OnDestroy {
     effect(() => (this.isKaleidoscope() && (this.isPlaying() || this.audioSource() === 'microphone')) ? this.startKaleidoscope() : this.stopKaleidoscope());
     effect(() => this.isStyleFusionOn() ? this.startStyleFusion() : this.stopStyleFusion());
     this._reimplementUnchanged();
+  }
+
+  enterOasis() {
+    this.hasEntered.set(true);
+    // Explicitly play music if there's a track
+    if (this.playlist().length > 0 && !this.isPlaying()) {
+      // Toggle play after context starts mapping cleanly via gesture
+      this.audioService.togglePlay();
+    }
   }
 
   ngOnInit(): void {

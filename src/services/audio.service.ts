@@ -172,7 +172,17 @@ export class AudioService {
 
     lastNode.connect(this.masterGainNode);
     this.masterGainNode.connect(this.analyserNode);
-    this.analyserNode.connect(this.audioContext.destination);
+
+    // Brickwall limiter to prevent clipping and distortion jumps
+    const limiter = this.audioContext.createDynamicsCompressor();
+    limiter.threshold.value = -1.0; // Prevent pushing above 0dB (a little headroom)
+    limiter.knee.value = 0.0;
+    limiter.ratio.value = 20.0; // Hard limiting ratio
+    limiter.attack.value = 0.005; // Quick attack to catch transients
+    limiter.release.value = 0.050; // Quick release
+
+    this.analyserNode.connect(limiter);
+    limiter.connect(this.audioContext.destination);
 
     this.audioElement.addEventListener('timeupdate', () => this.currentTime.set(this.audioElement?.currentTime || 0));
     this.audioElement.addEventListener('durationchange', () => this.duration.set(this.audioElement?.duration || 0));
@@ -221,9 +231,9 @@ export class AudioService {
 
   private loadDefaultPlaylist() {
     this.playlist.set([
-      // { name: 'Ambient Classical Guitar', url: 'https://cdn.pixabay.com/audio/2022/08/04/audio_2dde6b9975.mp3', duration: '...' },
-      // { name: 'The Cradle of Your Soul', url: 'https://cdn.pixabay.com/audio/2022/01/20/audio_20a45d31a2.mp3', duration: '...' },
-      // { name: 'Smoke', url: 'https://cdn.pixabay.com/audio/2023/04/24/audio_b722a84376.mp3', duration: '...' }
+      { name: 'Ambient Classical Guitar', url: 'https://cdn.pixabay.com/audio/2022/08/04/audio_2dde6b9975.mp3', duration: '...', isUserUpload: false },
+      { name: 'The Cradle of Your Soul', url: 'https://cdn.pixabay.com/audio/2022/01/20/audio_20a45d31a2.mp3', duration: '...', isUserUpload: false },
+      { name: 'Smoke', url: 'https://cdn.pixabay.com/audio/2023/04/24/audio_b722a84376.mp3', duration: '...', isUserUpload: false }
     ]);
   }
 
