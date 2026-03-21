@@ -4,6 +4,7 @@ export interface EqualizerTheme {
   | 'webgl-grok-lattice' | 'webgl-grok-rift' | 'webgl-grok-neural-ember' | 'webgl-grok-collapse' | 'webgl-grok-aurora'
   | 'webgl-shader-ferrofluid'  | 'webgl-shader-explosion' | 'webgl-shader-waves'| 'webgl-shader-fractal-zoom'| 'webgl-shader-nebula' | 'webgl-shader-plasma' | 'webgl-shader-plasma' | 'webgl-shader-geometry' | 'webgl-shader-particles' | 'webgl-shader-holo' | 'webgl-shader-fractal' | 'ford-circles'
   | 'helix' | 'polar-rose' | 'diamond' | 'orbits' | 'ripple' | 'nova'
+  | 'oscilloscope' | 'spectrogram'
   | 'base';
   base: string;
   display: string;

@@ -104,6 +104,20 @@
                   (interaction)="onVisualizerInteraction()"
                 />
               }
+              @case ('oscilloscope') {
+                <app-oscilloscope
+                  [timeDomainData]="timeDomainData()"
+                  [bars]="visualizerBars()"
+                  [beat]="beat()"
+                  [musicProfile]="effectiveSynergyDriveMode()"
+                />
+              }
+              @case ('spectrogram') {
+                <app-spectrogram
+                  [bars]="visualizerBars()"
+                  [beat]="beat()"
+                />
+              }
               @case ('aura') {
                 <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style="overflow:hidden">
                   <defs><filter id="auraGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.5"></feGaussianBlur></filter></defs>

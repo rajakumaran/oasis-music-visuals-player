@@ -50,6 +50,7 @@ export class AudioService {
 
   gainValues = signal<number[]>(BANDS.map(() => 0));
   frequencyData: WritableSignal<Uint8Array> = signal(new Uint8Array(FFT_SIZE / 2));
+  timeDomainData: WritableSignal<Uint8Array> = signal(new Uint8Array(FFT_SIZE / 2));
 
   // --- Pre-Loading / Buffering Signals ---
   /**
@@ -205,13 +206,13 @@ export class AudioService {
       { name: 'Music track 1', url: '/music/sample-ai-track1.mp3', duration: '...', isUserUpload: false },
       { name: 'Music track 2', url: '/music/sample-ai-track2.mp3', duration: '...', isUserUpload: false },
       { name: 'Music track 3', url: '/music/sample-ai-track3.mp3', duration: '...', isUserUpload: false },
-      { name: 'Music track 4', url: '/music/sample-ai-track4.mp3', duration: '...', isUserUpload: false },
-      { name: 'Music track 5', url: '/music/sample-ai-track5.mp3', duration: '...', isUserUpload: false },
-      { name: 'Music track 6', url: '/music/sample-ai-track6.mp3', duration: '...', isUserUpload: false },
-      { name: 'Music track 7', url: '/music/sample-ai-track7.mp3', duration: '...', isUserUpload: false },
-      { name: 'Music track 8', url: '/music/sample-ai-track8.mp3', duration: '...', isUserUpload: false },
-      { name: 'Music track 9', url: '/music/sample-ai-track9.mp3', duration: '...', isUserUpload: false },
-      { name: 'Music track 10', url: '/music/sample-ai-track10.mp3', duration: '...', isUserUpload: false },
+      // { name: 'Music track 4', url: '/music/sample-ai-track4.mp3', duration: '...', isUserUpload: false },
+      // { name: 'Music track 5', url: '/music/sample-ai-track5.mp3', duration: '...', isUserUpload: false },
+      // { name: 'Music track 6', url: '/music/sample-ai-track6.mp3', duration: '...', isUserUpload: false },
+      // { name: 'Music track 7', url: '/music/sample-ai-track7.mp3', duration: '...', isUserUpload: false },
+      // { name: 'Music track 8', url: '/music/sample-ai-track8.mp3', duration: '...', isUserUpload: false },
+      // { name: 'Music track 9', url: '/music/sample-ai-track9.mp3', duration: '...', isUserUpload: false },
+      // { name: 'Music track 10', url: '/music/sample-ai-track10.mp3', duration: '...', isUserUpload: false },
     ]);
   }
 
@@ -646,6 +647,11 @@ export class AudioService {
       this.fftBuffer = new Uint8Array(this.analyserNode.frequencyBinCount);
     }
     this.analyserNode.getByteFrequencyData(this.fftBuffer);
+
+    // Time-domain waveform for oscilloscope visualizer
+    const timeBuf = new Uint8Array(this.analyserNode.frequencyBinCount);
+    this.analyserNode.getByteTimeDomainData(timeBuf);
+    this.timeDomainData.set(timeBuf);
 
     // Use a new Uint8Array reference so that Angular Signal detects the change.
     // This entirely eliminates the massive visual lag because dependencies evaluating

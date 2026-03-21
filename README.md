@@ -1,5 +1,23 @@
 # oasis-music-visuals-player
 
+# March/21st/2026 #3
+
+Both new themes are fully built and wired up! Here's what you've got:
+
+🌊 CRT Oscilloscope (CRT Oscilloscope in the theme dropdown)
+Shows the raw audio waveform (time-domain) — the actual shape of the sound wave vibrating
+Retro CRT aesthetic: phosphor persistence trails (fading glow), grid overlay, scanlines, vignette darkening at edges
+Color shifts with your music profile: electric green for rhythm, cool blue for atmosphere, hot pink for transient
+Beat detection causes a bloom/flash effect that pulses the entire screen
+Bass energy controls the glow intensity and trace thickness
+🌀 Spectrogram Waterfall (Spectrogram Waterfall in the theme dropdown)
+A scrolling frequency-time heatmap that paints the entire history of your audio as a river of color
+Bass frequencies at the bottom, treble at the top — like a professional audio analysis tool
+Uses a hand-crafted 256-color gradient: deep navy → electric blue → cyan → green → yellow → orange → white hot
+Beat detection causes bright flash columns across all frequencies
+Frequency axis labels (32Hz to 16kHz) on the left edge
+Both themes use Canvas 2D — a completely new rendering technique in your app. They're near the top of the theme list. Select them from the dropdown and let me know what you think!
+
 # March/21st/2026 #2
 Alright, the final fixes are complete and should be live on your machine! Here is exactly what was done to eliminate each of those issues:
 

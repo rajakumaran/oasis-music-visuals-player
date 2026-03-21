@@ -6,6 +6,8 @@ import { PresetService, Preset } from './services/preset.service';
 import { EqualizerTheme } from './models/equalizer-theme.model';
 import { FullscreenToggleComponent } from './fullscreen-toggle/fullscreen-toggle.component';
 import { WebglVisualizerComponent } from './webgl-visualizer/webgl-visualizer.component';
+import { OscilloscopeComponent } from './oscilloscope/oscilloscope.component';
+import { SpectrogramComponent } from './spectrogram/spectrogram.component';
 import { inject as vercelAnalytics } from '@vercel/analytics';
 
 type LightSourcePosition = 'none' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center-stage' | 'top-center';
@@ -20,7 +22,7 @@ interface AuraParticle { id: number; x: number; y: number; opacity: number; size
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FullscreenToggleComponent, WebglVisualizerComponent],
+  imports: [CommonModule, FullscreenToggleComponent, WebglVisualizerComponent, OscilloscopeComponent, SpectrogramComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,6 +43,7 @@ export class AppComponent implements OnInit, OnDestroy {
   beat = this.audioService.beat;
   transient = this.audioService.transient;
   currentTrackReady = this.audioService.currentTrackReady;
+  timeDomainData = this.audioService.timeDomainData;
 
   // --- Initial Splash Screen ---
   hasEntered = signal(false);
@@ -840,6 +843,9 @@ export class AppComponent implements OnInit, OnDestroy {
   themes: EqualizerTheme[] = [
     // --- Cyber Metropolis: 3D Cityscape ---
     { name: 'Cyber Metropolis', type: 'webgl', webglMode: 'webgl-metropolis', base: 'bg-[#02000a]', display: '#02000a', bar: '', sliderTrack: 'bg-purple-900/50', sliderThumb: 'bg-pink-500', text: 'text-pink-300', accent: '#ec4899', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-pink-500/50' },
+    // --- Canvas 2D Visualizers ---
+    { name: 'CRT Oscilloscope', type: 'oscilloscope', base: 'bg-[#050810]', display: 'bg-black', bar: '', sliderTrack: 'bg-green-900/50', sliderThumb: 'bg-green-400', text: 'text-green-300', accent: 'text-green-400', button: 'bg-green-900/70', buttonHover: 'hover:bg-green-800/70', highlight: 'bg-green-500/50' },
+    { name: 'Spectrogram Waterfall', type: 'spectrogram', base: 'bg-[#030712]', display: 'bg-black', bar: '', sliderTrack: 'bg-cyan-900/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-300', accent: 'text-cyan-400', button: 'bg-cyan-900/70', buttonHover: 'hover:bg-cyan-800/70', highlight: 'bg-cyan-500/50' },
     // --- Nova: the Jobs-inspired "one thing" ---
     { name: 'Nova', type: 'nova', base: 'bg-black', display: 'bg-black', bar: '', sliderTrack: 'bg-gray-800/50', sliderThumb: 'bg-white', text: 'text-gray-200', accent: 'text-white', button: 'bg-gray-800/70', buttonHover: 'hover:bg-gray-700/70', highlight: 'bg-white/20' },
     { name: 'Classic LED', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-gray-700', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-gray-400', text: 'text-gray-300', accent: 'text-green-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-green-600/50' },
