@@ -105,16 +105,10 @@ export class AppComponent implements OnInit, OnDestroy {
     }, 150);
   };
 
-  private iosPrewarmed = false;
   private readonly globalTouchListener = () => {
     this.onVisualizerInteraction();
-    // On the very first touch, pre-warm the AudioContext for iOS.
-    // iOS Safari requires AudioContext creation to happen synchronously inside
-    // a user gesture — doing this on first touch ensures it's ready before Play.
-    if (!this.iosPrewarmed) {
-      this.iosPrewarmed = true;
-      this.audioService.prewarmForIos();
-    }
+    // Removed the legacy prewarmForIos logic that was triggering on first touch
+    // and interrupting the Click-to-Enter play payload.
   };
 
   barCount = signal(window.innerWidth > 1024 ? 24 : 64); // Adaptive bar count
@@ -199,7 +193,6 @@ export class AppComponent implements OnInit, OnDestroy {
     effect(() => this.isAutoSwitching() ? this.startAutoSwitching() : this.stopAutoSwitching());
     effect(() => (this.isKaleidoscope() && (this.isPlaying() || this.audioSource() === 'microphone')) ? this.startKaleidoscope() : this.stopKaleidoscope());
     effect(() => this.isStyleFusionOn() ? this.startStyleFusion() : this.stopStyleFusion());
-    this._reimplementUnchanged();
   }
 
   enterOasis() {
@@ -1032,14 +1025,28 @@ export class AppComponent implements OnInit, OnDestroy {
   }
   private stopAutoSwitching(): void { if (this.themeSwitchIntervalId) { clearInterval(this.themeSwitchIntervalId); this.themeSwitchIntervalId = null; } }
 
+  // Autopilot Theme random bag memory
+  private themeRandomBag: number[] = [];
+
   private selectNextTheme(): void {
     const currentIndex = this.themes.findIndex(t => t.name === this.selectedTheme().name);
     let nextIndex: number;
+    
     if (this.switchMode() === 'random') {
-      do { nextIndex = Math.floor(Math.random() * this.themes.length); } while (nextIndex === currentIndex && this.themes.length > 1);
+      if (this.themeRandomBag.length === 0) {
+        // Refill bag with all indices EXCEPT the current one
+        this.themeRandomBag = this.themes.map((_, i) => i).filter(i => i !== currentIndex);
+      }
+      
+      const randPick = Math.floor(Math.random() * this.themeRandomBag.length);
+      nextIndex = this.themeRandomBag[randPick];
+      
+      // Pluck the chosen theme so it doesn't repeat until bag empties
+      this.themeRandomBag.splice(randPick, 1);
     } else {
       nextIndex = (currentIndex + 1) % this.themes.length;
     }
+    
     this.selectedTheme.set(this.themes[nextIndex]);
   }
 
@@ -1128,72 +1135,6 @@ export class AppComponent implements OnInit, OnDestroy {
     this.draggedTrackIndex.set(null);
   }
   onDragEnd() { this.draggedTrackIndex.set(null); }
-
-  private _reimplementUnchanged() {
-    // This block contains methods that were not directly part of the user's request,
-    // but are kept to maintain existing functionality.
-    this.startAutoSwitching = () => {
-      this.stopAutoSwitching();
-      this.themeSwitchIntervalId = setInterval(() => this.selectNextTheme(), this.switchInterval());
-    };
-    this.stopAutoSwitching = () => { if (this.themeSwitchIntervalId) { clearInterval(this.themeSwitchIntervalId); this.themeSwitchIntervalId = null; } };
-    this.selectNextTheme = () => {
-      const currentIndex = this.themes.findIndex(t => t.name === this.selectedTheme().name);
-      let nextIndex: number;
-      if (this.switchMode() === 'random') {
-        do { nextIndex = Math.floor(Math.random() * this.themes.length); } while (nextIndex === currentIndex && this.themes.length > 1);
-      } else {
-        nextIndex = (currentIndex + 1) % this.themes.length;
-      }
-      this.selectedTheme.set(this.themes[nextIndex]);
-    };
-    this.startKaleidoscope = () => {
-      this.stopKaleidoscope();
-      const animate = () => {
-        this.kaleidoscopeHueShift.update(h => (h + 0.5) % 360);
-        this.kaleidoscopeAnimFrameId = requestAnimationFrame(animate);
-      };
-      animate();
-    };
-    this.stopKaleidoscope = () => { if (this.kaleidoscopeAnimFrameId !== null) { cancelAnimationFrame(this.kaleidoscopeAnimFrameId); this.kaleidoscopeAnimFrameId = null; } };
-    this.savePreset = () => {
-      const name = this.newPresetName().trim();
-      if (name) {
-        this.presetService.savePreset(name, this.gainValues());
-        this.newPresetName.set('');
-      }
-    };
-    this.applyPreset = (event: Event) => {
-      const selectedName = (event.target as HTMLSelectElement).value;
-      const preset = this.presets().find(p => p.name === selectedName);
-      if (preset) {
-        this.selectedPreset.set(preset);
-        this.presetService.applyPreset(preset);
-      }
-    };
-    this.deleteSelectedPreset = () => {
-      const preset = this.selectedPreset();
-      if (preset) {
-        this.presetService.deletePreset(preset.name);
-        this.selectedPreset.set(null);
-      }
-    };
-    this.onDragStart = (index: number) => { this.draggedTrackIndex.set(index); };
-    this.onDrop = (event: DragEvent, dropIndex: number) => {
-      event.preventDefault();
-      const startIndex = this.draggedTrackIndex();
-      if (startIndex === null || startIndex === dropIndex) return;
-      this.playlist.update(list => {
-        const newList = [...list];
-        const [removed] = newList.splice(startIndex, 1);
-        newList.splice(dropIndex, 0, removed);
-        return newList;
-      });
-      const currentIdx = this.currentTrackIndex();
-      if (currentIdx === startIndex) this.currentTrackIndex.set(dropIndex);
-      else if (currentIdx !== null && startIndex < currentIdx && dropIndex >= currentIdx) this.currentTrackIndex.update(i => i! - 1);
-      else if (currentIdx !== null && startIndex > currentIdx && dropIndex <= currentIdx) this.currentTrackIndex.update(i => i! + 1);
-      this.draggedTrackIndex.set(null);
-    };
-  }
+  
+  // _reimplementUnchanged has been annihilated to restore class predictability and method stability
 }

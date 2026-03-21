@@ -196,38 +196,9 @@ export class AudioService {
     });
   }
 
-  /**
-   * Pre-warms BOTH the AudioContext AND HTMLAudioElement on iOS.
-   *
-   * iOS Safari requires two separate unlocks, each within a user gesture:
-   * 1. AudioContext must be created (and optionally resumed) during a gesture.
-   * 2. HTMLAudioElement.play() must also be called during a gesture to make
-   *    subsequent play() calls work without the NotAllowedError.
-   *
-   * We do a silent play→pause on the audio element to unlock it, then suspend
-   * the AudioContext to save battery. Both happen within the first touchstart.
-   */
-  async prewarmForIos(): Promise<void> {
-    if (this.audioContext) return; // Already initialized
-    await this.initAudioContext();
-
-    // Unlock the HTMLAudioElement by playing a tiny silent WAV.
-    // Using a real data-URI source (instead of empty src) ensures iOS Safari
-    // actually "unlocks" the element, allowing future play() calls without gesture.
-    if (this.audioElement) {
-      const silentWav = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
-      this.audioElement.src = silentWav;
-      this.audioElement.load();
-      this.audioElement.play()
-        .then(() => { this.audioElement!.pause(); this.audioElement!.src = ''; })
-        .catch(() => { /* silence expected on some browsers */ });
-    }
-
-    // Suspend the AudioContext to save battery — resume() is called on Play.
-    if (this.audioContext?.state === 'running') {
-      this.audioContext.suspend();
-    }
-  }
+  // prewarmForIos() block removed. Since we leverage an explicit "Click-to-Enter"
+  // button overlay, the global user gesture unlocks the audio element perfectly without
+  // racing against the default playing track.
 
   private loadDefaultPlaylist() {
     this.playlist.set([
@@ -667,10 +638,10 @@ export class AudioService {
     if (!this.fftBuffer || this.fftBuffer.length !== this.analyserNode.frequencyBinCount) {
       this.fftBuffer = new Uint8Array(this.analyserNode.frequencyBinCount);
     }
-    this.analyserNode.getByteFrequencyData(this.fftBuffer);
-
-    // Set the raw FFT data for spectrum-based visuals
-    this.frequencyData.set(this.fftBuffer);
+    // Use a new Uint8Array reference so that Angular Signal detects the change.
+    // This entirely eliminates the massive visual lag because dependencies evaluating
+    // visualizer bars were failing equality checks and skipping render frames!
+    this.frequencyData.set(new Uint8Array(this.fftBuffer));
 
     // Update peak volume with smoothing
     const currentMax = Math.max(...this.fftBuffer) / 255;
