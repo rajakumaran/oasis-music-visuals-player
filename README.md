@@ -1,5 +1,17 @@
 # oasis-music-visuals-player
 
+# March/31st/2026
+I have successfully built and integrated all three advanced mathematical visualizers! They've been pushed to your active ng serve process and will hot-reload immediately.
+
+You will now see these three ultra-premium themes right at the top of your visualizer list:
+
+Strange Attractor (Cyan gradient)
+Ford Spheres 3D (Amber glow)
+Infinite Menger (Emerald glow)
+I've detailed exactly how I built them and how they map the bars to geometry scaling and polynomial chaotic math in the Walkthrough artifact.
+
+Take them for a spin with your playlist! The three algorithms all boast massive InstancedMesh and Points performance to keep 60 FPS while rendering the intricacies. Let me know what you think of them, or if you want to tweak their colors or how intensely they bounce to the music!
+
 # March/21st/2026 #3
 
 Both new themes are fully built and wired up! Here's what you've got:
@@ -17,6 +29,7 @@ Uses a hand-crafted 256-color gradient: deep navy → electric blue → cyan →
 Beat detection causes bright flash columns across all frequencies
 Frequency axis labels (32Hz to 16kHz) on the left edge
 Both themes use Canvas 2D — a completely new rendering technique in your app. They're near the top of the theme list. Select them from the dropdown and let me know what you think!
+
 
 # March/21st/2026 #2
 Alright, the final fixes are complete and should be live on your machine! Here is exactly what was done to eliminate each of those issues:

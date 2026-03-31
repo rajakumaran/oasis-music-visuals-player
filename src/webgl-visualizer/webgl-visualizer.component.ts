@@ -53,6 +53,28 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
   private zenithMesh!: THREE.Mesh;
   private trafficData: { x: number, y: number, z: number, speed: number, axis: 'x' | 'z', dir: number }[] = [];
   
+  // Nebula State
+  private nebulaGroup!: THREE.Group;
+  private nebulaParticles!: THREE.Points;
+  private nebulaCore!: THREE.Mesh;
+  private nebulaSatellites: THREE.Mesh[] = [];
+  private nebulaSatelliteData: { orbitRadius: number; orbitSpeed: number; orbitPhase: number; binIndex: number; axis: THREE.Vector3 }[] = [];
+  private nebulaShockwaves: { ring: THREE.Mesh; age: number; maxAge: number }[] = [];
+  private nebulaBasePositions!: Float32Array; // initial spiral positions for displacement
+  
+  // Aizawa Attractor State
+  private attractorGroup!: THREE.Group;
+  private attractorParticles!: THREE.Points;
+  private attractorData: { x: number, y: number, z: number, originalIdx: number }[] = [];
+
+  // Ford Spheres State
+  private fordGroup!: THREE.Group;
+  private fordSpheresMap: THREE.Mesh[] = [];
+
+  // Menger Sponge State
+  private mengerGroup!: THREE.Group;
+  private mengerMesh!: THREE.InstancedMesh;
+
   private animationFrameId: number | null = null;
   private clock = new THREE.Clock();
   private isUserInteracting = false;
@@ -229,6 +251,37 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
       this.zenithMesh.geometry.dispose();
       (this.zenithMesh.material as THREE.Material).dispose();
     }
+    if (this.nebulaGroup) {
+      this.scene.remove(this.nebulaGroup);
+      this.nebulaParticles.geometry.dispose();
+      (this.nebulaParticles.material as THREE.Material).dispose();
+      this.nebulaCore.geometry.dispose();
+      (this.nebulaCore.material as THREE.Material).dispose();
+      this.nebulaSatellites.forEach(s => { s.geometry.dispose(); (s.material as THREE.Material).dispose(); });
+      this.nebulaShockwaves.forEach(sw => { this.nebulaGroup.remove(sw.ring); sw.ring.geometry.dispose(); (sw.ring.material as THREE.Material).dispose(); });
+      this.nebulaSatellites = [];
+      this.nebulaSatelliteData = [];
+      this.nebulaShockwaves = [];
+    }
+    if (this.attractorGroup) {
+      this.scene.remove(this.attractorGroup);
+      this.attractorParticles.geometry.dispose();
+      (this.attractorParticles.material as THREE.Material).dispose();
+      this.attractorData = [];
+    }
+    if (this.fordGroup) {
+      this.scene.remove(this.fordGroup);
+      this.fordSpheresMap.forEach(s => {
+        s.geometry.dispose();
+        (s.material as THREE.Material).dispose();
+      });
+      this.fordSpheresMap = [];
+    }
+    if (this.mengerGroup) {
+      this.scene.remove(this.mengerGroup);
+      this.mengerMesh.geometry.dispose();
+      (this.mengerMesh.material as THREE.Material).dispose();
+    }
   }
 
   private recreateVisualizers(): void {
@@ -238,6 +291,10 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
     this.createVoxelWavesVisualizer();
     this.createSingularityVisualizer();
     this.createMetropolisVisualizer();
+    this.createNebulaVisualizer();
+    this.createStrangeAttractorVisualizer();
+    this.createFordSpheresVisualizer();
+    this.createMengerSpongeVisualizer();
   }
 
   private createBarVisualizer() {
@@ -481,12 +538,171 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
     this.scene.add(this.metropolisGroup);
   }
 
-  private toggleVisualizerMode(mode: 'bars' | 'terrain' | 'voxel-waves' | 'quantum-singularity' | 'webgl-metropolis') {
+  // ============= STRANGE ATTRACTOR (Aizawa) =============
+  private createStrangeAttractorVisualizer() {
+    this.attractorGroup = new THREE.Group();
+    const numParticles = 8000;
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(numParticles * 3);
+    const colors = new Float32Array(numParticles * 3);
+    const accent = new THREE.Color(this.theme().accent || '#ffffff');
+    this.attractorData = [];
+
+    let x = 0.1, y = 0, z = 0;
+    const dt = 0.01;
+    const a = 0.95, b = 0.7, c = 0.6, d = 3.5, e = 0.25, f = 0.1;
+    
+    for (let i = 0; i < numParticles; i++) {
+        const dx = (z - b) * x - d * y;
+        const dy = d * x + (z - b) * y;
+        const dz = c + a * z - (Math.pow(z, 3) / 3) - (x * x + y * y) * (1 + e * z) + f * z * Math.pow(x, 3);
+        
+        x += dx * dt;
+        y += dy * dt;
+        z += dz * dt;
+
+        positions[i * 3] = x * 2;
+        positions[i * 3 + 1] = y * 2;
+        positions[i * 3 + 2] = z * 2;
+        
+        this.attractorData.push({ x: x * 2, y: y * 2, z: z * 2, originalIdx: i });
+
+        const mixRatio = i / numParticles;
+        const cColor = accent.clone().offsetHSL(mixRatio * 0.2, 0, 0);
+        colors[i * 3] = cColor.r; colors[i * 3 + 1] = cColor.g; colors[i * 3 + 2] = cColor.b;
+    }
+    
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    
+    const material = new THREE.PointsMaterial({
+        size: 0.1, vertexColors: true, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending
+    });
+    this.attractorParticles = new THREE.Points(geometry, material);
+    this.attractorGroup.position.set(0, 3, 0);
+    this.attractorGroup.add(this.attractorParticles);
+    this.scene.add(this.attractorGroup);
+  }
+
+  // ============= FORD SPHERES (3D Apollonian Gasket) =============
+  private createFordSpheresVisualizer() {
+    this.fordGroup = new THREE.Group();
+    this.fordSpheresMap = [];
+    
+    const material = new THREE.MeshStandardMaterial({
+        color: this.theme().accent,
+        metalness: 0.8,
+        roughness: 0.2,
+        emissive: this.theme().accent,
+        emissiveIntensity: 0.2
+    });
+
+    const createSphere = (x: number, y: number, z: number, r: number) => {
+        const geom = new THREE.SphereGeometry(1, 32, 32);
+        const sphere = new THREE.Mesh(geom, material);
+        sphere.position.set(x, y, z);
+        sphere.scale.setScalar(r);
+        sphere.castShadow = true;
+        sphere.receiveShadow = true;
+        sphere.userData = { initialScale: r };
+        this.fordSpheresMap.push(sphere);
+        this.fordGroup.add(sphere);
+    };
+
+    createSphere(0, 0, 0, 3);
+    
+    const numRings = 3;
+    const baseRadius = 3;
+    for (let ring = 1; ring <= numRings; ring++) {
+        const r = baseRadius / ring;
+        const count = ring * 6;
+        for (let i = 0; i < count; i++) {
+            const theta = (i / count) * Math.PI * 2;
+            const phi = Math.acos(1 - 2 * ((i + 0.5) / count));
+            const dist = baseRadius + r;
+            const x = dist * Math.sin(phi) * Math.cos(theta);
+            const y = dist * Math.sin(phi) * Math.sin(theta);
+            const z = dist * Math.cos(phi);
+            createSphere(x, y, z, r);
+        }
+    }
+    
+    this.fordGroup.position.set(0, 5, 0);
+    this.scene.add(this.fordGroup);
+  }
+
+  // ============= MENGER SPONGE VOXEL LATTICE =============
+  private createMengerSpongeVisualizer() {
+      this.mengerGroup = new THREE.Group();
+      
+      const depth = 2;
+      const cubesToDraw: THREE.Vector3[] = [];
+      const size = 10;
+      
+      const isMengerSolid = (x: number, y: number, z: number): boolean => {
+          while (x > 0 || y > 0 || z > 0) {
+              if ((x % 3 === 1 && y % 3 === 1) || (y % 3 === 1 && z % 3 === 1) || (x % 3 === 1 && z % 3 === 1)) {
+                  return false;
+              }
+              x = Math.floor(x / 3);
+              y = Math.floor(y / 3);
+              z = Math.floor(z / 3);
+          }
+          return true;
+      };
+
+      const dim = Math.pow(3, depth);
+      const step = size / dim;
+
+      for (let x = 0; x < dim; x++) {
+          for (let y = 0; y < dim; y++) {
+              for (let z = 0; z < dim; z++) {
+                  if (isMengerSolid(x, y, z)) {
+                      cubesToDraw.push(new THREE.Vector3(
+                          (x - dim/2) * step + step/2,
+                          (y - dim/2) * step + step/2,
+                          (z - dim/2) * step + step/2
+                      ));
+                  }
+              }
+          }
+      }
+
+      const geom = new THREE.BoxGeometry(step * 0.95, step * 0.95, step * 0.95);
+      const material = new THREE.MeshStandardMaterial({
+          color: this.theme().accent,
+          emissive: this.theme().accent,
+          emissiveIntensity: 0.3,
+          metalness: 0.5,
+          roughness: 0.2,
+      });
+
+      this.mengerMesh = new THREE.InstancedMesh(geom, material, cubesToDraw.length);
+      this.mengerMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+      const matrix = new THREE.Matrix4();
+      cubesToDraw.forEach((pos, i) => {
+          matrix.setPosition(pos);
+          this.mengerMesh.setMatrixAt(i, matrix);
+      });
+
+      this.mengerMesh.castShadow = true;
+      this.mengerMesh.receiveShadow = true;
+      this.mengerGroup.add(this.mengerMesh);
+      this.mengerGroup.position.set(0, 5, 0);
+      this.scene.add(this.mengerGroup);
+  }
+
+  private toggleVisualizerMode(mode: 'bars' | 'terrain' | 'voxel-waves' | 'quantum-singularity' | 'webgl-metropolis' | 'webgl-nebula' | 'strange-attractor' | 'ford-spheres' | 'menger-sponge') {
       this.cubes.forEach(c => c.visible = mode === 'bars');
       if (this.terrainMesh) this.terrainMesh.visible = mode === 'terrain';
       if (this.voxelWavesGroup) this.voxelWavesGroup.visible = mode === 'voxel-waves';
       if (this.singularityGroup) this.singularityGroup.visible = mode === 'quantum-singularity';
       if (this.metropolisGroup) this.metropolisGroup.visible = mode === 'webgl-metropolis';
+      if (this.nebulaGroup) this.nebulaGroup.visible = mode === 'webgl-nebula';
+      if (this.attractorGroup) this.attractorGroup.visible = mode === 'strange-attractor';
+      if (this.fordGroup) this.fordGroup.visible = mode === 'ford-spheres';
+      if (this.mengerGroup) this.mengerGroup.visible = mode === 'menger-sponge';
   }
 
   private updateSceneFromTheme(theme: EqualizerTheme, profile: MusicProfile) {
@@ -519,9 +735,32 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
       (this.zenithMesh.material as THREE.MeshBasicMaterial).color.set(accent);
       (this.trafficPoints.material as THREE.PointsMaterial).color.set(accent);
     }
+
+    if (this.nebulaGroup) {
+      (this.nebulaParticles.material as THREE.PointsMaterial).color.set(accentColor);
+      (this.nebulaCore.material as THREE.MeshStandardMaterial).emissive.set(accentColor);
+      this.nebulaSatellites.forEach(s => {
+        (s.material as THREE.MeshStandardMaterial).color.set(accentColor);
+        (s.material as THREE.MeshStandardMaterial).emissive.set(accentColor);
+      });
+    }
     
     if (this.terrainMesh) {
       (this.terrainMesh.material as THREE.ShaderMaterial).uniforms.colorAccent.value = accentColor;
+    }
+
+    if (this.attractorGroup) {
+      (this.attractorParticles.material as THREE.PointsMaterial).color.set(accentColor);
+    }
+    if (this.fordGroup) {
+      this.fordSpheresMap.forEach(s => {
+        (s.material as THREE.MeshStandardMaterial).color.set(accentColor);
+        (s.material as THREE.MeshStandardMaterial).emissive.set(accentColor);
+      });
+    }
+    if (this.mengerGroup) {
+      (this.mengerMesh.material as THREE.MeshStandardMaterial).color.set(accentColor);
+      (this.mengerMesh.material as THREE.MeshStandardMaterial).emissive.set(accentColor);
     }
 
     this.scene.fog = new THREE.Fog(
@@ -541,6 +780,10 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
     else if (this.theme().webglMode === 'voxel-waves') this.animateVoxelWaves(barData, elapsedTime);
     else if (this.theme().webglMode === 'quantum-singularity') this.animateSingularity(barData, elapsedTime);
     else if (this.theme().webglMode === 'webgl-metropolis') this.animateMetropolis(barData, elapsedTime);
+    else if (this.theme().webglMode === 'webgl-nebula') this.animateNebula(barData, elapsedTime);
+    else if (this.theme().webglMode === 'strange-attractor') this.animateStrangeAttractor(barData, elapsedTime);
+    else if (this.theme().webglMode === 'ford-spheres') this.animateFordSpheres(barData, elapsedTime);
+    else if (this.theme().webglMode === 'menger-sponge') this.animateMengerSponge(barData, elapsedTime);
     else this.animateBars(barData);
 
     this.directionalLight.intensity += (this.baseLightIntensity - this.directionalLight.intensity) * 0.05;
@@ -549,6 +792,84 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
 
     this.controls.update();
     this.composer.render();
+  }
+
+  private animateStrangeAttractor(barData: number[], elapsedTime: number) {
+      if (!this.attractorGroup) return;
+      const bass = barData.slice(0, 4).reduce((a, b) => a + b, 0) / 4;
+      
+      const positions = this.attractorParticles.geometry.attributes.position.array as Float32Array;
+      
+      this.attractorGroup.rotation.y = elapsedTime * 0.1;
+      this.attractorGroup.rotation.z = Math.sin(elapsedTime * 0.05) * 0.2;
+      
+      for (let i = 0; i < this.attractorData.length; i++) {
+          const orig = this.attractorData[i];
+          const dist = Math.sqrt(orig.x*orig.x + orig.y*orig.y + orig.z*orig.z);
+          const expansion = 1 + bass * (1 / (1 + dist));
+          
+          positions[i * 3] = orig.x * expansion;
+          positions[i * 3 + 1] = orig.y * expansion;
+          positions[i * 3 + 2] = orig.z * expansion;
+      }
+      this.attractorParticles.geometry.attributes.position.needsUpdate = true;
+      (this.attractorParticles.material as THREE.PointsMaterial).size = 0.05 + bass * 0.2;
+  }
+
+  private animateFordSpheres(barData: number[], elapsedTime: number) {
+      if (!this.fordGroup) return;
+      
+      const bass = barData.slice(0, 4).reduce((a, b) => a + b, 0) / 4;
+      this.fordGroup.rotation.y += 0.005 + bass * 0.02;
+      this.fordGroup.rotation.x = Math.sin(elapsedTime * 0.2) * 0.1;
+
+      for (let i = 0; i < this.fordSpheresMap.length; i++) {
+          const sphere = this.fordSpheresMap[i];
+          const bin = Math.min(barData.length - 1, Math.floor((i / this.fordSpheresMap.length) * barData.length));
+          const energy = barData[bin] || 0;
+          
+          const baseScale = sphere.userData['initialScale'] || 1;
+          if (i === 0) {
+              sphere.scale.setScalar(baseScale + bass * 1.5);
+              (sphere.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.2 + bass * 2.5;
+          } else {
+              sphere.scale.setScalar(baseScale * (1 + energy * 1.5));
+              (sphere.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.2 + energy * 2;
+          }
+      }
+  }
+
+  private animateMengerSponge(barData: number[], elapsedTime: number) {
+      if (!this.mengerGroup || !this.mengerMesh) return;
+      
+      const bass = barData.slice(0, 4).reduce((a, b) => a + b, 0) / 4;
+      this.mengerGroup.rotation.y = elapsedTime * 0.2;
+      this.mengerGroup.rotation.x = Math.sin(elapsedTime * 0.1) * 0.2;
+
+      const matrix = new THREE.Matrix4();
+      const pos = new THREE.Vector3();
+      const rot = new THREE.Quaternion();
+      const sca = new THREE.Vector3();
+      
+      const count = this.mengerMesh.count;
+      for (let i = 0; i < count; i++) {
+          this.mengerMesh.getMatrixAt(i, matrix);
+          matrix.decompose(pos, rot, sca);
+          
+          const dist = pos.length();
+          const bin = Math.min(barData.length - 1, Math.floor((dist / 10) * barData.length));
+          const energy = barData[bin] || 0;
+          
+          const targetScale = 1 + energy * 1.5;
+          sca.setScalar(sca.x + (targetScale - sca.x) * 0.2);
+          
+          if (energy > 0.6) rot.setFromEuler(new THREE.Euler(energy*elapsedTime, energy*elapsedTime, 0));
+          else rot.setFromEuler(new THREE.Euler(0, 0, 0));
+
+          matrix.compose(pos, rot, sca);
+          this.mengerMesh.setMatrixAt(i, matrix);
+      }
+      this.mengerMesh.instanceMatrix.needsUpdate = true;
   }
 
   private animateBars(barData: number[]) {
@@ -753,7 +1074,256 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
     const targetScale = 1 + bass * 2;
     this.zenithMesh.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
   }
-  
+
+  // ============== AUDIO NEBULA ==============
+  private createNebulaVisualizer() {
+    this.nebulaGroup = new THREE.Group();
+
+    // --- 1. Spiral Particle Cloud (6000 particles, 4 arms) ---
+    const PARTICLE_COUNT = 6000;
+    const NUM_ARMS = 4;
+    const positions = new Float32Array(PARTICLE_COUNT * 3);
+    const sizes = new Float32Array(PARTICLE_COUNT);
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const armIndex = i % NUM_ARMS;
+      const t = (i / PARTICLE_COUNT) * 6; // 0..6 spiral turns
+      const armAngle = (armIndex / NUM_ARMS) * Math.PI * 2;
+      const spiralAngle = armAngle + t * 1.2; // Spiral twist
+      const radius = 2 + t * 2.5; // Expand outward
+
+      // Add scatter (makes it feel organic, not perfectly geometric)
+      const scatter = 0.5 + t * 0.4;
+      const px = Math.cos(spiralAngle) * radius + (Math.random() - 0.5) * scatter;
+      const py = (Math.random() - 0.5) * (1.5 + t * 0.3); // Vertical spread increases outward
+      const pz = Math.sin(spiralAngle) * radius + (Math.random() - 0.5) * scatter;
+
+      positions[i * 3] = px;
+      positions[i * 3 + 1] = py;
+      positions[i * 3 + 2] = pz;
+      sizes[i] = 0.08 + Math.random() * 0.15;
+    }
+
+    // Store base positions for frequency-driven displacement
+    this.nebulaBasePositions = new Float32Array(positions);
+
+    const particleGeom = new THREE.BufferGeometry();
+    particleGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particleGeom.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    const particleMat = new THREE.PointsMaterial({
+      size: 0.12,
+      color: this.theme().accent,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true,
+    });
+    this.nebulaParticles = new THREE.Points(particleGeom, particleMat);
+    this.nebulaGroup.add(this.nebulaParticles);
+
+    // --- 2. Core Sphere ---
+    const coreGeom = new THREE.SphereGeometry(1.5, 32, 32);
+    const coreMat = new THREE.MeshStandardMaterial({
+      color: 0x000000,
+      emissive: this.theme().accent,
+      emissiveIntensity: 1.5,
+      roughness: 0.1,
+      metalness: 0.9,
+    });
+    this.nebulaCore = new THREE.Mesh(coreGeom, coreMat);
+    this.nebulaGroup.add(this.nebulaCore);
+
+    // --- 3. Orbiting Satellite Objects (8 varied geometries) ---
+    const satelliteGeometries: THREE.BufferGeometry[] = [
+      new THREE.IcosahedronGeometry(0.4, 0),
+      new THREE.OctahedronGeometry(0.35),
+      new THREE.TorusGeometry(0.3, 0.1, 8, 12),
+      new THREE.TetrahedronGeometry(0.4),
+      new THREE.IcosahedronGeometry(0.5, 1),
+      new THREE.DodecahedronGeometry(0.35),
+      new THREE.TorusKnotGeometry(0.25, 0.08, 32, 8),
+      new THREE.OctahedronGeometry(0.5),
+    ];
+
+    this.nebulaSatellites = [];
+    this.nebulaSatelliteData = [];
+
+    for (let s = 0; s < 8; s++) {
+      const mat = new THREE.MeshStandardMaterial({
+        color: this.theme().accent,
+        emissive: this.theme().accent,
+        emissiveIntensity: 0.8,
+        roughness: 0.2,
+        metalness: 0.8,
+        wireframe: s % 3 === 0, // Every 3rd satellite is wireframe for variety
+      });
+      const mesh = new THREE.Mesh(satelliteGeometries[s], mat);
+      mesh.castShadow = true;
+
+      // Spread satellites across frequency spectrum
+      const binIndex = Math.floor((s / 8) * 64);
+      const orbitRadius = 5 + s * 2.5;
+      const orbitSpeed = 0.3 + Math.random() * 0.5;
+      const orbitPhase = (s / 8) * Math.PI * 2;
+
+      // Tilt the orbit axis for visual variety
+      const axis = new THREE.Vector3(
+        Math.random() - 0.5,
+        1 + Math.random(),
+        Math.random() - 0.5
+      ).normalize();
+
+      this.nebulaSatellites.push(mesh);
+      this.nebulaSatelliteData.push({ orbitRadius, orbitSpeed, orbitPhase, binIndex, axis });
+      this.nebulaGroup.add(mesh);
+    }
+
+    this.scene.add(this.nebulaGroup);
+  }
+
+  private animateNebula(barData: number[], elapsedTime: number) {
+    if (!this.nebulaGroup) return;
+
+    const NUM_ARMS = 4;
+    const bass = barData.slice(0, Math.max(1, Math.floor(barData.length * 0.15))).reduce((a, b) => a + b, 0) / Math.max(1, Math.floor(barData.length * 0.15));
+    const mids = barData.slice(Math.floor(barData.length * 0.15), Math.floor(barData.length * 0.6)).reduce((a, b) => a + b, 0) / Math.max(1, Math.floor(barData.length * 0.45));
+    const treble = barData.slice(Math.floor(barData.length * 0.6)).reduce((a, b) => a + b, 0) / Math.max(1, Math.floor(barData.length * 0.4));
+    const overall = barData.reduce((a, b) => a + b, 0) / Math.max(1, barData.length);
+
+    // --- 1. Animate particles: displace along Y and radially based on frequency ---
+    const positions = this.nebulaParticles.geometry.attributes.position.array as Float32Array;
+    const basePos = this.nebulaBasePositions;
+    const particleCount = positions.length / 3;
+
+    for (let i = 0; i < particleCount; i++) {
+      const armIndex = i % NUM_ARMS;
+      const t = (i / particleCount); // 0..1 progress along spiral
+
+      // Each arm responds to a different frequency range
+      let armFreqStart: number, armFreqEnd: number;
+      if (armIndex === 0) { armFreqStart = 0; armFreqEnd = 0.1; }       // Sub-bass
+      else if (armIndex === 1) { armFreqStart = 0.1; armFreqEnd = 0.3; } // Low-mids
+      else if (armIndex === 2) { armFreqStart = 0.3; armFreqEnd = 0.6; } // High-mids
+      else { armFreqStart = 0.6; armFreqEnd = 1.0; }                     // Treble
+
+      const binIdx = Math.floor((armFreqStart + t * (armFreqEnd - armFreqStart)) * barData.length);
+      const energy = barData[Math.min(binIdx, barData.length - 1)] || 0;
+
+      // Base position + frequency-driven displacement
+      const bx = basePos[i * 3];
+      const by = basePos[i * 3 + 1];
+      const bz = basePos[i * 3 + 2];
+
+      // Radial displacement (push outward based on energy)
+      const radialDist = Math.sqrt(bx * bx + bz * bz) + 0.001;
+      const radialPush = energy * 2;
+      const nx = bx / radialDist;
+      const nz = bz / radialDist;
+
+      // Vertical displacement (energy pushes particles up/down from the disk plane)
+      const vertPush = energy * (by > 0 ? 1.5 : -1.5);
+
+      // Gentle orbital drift
+      const driftAngle = elapsedTime * 0.05 * (1 + overall * 0.3);
+      const cos = Math.cos(driftAngle);
+      const sin = Math.sin(driftAngle);
+      const rx = bx * cos - bz * sin;
+      const rz = bx * sin + bz * cos;
+
+      // Shimmer for treble arm
+      const shimmer = armIndex === 3 ? Math.sin(elapsedTime * 8 + i * 0.1) * treble * 0.5 : 0;
+
+      positions[i * 3] = rx + nx * radialPush;
+      positions[i * 3 + 1] = by + vertPush + shimmer;
+      positions[i * 3 + 2] = rz + nz * radialPush;
+    }
+    this.nebulaParticles.geometry.attributes.position.needsUpdate = true;
+
+    // Dynamic particle size
+    (this.nebulaParticles.material as THREE.PointsMaterial).size = 0.1 + overall * 0.15;
+    (this.nebulaParticles.material as THREE.PointsMaterial).opacity = 0.6 + overall * 0.35;
+
+    // --- 2. Core breathing ---
+    const coreScale = 1 + bass * 2.5;
+    this.nebulaCore.scale.setScalar(coreScale);
+    (this.nebulaCore.material as THREE.MeshStandardMaterial).emissiveIntensity = 1 + bass * 4;
+    this.nebulaCore.rotation.y = elapsedTime * 0.3;
+    this.nebulaCore.rotation.x = Math.sin(elapsedTime * 0.15) * 0.2;
+
+    // --- 3. Satellite orbits ---
+    for (let s = 0; s < this.nebulaSatellites.length; s++) {
+      const sat = this.nebulaSatellites[s];
+      const data = this.nebulaSatelliteData[s];
+      const energy = barData[Math.min(data.binIndex, barData.length - 1)] || 0;
+
+      // Orbit position
+      const angle = elapsedTime * data.orbitSpeed + data.orbitPhase;
+      const dynamicRadius = data.orbitRadius + energy * 4;
+
+      // Orbit in a tilted plane using the axis
+      const basePos3 = new THREE.Vector3(Math.cos(angle) * dynamicRadius, 0, Math.sin(angle) * dynamicRadius);
+      // Rotate around the satellite's unique tilt axis
+      const q = new THREE.Quaternion().setFromAxisAngle(data.axis, data.orbitPhase * 0.5);
+      basePos3.applyQuaternion(q);
+
+      sat.position.copy(basePos3);
+
+      // Scale with energy
+      const satScale = 0.8 + energy * 2.5;
+      sat.scale.setScalar(satScale);
+
+      // Spin
+      sat.rotation.x += 0.02 + energy * 0.08;
+      sat.rotation.y += 0.03 + energy * 0.06;
+
+      // Emissive glow intensity
+      (sat.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.3 + energy * 3;
+    }
+
+    // --- 4. Beat-triggered shockwaves ---
+    const beatInfo = this.beat();
+    if (beatInfo.timestamp > this.lastBeatTimestamp && beatInfo.strength > 0.3) {
+      // Create a new shockwave ring
+      const ringGeom = new THREE.TorusGeometry(1, 0.08, 8, 64);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: this.theme().accent,
+        transparent: true,
+        opacity: 0.8 * beatInfo.strength,
+        side: THREE.DoubleSide,
+      });
+      const ringMesh = new THREE.Mesh(ringGeom, ringMat);
+      ringMesh.rotation.x = Math.PI / 2; // Lay flat
+      this.nebulaGroup.add(ringMesh);
+      this.nebulaShockwaves.push({ ring: ringMesh, age: 0, maxAge: 90 });
+    }
+
+    // Animate existing shockwaves
+    for (let sw = this.nebulaShockwaves.length - 1; sw >= 0; sw--) {
+      const wave = this.nebulaShockwaves[sw];
+      wave.age++;
+      const progress = wave.age / wave.maxAge;
+      const expandScale = 1 + progress * 25; // Expand to radius ~25
+      wave.ring.scale.setScalar(expandScale);
+      (wave.ring.material as THREE.MeshBasicMaterial).opacity = Math.max(0, (1 - progress) * 0.6);
+
+      if (wave.age >= wave.maxAge) {
+        this.nebulaGroup.remove(wave.ring);
+        wave.ring.geometry.dispose();
+        (wave.ring.material as THREE.Material).dispose();
+        this.nebulaShockwaves.splice(sw, 1);
+      }
+    }
+
+    // --- 5. Dynamic bloom ---
+    if (this.bloomPass) {
+      this.bloomPass.strength = 0.5 + overall * 1.5;
+    }
+
+    // Slow group tilt for dramatics
+    this.nebulaGroup.rotation.x = Math.sin(elapsedTime * 0.08) * 0.15;
+  }
+
   private animateCamera(barData: number[], elapsedTime: number) {
       if (!this.isPlaying()) return;
       

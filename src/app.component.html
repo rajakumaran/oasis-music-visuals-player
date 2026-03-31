@@ -118,6 +118,27 @@
                   [beat]="beat()"
                 />
               }
+              @case ('particle-storm') {
+                <app-particle-storm
+                  [bars]="visualizerBars()"
+                  [beat]="beat()"
+                  [musicProfile]="effectiveSynergyDriveMode()"
+                />
+              }
+              @case ('radar-pulse') {
+                <app-radar-pulse
+                  [bars]="visualizerBars()"
+                  [beat]="beat()"
+                  [musicProfile]="effectiveSynergyDriveMode()"
+                />
+              }
+              @case ('terrain-peaks') {
+                <app-terrain-peaks
+                  [bars]="visualizerBars()"
+                  [beat]="beat()"
+                  [musicProfile]="effectiveSynergyDriveMode()"
+                />
+              }
               @case ('aura') {
                 <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style="overflow:hidden">
                   <defs><filter id="auraGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.5"></feGaussianBlur></filter></defs>

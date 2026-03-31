@@ -4,6 +4,7 @@ export interface EqualizerTheme {
   | 'webgl-grok-lattice' | 'webgl-grok-rift' | 'webgl-grok-neural-ember' | 'webgl-grok-collapse' | 'webgl-grok-aurora'
   | 'webgl-shader-ferrofluid'  | 'webgl-shader-explosion' | 'webgl-shader-waves'| 'webgl-shader-fractal-zoom'| 'webgl-shader-nebula' | 'webgl-shader-plasma' | 'webgl-shader-plasma' | 'webgl-shader-geometry' | 'webgl-shader-particles' | 'webgl-shader-holo' | 'webgl-shader-fractal' | 'ford-circles'
   | 'helix' | 'polar-rose' | 'diamond' | 'orbits' | 'ripple' | 'nova'
+  | 'particle-storm' | 'radar-pulse' | 'terrain-peaks'
   | 'oscilloscope' | 'spectrogram'
   | 'base';
   base: string;
@@ -17,5 +18,5 @@ export interface EqualizerTheme {
   buttonHover: string;
   highlight: string;
   fragmentShader?: string; // Optional for webgl themes
-  webglMode?: 'bars' | 'terrain' | 'voxel-waves' | 'quantum-singularity' | 'webgl-metropolis';
+  webglMode?: 'bars' | 'terrain' | 'voxel-waves' | 'quantum-singularity' | 'webgl-metropolis' | 'webgl-nebula' | 'strange-attractor' | 'ford-spheres' | 'menger-sponge';
 }

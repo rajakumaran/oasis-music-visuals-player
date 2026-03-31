@@ -8,6 +8,9 @@ import { FullscreenToggleComponent } from './fullscreen-toggle/fullscreen-toggle
 import { WebglVisualizerComponent } from './webgl-visualizer/webgl-visualizer.component';
 import { OscilloscopeComponent } from './oscilloscope/oscilloscope.component';
 import { SpectrogramComponent } from './spectrogram/spectrogram.component';
+import { ParticleStormComponent } from './particle-storm/particle-storm.component';
+import { RadarPulseComponent } from './radar-pulse/radar-pulse.component';
+import { TerrainPeaksComponent } from './terrain-peaks/terrain-peaks.component';
 import { inject as vercelAnalytics } from '@vercel/analytics';
 
 type LightSourcePosition = 'none' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center-stage' | 'top-center';
@@ -22,7 +25,7 @@ interface AuraParticle { id: number; x: number; y: number; opacity: number; size
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FullscreenToggleComponent, WebglVisualizerComponent, OscilloscopeComponent, SpectrogramComponent],
+  imports: [CommonModule, FullscreenToggleComponent, WebglVisualizerComponent, OscilloscopeComponent, SpectrogramComponent, ParticleStormComponent, RadarPulseComponent, TerrainPeaksComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -841,11 +844,19 @@ export class AppComponent implements OnInit, OnDestroy {
   bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k'];
 
   themes: EqualizerTheme[] = [
+    // --- Mathematical / Fractal 3D Modules ---
+    { name: 'Strange Attractor', type: 'webgl', webglMode: 'strange-attractor', base: 'bg-[#000005]', display: '#000005', bar: '', sliderTrack: 'bg-cyan-900/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-300', accent: '#0891b2', button: 'bg-cyan-900/70', buttonHover: 'hover:bg-cyan-800/70', highlight: 'bg-cyan-500/50' },
+    { name: 'Ford Spheres 3D', type: 'webgl', webglMode: 'ford-spheres', base: 'bg-[#050510]', display: '#020205', bar: '', sliderTrack: 'bg-amber-900/50', sliderThumb: 'bg-amber-400', text: 'text-amber-300', accent: '#d97706', button: 'bg-amber-900/70', buttonHover: 'hover:bg-amber-800/70', highlight: 'bg-amber-500/50' },
+    { name: 'Infinite Menger', type: 'webgl', webglMode: 'menger-sponge', base: 'bg-[#020502]', display: '#010201', bar: '', sliderTrack: 'bg-emerald-900/50', sliderThumb: 'bg-emerald-400', text: 'text-emerald-300', accent: '#10b981', button: 'bg-emerald-900/70', buttonHover: 'hover:bg-emerald-800/70', highlight: 'bg-emerald-500/50' },
     // --- Cyber Metropolis: 3D Cityscape ---
     { name: 'Cyber Metropolis', type: 'webgl', webglMode: 'webgl-metropolis', base: 'bg-[#02000a]', display: '#02000a', bar: '', sliderTrack: 'bg-purple-900/50', sliderThumb: 'bg-pink-500', text: 'text-pink-300', accent: '#ec4899', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-pink-500/50' },
+    { name: 'Audio Nebula', type: 'webgl', webglMode: 'webgl-nebula', base: 'bg-[#020008]', display: '#020008', bar: '', sliderTrack: 'bg-violet-900/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: '#a78bfa', button: 'bg-violet-900/70', buttonHover: 'hover:bg-violet-800/70', highlight: 'bg-violet-500/50' },
     // --- Canvas 2D Visualizers ---
     { name: 'CRT Oscilloscope', type: 'oscilloscope', base: 'bg-[#050810]', display: 'bg-black', bar: '', sliderTrack: 'bg-green-900/50', sliderThumb: 'bg-green-400', text: 'text-green-300', accent: 'text-green-400', button: 'bg-green-900/70', buttonHover: 'hover:bg-green-800/70', highlight: 'bg-green-500/50' },
-    { name: 'Spectrogram Waterfall', type: 'spectrogram', base: 'bg-[#030712]', display: 'bg-black', bar: '', sliderTrack: 'bg-cyan-900/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-300', accent: 'text-cyan-400', button: 'bg-cyan-900/70', buttonHover: 'hover:bg-cyan-800/70', highlight: 'bg-cyan-500/50' },
+    // { name: 'Spectrogram Waterfall', type: 'spectrogram', base: 'bg-[#030712]', display: 'bg-black', bar: '', sliderTrack: 'bg-cyan-900/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-300', accent: 'text-cyan-400', button: 'bg-cyan-900/70', buttonHover: 'hover:bg-cyan-800/70', highlight: 'bg-cyan-500/50' },
+    { name: 'Particle Storm', type: 'particle-storm', base: 'bg-black', display: 'bg-black', bar: '', sliderTrack: 'bg-violet-900/50', sliderThumb: 'bg-fuchsia-400', text: 'text-fuchsia-300', accent: 'text-violet-400', button: 'bg-violet-900/70', buttonHover: 'hover:bg-violet-800/70', highlight: 'bg-fuchsia-500/50' },
+    { name: 'Radar Pulse', type: 'radar-pulse', base: 'bg-[#020402]', display: 'bg-black', bar: '', sliderTrack: 'bg-green-900/50', sliderThumb: 'bg-green-400', text: 'text-green-300', accent: 'text-green-400', button: 'bg-green-900/70', buttonHover: 'hover:bg-green-800/70', highlight: 'bg-green-500/50' },
+    { name: 'Terrain Peaks', type: 'terrain-peaks', base: 'bg-[#0a0520]', display: 'bg-black', bar: '', sliderTrack: 'bg-indigo-900/50', sliderThumb: 'bg-amber-400', text: 'text-amber-300', accent: 'text-amber-400', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-amber-500/50' },
     // --- Nova: the Jobs-inspired "one thing" ---
     { name: 'Nova', type: 'nova', base: 'bg-black', display: 'bg-black', bar: '', sliderTrack: 'bg-gray-800/50', sliderThumb: 'bg-white', text: 'text-gray-200', accent: 'text-white', button: 'bg-gray-800/70', buttonHover: 'hover:bg-gray-700/70', highlight: 'bg-white/20' },
     { name: 'Classic LED', type: 'led', base: 'bg-gray-900', display: 'bg-black', bar: 'bg-gray-700', sliderTrack: 'bg-gray-600', sliderThumb: 'bg-gray-400', text: 'text-gray-300', accent: 'text-green-400', button: 'bg-gray-700', buttonHover: 'hover:bg-gray-600', highlight: 'bg-green-600/50' },
@@ -903,7 +914,7 @@ export class AppComponent implements OnInit, OnDestroy {
     { name: 'Matrix', type: 'shadow', base: 'bg-black', display: 'bg-black/80', bar: 'bg-gradient-to-t from-emerald-700 to-green-400 shadow-[0_0_10px_#4ade80,-1px_0_4px_rgba(0,0,0,0.7)]', sliderTrack: 'bg-gray-800', sliderThumb: 'bg-green-500', text: 'text-green-400 font-mono', accent: 'text-green-300', button: 'bg-gray-900 border border-green-700', buttonHover: 'hover:bg-gray-800', highlight: 'bg-green-600/50' },
     { name: 'Cosmic Rift 2.0', type: '3d', base: 'cosmic-rift-bg', display: 'bg-black/40', bar: 'bg-gradient-to-t from-fuchsia-500 via-pink-400 to-cyan-300 shadow-[0_0_10px_#a855f7]', sliderTrack: 'bg-purple-800/50', sliderThumb: 'bg-fuchsia-500', text: 'text-purple-300', accent: 'text-cyan-300', button: 'bg-purple-900/70', buttonHover: 'hover:bg-purple-800/70', highlight: 'bg-fuchsia-500/50' },
     { name: 'Celestial Sphere', type: 'fractal', base: 'bg-gradient-to-br from-gray-900 via-blue-900 to-black', display: 'bg-black/40', bar: '', sliderTrack: 'bg-blue-800/50', sliderThumb: 'bg-sky-500', text: 'text-sky-300', accent: 'text-cyan-300', button: 'bg-blue-900/70', buttonHover: 'hover:bg-blue-800/70', highlight: 'bg-sky-500/50' },
-    { name: 'Aura Bloom', type: 'aura', base: 'bg-black', display: 'bg-black/50', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: 'text-sky-300', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-sky-500/50' },
+    // { name: 'Aura Bloom', type: 'aura', base: 'bg-black', display: 'bg-black/50', bar: '', sliderTrack: 'bg-indigo-800/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: 'text-sky-300', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-sky-500/50' },
     { name: 'Molten Core', type: 'glossy', base: 'bg-stone-900', display: 'bg-black/60', bar: 'bg-gradient-to-t from-red-700 via-orange-500 to-yellow-400 shadow-[0_0_8px_#fb923c]', sliderTrack: 'bg-red-900/50', sliderThumb: 'bg-amber-400', text: 'text-amber-300', accent: 'text-orange-400', button: 'bg-orange-800/50', buttonHover: 'hover:bg-orange-700/50', highlight: 'bg-yellow-500/50' },
     { name: 'Ocean Floor', type: 'glass', base: 'bg-gradient-to-t from-blue-900 to-teal-900', display: 'bg-black/30', bar: 'rounded-t-md', sliderTrack: 'bg-cyan-800/50', sliderThumb: 'bg-teal-300', text: 'text-cyan-200', accent: 'text-teal-300', button: 'bg-cyan-900/60', buttonHover: 'hover:bg-cyan-800/60', highlight: 'bg-teal-600/50' },
     { name: 'Aquamarine Dream', type: 'glossy', base: 'bg-gradient-to-br from-green-900 via-cyan-800 to-teal-900', display: 'bg-black/30', bar: 'bg-gradient-to-t from-emerald-400 to-cyan-200 shadow-[0_0_8px_#67e8f9]', sliderTrack: 'bg-teal-800/60', sliderThumb: 'bg-emerald-300', text: 'text-cyan-200', accent: 'text-emerald-300', button: 'bg-cyan-900/60', buttonHover: 'hover:bg-cyan-800/60', highlight: 'bg-emerald-600/50' },
