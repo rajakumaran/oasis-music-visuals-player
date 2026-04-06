@@ -2,7 +2,7 @@ import { Injectable, signal, effect, WritableSignal, computed } from '@angular/c
 import { Track } from '../models/track.model';
 
 const BANDS = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
-const FFT_SIZE = 1024; // Smaller window = lower latency (~23ms vs ~46ms); resolution is still fine for bar visualizers
+const FFT_SIZE = 2048; // Larger window = 1024 bins, ~23Hz resolution. Enables sharp spectral peaks & natural trembling (STFT spirit)
 const CROSSFADE_DURATION = 3.75; // seconds
 
 @Injectable({ providedIn: 'root' })
@@ -156,7 +156,7 @@ export class AudioService {
     this.mediaElementSourceNode = this.audioContext.createMediaElementSource(this.audioElement);
     this.analyserNode = this.audioContext.createAnalyser();
     this.analyserNode.fftSize = FFT_SIZE;
-    this.analyserNode.smoothingTimeConstant = 0.3; // Low smoothing = bars track the music tightly
+    this.analyserNode.smoothingTimeConstant = 0.08; // Near-zero smoothing: lets natural harmonic trembling pass through (STFT spirit)
     this.masterGainNode = this.audioContext.createGain();
 
     let lastNode: AudioNode = this.mediaElementSourceNode;

@@ -627,6 +627,7 @@
               <div class="join">
                   <button (click)="visualizerEngine.set('synergy')" class="btn btn-sm join-item flex-1 block text-sm mb-1 btn-3d"  [class]="effectiveTheme().button" [class.btn-active]="visualizerEngine() === 'synergy'" title="Use the intelligent, adaptive Synergy Drive engine.">Synergy Drive</button>
                   <button (click)="visualizerEngine.set('algorithm')" class="btn btn-sm join-item flex-1 block text-sm mb-1 btn-3d"  [class]="effectiveTheme().button" [class.btn-active]="visualizerEngine() === 'algorithm'" title="Use raw, high-impact algorithms from my research.">Algorithm Lab</button>
+                  <button (click)="visualizerEngine.set('pure-stft')" class="btn btn-sm join-item flex-1 block text-sm mb-1 btn-3d"  [class]="effectiveTheme().button" [class.btn-active]="visualizerEngine() === 'pure-stft'" title="Pure STFT: Raw, unsmoothed FFT spectral data. The purest frequency-domain dance.">Pure STFT</button>
                 </div>
             </div>
             
@@ -642,6 +643,15 @@
                     <button (click)="setSynergyDriveMode('rhythm')" class="btn btn-sm join-item flex-1 block text-sm mb-1 btn-3d"  [class]="effectiveTheme().button" [class.btn-active]="synergyDriveMode() === 'rhythm'" title="Rhythm Mode: Emphasizes the bass and beat for rhythmic music.">Rhythm</button>
                     <button (click)="setSynergyDriveMode('transient')" class="btn btn-sm join-item flex-1 block text-sm mb-1 btn-3d"  [class]="effectiveTheme().button" [class.btn-active]="synergyDriveMode() === 'transient'" title="Transient Mode: Reacts sharply to high-frequency sounds like cymbals and snares.">Super Sense</button>
                   </div>
+              </div>
+            }
+
+            @if (visualizerEngine() === 'pure-stft') {
+              <div class="animate-fade-in">
+                <p class="text-sm text-center mt-2 text-gray-400">
+                  🎹 <span class="font-medium text-white">Pure STFT</span> — Raw frequency-domain spectral data.
+                  Zero smoothing. Zero decay. Every harmonic trembles with the music.
+                </p>
               </div>
             }
 

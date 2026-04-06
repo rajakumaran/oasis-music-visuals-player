@@ -17,7 +17,7 @@ type LightSourcePosition = 'none' | 'top-left' | 'top-right' | 'bottom-left' | '
 type SynergyDriveMode = 'atmosphere' | 'rhythm' | 'transient';
 type SynergyDriveSetting = SynergyDriveMode | 'smart';
 type Algorithm = 'basic' | 'stft-fractal' | 'wavelet-harmonic';
-type VisualizerEngine = 'synergy' | 'algorithm';
+type VisualizerEngine = 'synergy' | 'algorithm' | 'pure-stft';
 
 interface AuraRing { id: number; radius: number; opacity: number; thickness: number; hue: number; }
 interface AuraParticle { id: number; x: number; y: number; opacity: number; size: number; }
@@ -266,9 +266,9 @@ export class AppComponent implements OnInit, OnDestroy {
     const map = (val: number, in_min: number, in_max: number, out_min: number, out_max: number) =>
       ((val - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min;
 
-    // Reduced significantly to fix lingering audio lag
-    const decay = map(width, 320, 2560, 0.45, 0.60);
-    this.decayFactor.set(clamp(decay, 0.45, 0.60));
+    // Flattened: all screen sizes get the same tight decay for consistent trembling
+    const decay = map(width, 320, 3840, 0.38, 0.45);
+    this.decayFactor.set(clamp(decay, 0.38, 0.45));
   }
 
   // averageDataBuffers removed — the AnalyserNode's smoothingTimeConstant (0.3) already
@@ -331,20 +331,21 @@ export class AppComponent implements OnInit, OnDestroy {
         let finalSensitivity = sensitivityValue;
 
         // Apply range-specific modifiers
+        // --- Trembling Spirit: tighter decay lets raw spectral fluctuations show ---
         if (barProgress < ranges.subBass) { // Sub-bass
-          finalSensitivity *= 1.1; finalDecay = Math.min(0.85, baseDecay + 0.1);
+          finalSensitivity *= 1.1; finalDecay = Math.min(0.65, baseDecay + 0.1);
         } else if (barProgress < ranges.bass) { // Bass
-          finalSensitivity *= 1.05; finalDecay = Math.min(0.80, baseDecay + 0.05);
+          finalSensitivity *= 1.05; finalDecay = Math.min(0.55, baseDecay + 0.05);
         } else if (barProgress < ranges.lowMid) { // Low Mids
-          finalSensitivity *= 0.9; finalDecay = Math.max(0.5, baseDecay - 0.05);
+          finalSensitivity *= 0.9; finalDecay = Math.max(0.35, baseDecay - 0.1);
         } else if (barProgress < ranges.mid) { // Mids
-          finalSensitivity *= 0.85;
+          finalSensitivity *= 0.85; finalDecay = Math.max(0.30, baseDecay - 0.1);
         } else if (barProgress < ranges.upperMid) { // Upper Mids
-          finalSensitivity *= 0.95;
+          finalSensitivity *= 0.95; finalDecay = Math.max(0.28, baseDecay - 0.12);
         } else if (barProgress < ranges.presence) { // Presence
-          finalSensitivity *= 1.15; finalDecay = Math.max(0.4, baseDecay - 0.1);
+          finalSensitivity *= 1.15; finalDecay = Math.max(0.25, baseDecay - 0.15);
         } else { // Brilliance
-          finalSensitivity *= 1.25; finalDecay = Math.max(0.3, baseDecay - 0.15);
+          finalSensitivity *= 1.25; finalDecay = Math.max(0.20, baseDecay - 0.20);
         }
 
         normalizedValue *= finalSensitivity;
@@ -355,10 +356,26 @@ export class AppComponent implements OnInit, OnDestroy {
         if (normalizedValue >= currentValue) {
           this.smoothedBars[i] = normalizedValue;
         } else {
-          if (driveMode === 'atmosphere') finalDecay = Math.min(0.85, finalDecay + 0.2);
+          if (driveMode === 'atmosphere') finalDecay = Math.min(0.55, finalDecay + 0.08);
           this.smoothedBars[i] = currentValue * finalDecay;
         }
         output[i] = Math.min(1, Math.max(0, this.smoothedBars[i]));
+        lastIndex = index;
+      }
+
+    } else if (engine === 'pure-stft') {
+      // --- PURE STFT ENGINE: Professor Georges' raw spectral dance ---
+      // Zero smoothing, zero decay, zero beat/transient modifiers.
+      // Each bar is the LIVE max amplitude of its frequency bin range, normalized 0-1.
+      let lastIndex = 0;
+
+      for (let i = 0; i < bars; i++) {
+        const index = Math.max(lastIndex + 1, Math.floor(Math.exp(((i + 1) / bars) * logLength)));
+        const rawValue = index > lastIndex ? (this.sliceMax(data, lastIndex, index) / 255) : 0;
+
+        // Direct passthrough — no smoothedBars, no decay, no sensitivity scaling
+        // Just the pure FFT magnitude, clamped to [0, 1]
+        output[i] = Math.min(1, Math.max(0, rawValue));
         lastIndex = index;
       }
 

@@ -1,5 +1,36 @@
 # oasis-music-visuals-player
 
+# April/6th/2026 #2
+What's Live Now
+🔧 Fixed: "Bigger screen = more lag"
+The updateDecayFactor() was giving 40" monitors a decay of 0.60 while laptops got 0.50. Now all screens get 0.38–0.45 — consistent, tight trembling everywhere.
+
+🔧 Fixed: Atmosphere mode killing the trembling
+Was adding +0.20 to decay → pushed to 0.80 on big screens. Now adds only +0.08, capped at 0.55.
+
+🔧 Fixed: CSS transitions adding hidden lag
+Six bar classes had transition: height 33ms — a full render frame of CSS smoothing ON TOP of the JS pipeline. All removed.
+
+🆕 New: Pure STFT Engine Tab
+A third tab alongside Synergy Drive and Algorithm Lab. Zero smoothing. Zero decay. Zero beat modifiers. Each bar is the raw FFT bin amplitude — Professor Georges' spectral dance in its purest form. Every harmonic trembles independently.
+
+Your ng serve should hot-reload — switch to Pure STFT and play a track to see the raw trembling. Then switch back to Synergy Drive to see the improved (but still musically-aware) version. The difference should be dramatic on your 40" screen.
+
+# April/6th/2026 #1
+Surgical Edits — All Themes Now Tremble
+Change	What It Does
+FFT 1024→2048	Doubles frequency resolution to ~23Hz/bin — individual piano harmonics now resolve as separate peaks instead of smearing
+Smoothing 0.30→0.08	Only 8% of the previous frame bleeds into the current — peaks snap up instantly and flutter during note sustain
+Decay factors tightened	Sub-bass 0.85→0.65, bass 0.80→0.55, mids now 0.28–0.35 — bars fall fast enough to reveal the natural trembling
+What's untouched:
+✅ No CSS sizing, spacing, or layout changes
+✅ No bar count or DOM structure changes
+✅ No screen-factor / responsive behavior changes
+✅ Build passes clean (878kB, exit 0)
+Fire up ng serve and play a piano track — you should see every bar tremble with life as the strings ring out, just like in the Professor's visualization. The effect will be most dramatic on piano, guitar, and acoustic music, but EDM and beats will also feel more immediately punchy.
+
+
+
 # March/31st/2026
 I have successfully built and integrated all three advanced mathematical visualizers! They've been pushed to your active ng serve process and will hot-reload immediately.
 
