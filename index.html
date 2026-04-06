@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <meta name="google-adsense-account" content="ca-pub-9513364039433406">
   <title>Audio Oasis Equalizer</title>
   <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.2/dist/full.min.css" rel="stylesheet" type="text/css" />
@@ -37,6 +40,7 @@
     /* DaisyUI overrides for vertical range */
     input[type=range].vertical {
       writing-mode: bt-lr;
+      appearance: slider-vertical;
       -webkit-appearance: slider-vertical;
       padding: 0 5px;
     }
@@ -77,7 +81,7 @@
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
-<body class="bg-gray-900 text-gray-300 font-sans antialiased">
+<body class="bg-gray-950 text-gray-300 antialiased" style="font-family: 'Inter', system-ui, -apple-system, sans-serif;">
   <app-root></app-root>
 </body>
 </html>

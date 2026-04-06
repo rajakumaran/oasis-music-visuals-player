@@ -11,6 +11,7 @@ import { SpectrogramComponent } from './spectrogram/spectrogram.component';
 import { ParticleStormComponent } from './particle-storm/particle-storm.component';
 import { RadarPulseComponent } from './radar-pulse/radar-pulse.component';
 import { TerrainPeaksComponent } from './terrain-peaks/terrain-peaks.component';
+import { CymaticsComponent } from './cymatics/cymatics.component';
 import { inject as vercelAnalytics } from '@vercel/analytics';
 
 type LightSourcePosition = 'none' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center-stage' | 'top-center';
@@ -25,7 +26,7 @@ interface AuraParticle { id: number; x: number; y: number; opacity: number; size
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FullscreenToggleComponent, WebglVisualizerComponent, OscilloscopeComponent, SpectrogramComponent, ParticleStormComponent, RadarPulseComponent, TerrainPeaksComponent],
+  imports: [CommonModule, FullscreenToggleComponent, WebglVisualizerComponent, OscilloscopeComponent, SpectrogramComponent, ParticleStormComponent, RadarPulseComponent, TerrainPeaksComponent, CymaticsComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,7 +53,7 @@ export class AppComponent implements OnInit, OnDestroy {
   hasEntered = signal(false);
 
   // --- Visualizer Engine State ---
-  visualizerEngine = signal<VisualizerEngine>('synergy');
+  visualizerEngine = signal<VisualizerEngine>('pure-stft');
 
   // Synergy Drive Engine State
   synergyDriveMode = signal<SynergyDriveSetting>('smart');
@@ -861,6 +862,8 @@ export class AppComponent implements OnInit, OnDestroy {
   bandFrequencies = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k'];
 
   themes: EqualizerTheme[] = [
+    // --- ★ Cymatics: Sound Made Visible ---
+    { name: 'Cymatics', type: 'cymatics', base: 'bg-[#020206]', display: 'bg-black', bar: '', sliderTrack: 'bg-indigo-900/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: '#a78bfa', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-violet-500/50' },
     // --- Mathematical / Fractal 3D Modules ---
     { name: 'Strange Attractor', type: 'webgl', webglMode: 'strange-attractor', base: 'bg-[#000005]', display: '#000005', bar: '', sliderTrack: 'bg-cyan-900/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-300', accent: '#0891b2', button: 'bg-cyan-900/70', buttonHover: 'hover:bg-cyan-800/70', highlight: 'bg-cyan-500/50' },
     { name: 'Ford Spheres 3D', type: 'webgl', webglMode: 'ford-spheres', base: 'bg-[#050510]', display: '#020205', bar: '', sliderTrack: 'bg-amber-900/50', sliderThumb: 'bg-amber-400', text: 'text-amber-300', accent: '#d97706', button: 'bg-amber-900/70', buttonHover: 'hover:bg-amber-800/70', highlight: 'bg-amber-500/50' },

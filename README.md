@@ -1,5 +1,44 @@
 # oasis-music-visuals-player
 
+
+# April/6th/2026 #4
+All done! Here's the summary:
+
+✅ Completed — Build Passing
+What changed:
+Change	Files
+STFT Default	app.component.ts — one-line change
+Cymatics Visualizer	New cymatics/cymatics.component.ts — 280 lines of Chladni plate physics
+Theme Integration	equalizer-theme.model.ts, app.component.ts (import + theme at #1), app.component.html (@case)
+UI Dark Polish	index.html (Inter font, darker body), app.component.html (header, cockpits, autopilot section, labels)
+
+🌀 Cymatics — What to expect:
+~2500 particles organize into geometric Chladni patterns on a virtual vibrating plate
+Bass controls the pattern shape (which mandala you see)
+Beats trigger dramatic mode jumps — the pattern dissolves and reforms into a new shape
+Treble makes individual particles shimmer
+Circular plate with glowing edge, ghost nodal lines, and a bass-reactive center glow
+
+🎨 UI improvements:
+Inter font gives everything a modern, clean feel
+All controls readable against the darker bg-gray-950 background
+That jarring blue autopilot section is now a subtle dark container
+Glass-morphism on header and cockpit sidebars
+Deploy or ng serve to see it live! 🎶
+
+# April/6th/2026 #3
+Here's the plan. Key highlights:
+
+🎯 STFT as default — Simple one-line change, done.
+
+🌀 New visualizer: Cymatics — Inspired by Chladni's physics experiments where sound creates geometric patterns on vibrating plates. Particles self-organize into frequency-driven mandalas that "mode-jump" on every beat. Uses Canvas 2D for mobile performance (same pattern as Particle Storm and Terrain Peaks).
+
+🎨 UI Polish — Full dark-theme pass: Inter font, readable text on all controls, fix the jarring blue bg-blue-300 autopilot section, darker glass-morphism sidebars.
+
+🚫 YouTube — Confirmed impossible due to browser Same-Origin Policy. No legal client-side workaround exists — YouTube iframes completely block audio data access to the Web Audio API.
+
+Please review the plan and let me know:
+
 # April/6th/2026 #2
 What's Live Now
 🔧 Fixed: "Bigger screen = more lag"

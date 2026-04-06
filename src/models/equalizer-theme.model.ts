@@ -5,7 +5,7 @@ export interface EqualizerTheme {
   | 'webgl-shader-ferrofluid'  | 'webgl-shader-explosion' | 'webgl-shader-waves'| 'webgl-shader-fractal-zoom'| 'webgl-shader-nebula' | 'webgl-shader-plasma' | 'webgl-shader-plasma' | 'webgl-shader-geometry' | 'webgl-shader-particles' | 'webgl-shader-holo' | 'webgl-shader-fractal' | 'ford-circles'
   | 'helix' | 'polar-rose' | 'diamond' | 'orbits' | 'ripple' | 'nova'
   | 'particle-storm' | 'radar-pulse' | 'terrain-peaks'
-  | 'oscilloscope' | 'spectrogram'
+  | 'oscilloscope' | 'spectrogram' | 'cymatics'
   | 'base';
   base: string;
   display: string;
