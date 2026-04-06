@@ -1,5 +1,8 @@
 # oasis-music-visuals-player
 
+# April/6th/2026 #5
+commented out Ford Spheres 3D and Terrain Peaks
+NOTE: I am addin a paywall. Which will be in another brand new branch cut from here.
 
 # April/6th/2026 #4
 All done! Here's the summary:
