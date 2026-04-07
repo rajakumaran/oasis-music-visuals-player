@@ -470,9 +470,9 @@
           <div class="mb-6">
             <label class="block text-sm text-gray-300 mb-2">Theme</label>
             <!-- <select [value]="selectedThemeIndex()" (change)="selectTheme($any($event.target).value)" class="select select-bordered block text-sm text-black mb-2 w-full" [disabled]="isHolidayThemeOn()" title="Select a visual theme"> -->
-            <select [value]="selectedThemeIndex()" (change)="selectTheme($any($event.target).value)" [class]="'select select-sm w-full appearance-none rounded-md py-1 pl-2 pr-7 text-xs ' + effectiveTheme().button + ' ' + effectiveTheme().text" [disabled]="isHolidayThemeOn()" title="Select a visual theme">          
+            <select [value]="selectedThemeIndex()" (change)="selectTheme($any($event.target).value)" [class]="'select select-sm w-full appearance-none rounded-md py-1 pl-2 pr-7 text-xs ' + effectiveTheme().button + ' ' + effectiveTheme().text" [disabled]="isHolidayThemeOn()" title="Select a visual theme">
               @for (theme of themes; track theme.name; let i = $index) {
-                <option [value]="i">{{ theme.name }}</option>
+                <option [value]="i">{{ licenseService.isThemeLocked(theme.name) ? '🔒 ' : '' }}{{ theme.name }}{{ licenseService.isThemeLocked(theme.name) ? ' (Pro)' : '' }}</option>
               }
             </select>
           </div>
@@ -495,8 +495,14 @@
             <h3 class="text-lg font-medium text-gray-100 mb-3">Playlist</h3>
             @if (audioSource() === 'file') {
               <label class="w-full" title="Upload audio or video files">
-                <span class="mb-2 block text-center text-sm">Upload Music (Max 100!)</span>
-                <input type="file" multiple accept="audio/*,video/mp4" (change)="onFileChange($event)" class="file-input file-input-bordered file-input-sm block text-sm text-black mb-2 w-full" />
+                @if (isPro()) {
+                  <span class="mb-2 block text-center text-sm">Upload Music (Max 100!)</span>
+                  <input type="file" multiple accept="audio/*,video/mp4" (change)="onFileChange($event)" class="file-input file-input-bordered file-input-sm block text-sm text-black mb-2 w-full" />
+                } @else {
+                  <button (click)="showUpgradeModal.set(true)" class="btn btn-sm w-full btn-3d bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-none hover:from-violet-500 hover:to-indigo-500">
+                    <i class="fa-solid fa-crown mr-1"></i> Upgrade to Upload Music
+                  </button>
+                }
               </label>
             }
             @if (audioSource() === 'microphone') {
@@ -783,3 +789,77 @@
     </aside>
   </main>
 </div>
+
+<!-- ===== SPECTRA PRO UPGRADE MODAL ===== -->
+@if (showUpgradeModal()) {
+  <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4" (click)="dismissUpgradeModal()">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-md"></div>
+
+    <!-- Modal Card -->
+    <div class="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-gray-700/50 bg-gray-950/95 backdrop-blur-xl shadow-2xl shadow-violet-500/10" (click)="$event.stopPropagation()">
+
+      <!-- Close Button -->
+      <button (click)="dismissUpgradeModal()" class="absolute top-4 right-4 z-10 btn btn-sm btn-ghost btn-circle text-gray-400 hover:text-white">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <!-- Header -->
+      <div class="p-8 pb-4 text-center">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-violet-500/20 to-indigo-500/20 border border-violet-500/30 mb-4">
+          <i class="fa-solid fa-crown text-amber-400 text-xs"></i>
+          <span class="text-xs font-semibold tracking-widest text-violet-300 uppercase">Spectra Pro</span>
+        </div>
+        <h2 class="text-3xl font-bold text-white mb-2">Unlock the Full Experience</h2>
+        <p class="text-gray-400 text-sm max-w-md mx-auto">Get access to all 60+ visualizer themes, unlimited uploads, Style Fusion, Autopilot, and every future update.</p>
+      </div>
+
+      <!-- Pricing Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 px-6 pb-4 max-w-lg mx-auto">
+
+        <!-- Monthly -->
+        <div class="rounded-xl border border-gray-700/50 bg-gray-900/60 p-6 text-center hover:border-gray-600/60 transition-colors cursor-pointer group" (click)="openCheckout('monthly')">
+          <p class="text-xs text-gray-500 uppercase tracking-wider mb-2 font-medium">Monthly</p>
+          <p class="text-3xl font-bold text-white">$4<span class="text-lg text-gray-400">.99</span></p>
+          <p class="text-xs text-gray-500 mt-1">/month</p>
+          <button class="btn btn-sm w-full mt-4 bg-gray-800 border-gray-700 text-gray-300 group-hover:bg-gray-700 group-hover:text-white transition-all">
+            Get Started
+          </button>
+        </div>
+
+        <!-- Annual (Best Value) -->
+        <div class="rounded-xl border-2 border-violet-500/60 bg-gradient-to-b from-violet-950/40 to-gray-900/60 p-6 text-center relative hover:border-violet-400/70 transition-colors cursor-pointer group scale-[1.03]" (click)="openCheckout('annual')">
+          <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 text-[10px] font-bold text-white uppercase tracking-wider">Best Value</div>
+          <p class="text-xs text-violet-400 uppercase tracking-wider mb-2 font-medium mt-1">Annual</p>
+          <p class="text-3xl font-bold text-white">$29<span class="text-lg text-gray-400">.99</span></p>
+          <p class="text-xs text-violet-400 mt-1">Save 50%</p>
+          <button class="btn btn-sm w-full mt-4 bg-gradient-to-r from-violet-600 to-indigo-600 border-none text-white group-hover:from-violet-500 group-hover:to-indigo-500 transition-all">
+            Subscribe
+          </button>
+        </div>
+      </div>
+
+      <!-- Feature List -->
+      <div class="px-6 pb-4">
+        <div class="rounded-xl bg-gray-900/40 border border-gray-800/50 p-4">
+          <p class="text-xs text-gray-500 uppercase tracking-wider mb-3 font-medium">Everything in Pro</p>
+          <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            <div class="flex items-center gap-2 text-gray-300"><i class="fa-solid fa-check text-emerald-400 text-xs"></i> 60+ visualizer themes</div>
+            <div class="flex items-center gap-2 text-gray-300"><i class="fa-solid fa-check text-emerald-400 text-xs"></i> Upload your own music</div>
+            <div class="flex items-center gap-2 text-gray-300"><i class="fa-solid fa-check text-emerald-400 text-xs"></i> Style Fusion mixing</div>
+            <div class="flex items-center gap-2 text-gray-300"><i class="fa-solid fa-check text-emerald-400 text-xs"></i> Autopilot themes</div>
+            <div class="flex items-center gap-2 text-gray-300"><i class="fa-solid fa-check text-emerald-400 text-xs"></i> WebGL 3D visualizers</div>
+            <div class="flex items-center gap-2 text-gray-300"><i class="fa-solid fa-check text-emerald-400 text-xs"></i> All future themes</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 pb-6 text-center">
+        <button (click)="restorePurchase()" class="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+          Already Pro? <span class="underline">Restore purchase</span>
+        </button>
+      </div>
+    </div>
+  </div>
+}

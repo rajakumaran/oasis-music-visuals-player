@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AudioService } from './services/audio.service';
 import { HolidayService } from './services/holiday.service';
 import { PresetService, Preset } from './services/preset.service';
+import { LicenseService, STRIPE_LINKS } from './services/license.service';
 import { EqualizerTheme } from './models/equalizer-theme.model';
 import { FullscreenToggleComponent } from './fullscreen-toggle/fullscreen-toggle.component';
 import { WebglVisualizerComponent } from './webgl-visualizer/webgl-visualizer.component';
@@ -35,6 +36,11 @@ export class AppComponent implements OnInit, OnDestroy {
   audioService = inject(AudioService);
   holidayService = inject(HolidayService);
   presetService = inject(PresetService);
+  licenseService = inject(LicenseService);
+
+  // --- Spectra Pro Paywall ---
+  showUpgradeModal = signal(false);
+  isPro = this.licenseService.isPro;
 
   playlist = this.audioService.playlist;
   currentTrackIndex = this.audioService.currentTrackIndex;
@@ -983,7 +989,10 @@ export class AppComponent implements OnInit, OnDestroy {
   effectiveTheme = computed(() => this.activeHoliday()?.theme ?? this.selectedTheme());
   selectedThemeIndex = computed(() => this.themes.findIndex(t => t.name === this.selectedTheme().name));
 
-  onFileChange(event: Event) { this.audioService.loadFiles((event.target as HTMLInputElement).files!); }
+  onFileChange(event: Event) {
+    if (!this.isPro()) { this.showUpgradeModal.set(true); return; }
+    this.audioService.loadFiles((event.target as HTMLInputElement).files!);
+  }
   onBgImageChange(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
@@ -1042,6 +1051,11 @@ export class AppComponent implements OnInit, OnDestroy {
   selectTheme(index: string) {
     const i = parseInt(index, 10);
     if (!isNaN(i) && i < this.themes.length) {
+      // Gate: if theme is locked (Pro-only), show upgrade modal instead
+      if (this.licenseService.isThemeLocked(this.themes[i].name)) {
+        this.showUpgradeModal.set(true);
+        return;
+      }
       this.selectedTheme.set(this.themes[i]);
       // If LED theme is selected, automatically stash cockpits for a cleaner look
       if (this.themes[i].type === 'led') {
@@ -1049,7 +1063,10 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     }
   }
-  toggleAutoSwitch() { this.isAutoSwitching.update(v => !v); }
+  toggleAutoSwitch() {
+    if (!this.isPro()) { this.showUpgradeModal.set(true); return; }
+    this.isAutoSwitching.update(v => !v);
+  }
   setSwitchInterval(event: Event) { this.switchInterval.set(parseInt((event.target as HTMLSelectElement).value, 10)); }
   setSwitchMode(mode: 'sequential' | 'random') { this.switchMode.set(mode); }
   toggleHolidayTheme(event: Event) { this.holidayService.setHolidayThemeEnabled((event.target as HTMLInputElement).checked); }
@@ -1101,7 +1118,19 @@ export class AppComponent implements OnInit, OnDestroy {
   decrementLedHeight() { this.ledSegmentHeight.update(h => Math.max(1, h - 1)); }
   toggleKaleidoscope() { this.isKaleidoscope.update(k => !k); }
 
-  toggleStyleFusion() { this.isStyleFusionOn.update(f => !f); }
+  toggleStyleFusion() {
+    if (!this.isPro()) { this.showUpgradeModal.set(true); return; }
+    this.isStyleFusionOn.update(f => !f);
+  }
+
+  // --- Upgrade Modal Methods ---
+  dismissUpgradeModal() { this.showUpgradeModal.set(false); }
+  openCheckout(plan: 'monthly' | 'annual' | 'lifetime') {
+    this.licenseService.openCheckout(plan);
+  }
+  restorePurchase() {
+    this.licenseService.openCustomerPortal();
+  }
   setFusionInterval(event: Event) { this.fusionInterval.set(parseInt((event.target as HTMLSelectElement).value, 10)); }
 
   private startKaleidoscope() {
