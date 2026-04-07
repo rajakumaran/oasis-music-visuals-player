@@ -222,6 +222,11 @@ export class AppComponent implements OnInit, OnDestroy {
     vercelAnalytics();
     this.isMobile.set(window.innerWidth < 768);
     this.updateDecayFactor();
+
+    // If arriving from Stripe payment redirect, skip splash and auto-enter
+    if (this.licenseService.activatedFromRedirect()) {
+      this.enterOasis();
+    }
     window.addEventListener('resize', this.resizeListener);
     window.addEventListener('orientationchange', this.orientationChangeListener);
     // Modern API (Android Chrome, Firefox) — fires on programmatic + physical rotation
@@ -1083,13 +1088,20 @@ export class AppComponent implements OnInit, OnDestroy {
   private themeRandomBag: number[] = [];
 
   private selectNextTheme(): void {
-    const currentIndex = this.themes.findIndex(t => t.name === this.selectedTheme().name);
+    // For free users, only cycle through free themes
+    const availableThemes = this.isPro()
+      ? this.themes
+      : this.themes.filter(t => this.licenseService.isThemeFree(t.name));
+
+    if (availableThemes.length === 0) return;
+
+    const currentIndex = availableThemes.findIndex(t => t.name === this.selectedTheme().name);
     let nextIndex: number;
 
     if (this.switchMode() === 'random') {
       if (this.themeRandomBag.length === 0) {
         // Refill bag with all indices EXCEPT the current one
-        this.themeRandomBag = this.themes.map((_, i) => i).filter(i => i !== currentIndex);
+        this.themeRandomBag = availableThemes.map((_, i) => i).filter(i => i !== currentIndex);
       }
 
       const randPick = Math.floor(Math.random() * this.themeRandomBag.length);
@@ -1098,10 +1110,10 @@ export class AppComponent implements OnInit, OnDestroy {
       // Pluck the chosen theme so it doesn't repeat until bag empties
       this.themeRandomBag.splice(randPick, 1);
     } else {
-      nextIndex = (currentIndex + 1) % this.themes.length;
+      nextIndex = (currentIndex + 1) % availableThemes.length;
     }
 
-    this.selectedTheme.set(this.themes[nextIndex]);
+    this.selectedTheme.set(availableThemes[nextIndex]);
   }
 
 
