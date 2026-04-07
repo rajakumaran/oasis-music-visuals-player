@@ -40,8 +40,8 @@ const FREE_THEME_NAMES: ReadonlySet<string> = new Set([
 ]);
 
 export const STRIPE_LINKS = {
-  monthly: 'https://buy.stripe.com/test_14A14mdPHb5PbzveRZ67S00',   // $4.99/month
-  annual: 'https://buy.stripe.com/test_eVq6oGdPH4HravraBJ67S01',    // $29.99/year
+  monthly: 'https://buy.stripe.com/3cI8wR0GQenXgQX0bgabK00',   // $4.99/month
+  annual: 'https://buy.stripe.com/14A4gBcpy2FfbwD4rwabK01',    // $29.99/year
   portal: '', // Customer portal — set up later in Stripe Dashboard → Settings → Billing → Customer portal
 } as const;
 
@@ -49,6 +49,9 @@ export const STRIPE_LINKS = {
 export class LicenseService {
   /** Whether the user has an active Pro subscription */
   isPro = signal(false);
+
+  /** True when user just arrived from a Stripe payment redirect — skip splash screen */
+  activatedFromRedirect = signal(false);
 
   /** Number of free themes available */
   readonly freeThemeCount = FREE_THEME_NAMES.size;
@@ -126,6 +129,7 @@ export class LicenseService {
     const params = new URLSearchParams(window.location.search);
     if (params.get(ACTIVATION_PARAM) === ACTIVATION_VALUE) {
       this.activatePro();
+      this.activatedFromRedirect.set(true); // Skip splash screen
       // Clean the URL so it doesn't look ugly / re-trigger on refresh
       const cleanUrl = window.location.pathname + window.location.hash;
       window.history.replaceState({}, '', cleanUrl);
