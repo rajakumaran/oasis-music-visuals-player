@@ -39,15 +39,10 @@ const FREE_THEME_NAMES: ReadonlySet<string> = new Set([
   'CRT Oscilloscope',   // Canvas Waveform — unique tech aesthetic
 ]);
 
-/** Stripe Payment Link URLs — replace with your actual links from the Stripe Dashboard */
 export const STRIPE_LINKS = {
   monthly: 'https://buy.stripe.com/test_14A14mdPHb5PbzveRZ67S00',   // $4.99/month
   annual: 'https://buy.stripe.com/test_eVq6oGdPH4HravraBJ67S01',    // $29.99/year
-  // portal: 'https://billing.stripe.com/p/login/test_14A14mdPHb5PbzveRZ67S00', // Customer portal for "Restore"
-  // lifetime: 'https://buy.stripe.com/PLACEHOLDER_LIFETIME',  // $49.99 one-time lifetime is too much. What if so many customers virally? Add this once on the market however.
-  // monthly:  'https://buy.stripe.com/PLACEHOLDER_MONTHLY',   // $4.99/month
-  // annual: 'https://buy.stripe.com/PLACEHOLDER_ANNUAL',    // $29.99/year
-
+  portal: '', // Customer portal — set up later in Stripe Dashboard → Settings → Billing → Customer portal
 } as const;
 
 @Injectable({ providedIn: 'root' })
@@ -101,7 +96,12 @@ export class LicenseService {
 
   /** Open Stripe Customer Portal for subscription management / restore */
   openCustomerPortal(): void {
-    window.open(STRIPE_LINKS.portal, '_blank');
+    if (STRIPE_LINKS.portal) {
+      window.open(STRIPE_LINKS.portal, '_blank');
+    } else {
+      // Portal not configured yet — just re-activate from URL as a fallback
+      this.activatePro();
+    }
   }
 
   // --- Private helpers ---
