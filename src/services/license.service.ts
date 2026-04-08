@@ -40,8 +40,8 @@ const FREE_THEME_NAMES: ReadonlySet<string> = new Set([
 ]);
 
 export const STRIPE_LINKS = {
-  monthly: 'https://buy.stripe.com/3cI8wR0GQenXgQX0bgabK00',   // $4.99/month
-  annual: 'https://buy.stripe.com/14A4gBcpy2FfbwD4rwabK01',    // $29.99/year
+  monthly: 'https://buy.stripe.com/7sY8wR75e2Ff9ove26abK05',   // $4.99/month
+  annual: 'https://buy.stripe.com/7sYdRb3T25Rr9ovf6aabK06',    // $29.99/year
   portal: '', // Customer portal — set up later in Stripe Dashboard → Settings → Billing → Customer portal
 } as const;
 

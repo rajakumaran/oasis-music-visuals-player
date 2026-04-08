@@ -129,7 +129,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private smoothedBars: number[] = [];
 
   tickerMessages: string[] = [
-    'Welcome to the Audio Oasis Equalizer...',
+    'Welcome to the Spectra!, a fantastic audio and visuals player...',
     'Tip: Try combining different Visualization Modes, Algo Lab, and Synergy Drive settings!',
     'Tip: Try Microphone Mode to visualize any sound in your room.',
     'By Mr. Muthukumaran Azhagesan ( Kumar ), https://linktr.ee/muthukumaran.azhagesan',
@@ -140,7 +140,8 @@ export class AppComponent implements OnInit, OnDestroy {
   private tickerInterval: any;
   animationClass = computed(() => 'animate-' + this.tickerDirection());
 
-  isAutoSwitching = signal(true); //on by default
+  // Autopilot: ON by default for Pro users, OFF for free users (they'd cycle locked themes)
+  isAutoSwitching = signal(this.licenseService.isPro());
   switchInterval = signal(10000);
   switchMode = signal<'sequential' | 'random'>('sequential');
   private themeSwitchIntervalId: any = null;

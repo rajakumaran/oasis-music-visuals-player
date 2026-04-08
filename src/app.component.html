@@ -44,6 +44,9 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span class="text-xs font-medium text-violet-300 tracking-wide">
+            On click of POWER ON button, sample music will start automatically. If not, click on the next track button (on the right).            
+          
+          <br/><br/><br/>          
             Audio begins immediately. Headphones recommended.
           </span>
         </div>
@@ -507,7 +510,7 @@
                   <input type="file" multiple accept="audio/*,video/mp4" (change)="onFileChange($event)" class="file-input file-input-bordered file-input-sm block text-sm text-black mb-2 w-full" />
                 } @else {
                   <button (click)="showUpgradeModal.set(true)" class="btn btn-sm w-full btn-3d bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-none hover:from-violet-500 hover:to-indigo-500">
-                    <i class="fa-solid fa-crown mr-1"></i> Upgrade to Upload Music
+                    <i class="fa-solid fa-crown mr-1"></i> Upgrade to Upload Music/Enjoy Spectra
                   </button>
                 }
               </label>
