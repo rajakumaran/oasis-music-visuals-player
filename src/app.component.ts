@@ -20,6 +20,7 @@ type SynergyDriveMode = 'atmosphere' | 'rhythm' | 'transient';
 type SynergyDriveSetting = SynergyDriveMode | 'smart';
 type Algorithm = 'basic' | 'stft-fractal' | 'wavelet-harmonic';
 type VisualizerEngine = 'synergy' | 'algorithm' | 'pure-stft';
+type QuickVibe = 'chill' | 'energy' | 'cosmic' | 'retro' | null;
 
 interface AuraRing { id: number; radius: number; opacity: number; thickness: number; hue: number; }
 interface AuraParticle { id: number; x: number; y: number; opacity: number; size: number; }
@@ -102,6 +103,9 @@ export class AppComponent implements OnInit, OnDestroy {
   showCockpits = signal(true);
   showCockpitButton = signal(false);
   private cockpitAutoHideTimeout: any;
+
+  // --- Quick Vibe (Simple Mode) ---
+  activeVibe = signal<QuickVibe>(null);
 
   private readonly resizeListener = () => {
     this.updateDecayFactor();
@@ -1028,6 +1032,31 @@ export class AppComponent implements OnInit, OnDestroy {
       this.showCockpitButton.set(true);
       this.scheduleCockpitButtonHide();
     }
+  }
+
+  // --- Quick Vibe Presets ---
+  applyQuickVibe(vibe: QuickVibe) {
+    this.activeVibe.set(vibe);
+
+    // Each vibe maps to a curated free-tier theme + engine combo
+    const vibeMap: Record<string, { theme: string; engine: VisualizerEngine }> = {
+      'chill':  { theme: 'Cymatics',         engine: 'pure-stft' },
+      'energy': { theme: 'Particle Storm',   engine: 'pure-stft' },
+      'cosmic': { theme: 'Strange Attractor', engine: 'synergy' },
+      'retro':  { theme: 'Classic LED',       engine: 'pure-stft' },
+    };
+
+    const preset = vibeMap[vibe!];
+    if (!preset) return;
+
+    // Apply theme
+    const themeIndex = this.themes.findIndex(t => t.name === preset.theme);
+    if (themeIndex >= 0) {
+      this.selectedTheme.set(this.themes[themeIndex]);
+    }
+
+    // Apply engine
+    this.visualizerEngine.set(preset.engine);
   }
 
   onVisualizerInteraction() {

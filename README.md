@@ -1,5 +1,17 @@
 # oasis-music-visuals-player
 
+# April/9th/2026
+Vibe	Theme	Engine	Mood
+🌙 Chill	Cymatics	Pure STFT	Calm, flowing mandala patterns
+⚡ Energy	Particle Storm	Pure STFT	Explosive particle bursts
+⭐ Cosmic	Strange Attractor	Synergy	Deep space 3D fractals
+📻 Retro	Classic LED	Pure STFT	Vintage equalizer bars
+All 4 vibes use free-tier themes so they work for everyone. The active vibe glows with its accent color. When users want fine control, they click "Cockpits" to open the full Mriya cockpit 😄
+
+Deploy and test!
+
+
+
 # April/7th/2026 #1
 I've successfully implemented the Stripe payment integration for Spectra! Here's what's live:
 
