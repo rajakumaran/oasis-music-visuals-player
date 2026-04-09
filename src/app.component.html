@@ -155,6 +155,13 @@
                   [musicProfile]="effectiveSynergyDriveMode()"
                 />
               }
+              @case ('fireworks') {
+                <app-fireworks
+                  [bars]="visualizerBars()"
+                  [beat]="beat()"
+                  [musicProfile]="effectiveSynergyDriveMode()"
+                />
+              }
               @case ('radar-pulse') {
                 <app-radar-pulse
                   [bars]="visualizerBars()"

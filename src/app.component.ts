@@ -10,6 +10,7 @@ import { WebglVisualizerComponent } from './webgl-visualizer/webgl-visualizer.co
 import { OscilloscopeComponent } from './oscilloscope/oscilloscope.component';
 import { SpectrogramComponent } from './spectrogram/spectrogram.component';
 import { ParticleStormComponent } from './particle-storm/particle-storm.component';
+import { FireworksComponent } from './fireworks/fireworks.component';
 import { RadarPulseComponent } from './radar-pulse/radar-pulse.component';
 import { TerrainPeaksComponent } from './terrain-peaks/terrain-peaks.component';
 import { CymaticsComponent } from './cymatics/cymatics.component';
@@ -28,7 +29,7 @@ interface AuraParticle { id: number; x: number; y: number; opacity: number; size
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FullscreenToggleComponent, WebglVisualizerComponent, OscilloscopeComponent, SpectrogramComponent, ParticleStormComponent, RadarPulseComponent, TerrainPeaksComponent, CymaticsComponent],
+  imports: [CommonModule, FullscreenToggleComponent, WebglVisualizerComponent, OscilloscopeComponent, SpectrogramComponent, ParticleStormComponent, FireworksComponent, RadarPulseComponent, TerrainPeaksComponent, CymaticsComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -891,6 +892,7 @@ export class AppComponent implements OnInit, OnDestroy {
     { name: 'CRT Oscilloscope', type: 'oscilloscope', base: 'bg-[#050810]', display: 'bg-black', bar: '', sliderTrack: 'bg-green-900/50', sliderThumb: 'bg-green-400', text: 'text-green-300', accent: 'text-green-400', button: 'bg-green-900/70', buttonHover: 'hover:bg-green-800/70', highlight: 'bg-green-500/50' },
     // { name: 'Spectrogram Waterfall', type: 'spectrogram', base: 'bg-[#030712]', display: 'bg-black', bar: '', sliderTrack: 'bg-cyan-900/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-300', accent: 'text-cyan-400', button: 'bg-cyan-900/70', buttonHover: 'hover:bg-cyan-800/70', highlight: 'bg-cyan-500/50' },
     { name: 'Particle Storm', type: 'particle-storm', base: 'bg-black', display: 'bg-black', bar: '', sliderTrack: 'bg-violet-900/50', sliderThumb: 'bg-fuchsia-400', text: 'text-fuchsia-300', accent: 'text-violet-400', button: 'bg-violet-900/70', buttonHover: 'hover:bg-violet-800/70', highlight: 'bg-fuchsia-500/50' },
+    { name: 'Fireworks', type: 'fireworks', base: 'bg-[#020104]', display: 'bg-black', bar: '', sliderTrack: 'bg-amber-900/50', sliderThumb: 'bg-amber-400', text: 'text-amber-300', accent: 'text-orange-400', button: 'bg-amber-900/70', buttonHover: 'hover:bg-amber-800/70', highlight: 'bg-amber-500/50' },
     { name: 'Radar Pulse', type: 'radar-pulse', base: 'bg-[#020402]', display: 'bg-black', bar: '', sliderTrack: 'bg-green-900/50', sliderThumb: 'bg-green-400', text: 'text-green-300', accent: 'text-green-400', button: 'bg-green-900/70', buttonHover: 'hover:bg-green-800/70', highlight: 'bg-green-500/50' },
     // { name: 'Terrain Peaks', type: 'terrain-peaks', base: 'bg-[#0a0520]', display: 'bg-black', bar: '', sliderTrack: 'bg-indigo-900/50', sliderThumb: 'bg-amber-400', text: 'text-amber-300', accent: 'text-amber-400', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-amber-500/50' },
     // --- Nova: the Jobs-inspired "one thing" ---
@@ -1035,28 +1037,41 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   // --- Quick Vibe Presets ---
+  // Categorize ALL themes by type into vibe buckets
+  private readonly VIBE_TYPES: Record<string, string[]> = {
+    'chill':  ['cymatics', 'nova', 'ripple', 'polar-rose', 'diamond', 'orbits'],
+    'energy': ['particle-storm', 'fireworks', 'glass-box'],
+    'cosmic': ['webgl', 'oscilloscope', 'radar-pulse', 'fractal', 'spectrogram'],
+    'retro':  ['led', 'shadow', 'convex', 'concave', 'glossy', 'glass', '3d'],
+  };
+
+  private getVibeThemes(vibe: string): EqualizerTheme[] {
+    const types = this.VIBE_TYPES[vibe] || [];
+    const available = this.themes.filter(t => types.includes(t.type));
+    // For free users, further filter to free themes
+    if (!this.isPro()) {
+      return available.filter(t => this.licenseService.isThemeFree(t.name));
+    }
+    return available;
+  }
+
   applyQuickVibe(vibe: QuickVibe) {
     this.activeVibe.set(vibe);
+    if (!vibe) return;
 
-    // Each vibe maps to a curated free-tier theme + engine combo
-    const vibeMap: Record<string, { theme: string; engine: VisualizerEngine }> = {
-      'chill':  { theme: 'Cymatics',         engine: 'pure-stft' },
-      'energy': { theme: 'Particle Storm',   engine: 'pure-stft' },
-      'cosmic': { theme: 'Strange Attractor', engine: 'synergy' },
-      'retro':  { theme: 'Classic LED',       engine: 'pure-stft' },
+    const vibeThemes = this.getVibeThemes(vibe);
+    if (vibeThemes.length === 0) return;
+
+    // Pick a random theme from this vibe category
+    const randomIndex = Math.floor(Math.random() * vibeThemes.length);
+    this.selectedTheme.set(vibeThemes[randomIndex]);
+
+    // Set optimal engine per vibe
+    const engineMap: Record<string, VisualizerEngine> = {
+      'chill': 'pure-stft', 'energy': 'pure-stft',
+      'cosmic': 'synergy', 'retro': 'pure-stft',
     };
-
-    const preset = vibeMap[vibe!];
-    if (!preset) return;
-
-    // Apply theme
-    const themeIndex = this.themes.findIndex(t => t.name === preset.theme);
-    if (themeIndex >= 0) {
-      this.selectedTheme.set(this.themes[themeIndex]);
-    }
-
-    // Apply engine
-    this.visualizerEngine.set(preset.engine);
+    this.visualizerEngine.set(engineMap[vibe] || 'pure-stft');
   }
 
   onVisualizerInteraction() {

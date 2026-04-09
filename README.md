@@ -1,6 +1,36 @@
 # oasis-music-visuals-player
 
-# April/9th/2026
+# April/9th/2026 #2
+1) Added 7 brand new music sample tracks for the users to listen and watch!
+
+2) ✅ Build passed! Everything done:
+
+What shipped:
+🎆 New Fireworks Visualizer
+
+Rockets launch from the bottom, mapped to frequency band positions (like LED bars)
+3 explosion styles: Spherical burst, Ring/Peony, Willow/Cascade
+Multi-color (10 hue palette: red, orange, gold, green, cyan, blue, purple, magenta, amber, pink)
+Beats trigger multi-rocket volleys; strong bands fire sporadic rockets
+Physics: gravity, air resistance, trail effects, ground glow reflection
+🎛️ Quick Vibes — All themes categorized
+
+Vibe	Theme Types Included	Count
+🌙 Chill	Cymatics, Nova, Ripple, Polar Rose, Diamond, Orbits	~6
+⚡ Energy	Particle Storm, Fireworks, Glass Box	~3
+⭐ Cosmic	WebGL 3D, Oscilloscope, Radar, Fractal	~10+
+📻 Retro	LED, Shadow, Convex, Concave, Glossy, Glass, 3D	~50+
+Each vibe click picks a random theme from that category. Clicking again shuffles to another. Free users only see free-tier themes in each vibe.
+
+🔧 Cockpit button fix
+
+Button now stays visible when cockpits are hidden
+Mouse/touch on the visualizer also reveals it
+Deploy and enjoy the show! 🎇
+
+
+
+# April/9th/2026 #1  
 Vibe	Theme	Engine	Mood
 🌙 Chill	Cymatics	Pure STFT	Calm, flowing mandala patterns
 ⚡ Energy	Particle Storm	Pure STFT	Explosive particle bursts
