@@ -1,4 +1,4 @@
-# oasis-music-visuals-player
+# oasis-music-visuals-player renamed to spectra-musicand-visuals-player
 
 # April/9th/2026 #2
 1) Added 7 brand new music sample tracks for the users to listen and watch!

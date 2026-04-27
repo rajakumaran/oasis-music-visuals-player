@@ -1,7 +1,7 @@
 {
-  "name": "audio-oasis-music-equalizer",
+  "name": "spectra-music-and-visuals-player",
   "private": true,
-  "version": "3.9.9",
+  "version": "6.9.9",
   "type": "module",
   "scripts": {
     "dev": "ng serve",

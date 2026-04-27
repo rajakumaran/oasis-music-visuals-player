@@ -164,7 +164,7 @@ export class AppComponent implements OnInit, OnDestroy {
   fusionInterval = signal(10000); // New signal for fusion interval
 
   showOpportunisticTicker = signal(false);
-  opportunisticTickerMessage = signal('Audio Oasis :: Built by Muthukumaran Azhagesan (Kumar). Check his Linktree for more projects!');
+  opportunisticTickerMessage = signal('Spectra Music :: Built by Muthukumaran Azhagesan (Kumar). Check his Linktree for more projects!');
   private showTickerTimeout: any;
   private hideTickerTimeout: any;
 
