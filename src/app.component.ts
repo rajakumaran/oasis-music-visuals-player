@@ -123,6 +123,7 @@ export class AppComponent implements OnInit, OnDestroy {
   isControlsCollapsed = signal(false);
   showCockpits = signal(true);
   showCockpitButton = signal(false);
+  showAtmospheresPanel = signal(true);
   private cockpitAutoHideTimeout: any;
 
   // --- Atmospheres (One-Tap Experiences) ---
@@ -1186,6 +1187,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     this.activeAtmosphere.set(id);
+    this.showAtmospheresPanel.set(false);
 
     // Apply all settings
     const themePool = this.getAtmosphereThemes(atmosphere);

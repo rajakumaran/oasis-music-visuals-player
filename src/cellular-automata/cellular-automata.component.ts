@@ -44,8 +44,8 @@ export class CellularAutomataComponent implements AfterViewInit, OnDestroy {
   private resizeObserver!: ResizeObserver;
 
   // Simulation grid (double-buffered)
-  private readonly GRID_W = 120;
-  private readonly GRID_H = 120;
+  private readonly GRID_W = 250;
+  private readonly GRID_H = 250;
   private grid!: Uint8Array;
   private nextGrid!: Uint8Array;
   private age!: Float32Array; // tracks how long each cell has been alive (for glow effect)

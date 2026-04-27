@@ -96,12 +96,18 @@
 
       <!-- ✦ Atmospheres Panel — one-tap auto-play experiences (visible when cockpits hidden) -->
       @if (!showCockpits()) {
-        <div class="atmosphere-panel absolute bottom-3 left-1/2 -translate-x-1/2 z-[100] w-[95vw] max-w-3xl">
-          <!-- Panel Header -->
-          <div class="flex items-center justify-center gap-2 mb-2">
-            <span class="text-[10px] text-gray-400/80 uppercase tracking-[0.25em] font-semibold">✦ Atmospheres</span>
-            <span class="text-[9px] text-gray-500/60 italic hidden sm:inline">— One tap. Sit back. Enjoy.</span>
-          </div>
+        @if (showAtmospheresPanel()) {
+          <div class="atmosphere-panel absolute bottom-3 left-1/2 -translate-x-1/2 z-[100] w-[95vw] max-w-3xl">
+            <!-- Close Button -->
+            <button (click)="showAtmospheresPanel.set(false)" class="absolute top-2 right-3 text-gray-500 hover:text-white transition-colors" title="Hide Atmospheres">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <!-- Panel Header -->
+            <div class="flex items-center justify-center gap-2 mb-2">
+              <span class="text-[10px] text-gray-400/80 uppercase tracking-[0.25em] font-semibold">✦ Atmospheres</span>
+              <span class="text-[9px] text-gray-500/60 italic hidden sm:inline">— One tap. Sit back. Enjoy.</span>
+            </div>
 
           <!-- Atmosphere Buttons Grid -->
           <div class="atmosphere-grid">
@@ -139,6 +145,25 @@
             </div>
           }
         </div>
+        } @else {
+          <!-- Stashed Atmospheres Button -->
+          <button (click)="showAtmospheresPanel.set(true)" 
+                  class="absolute bottom-4 left-1/2 -translate-x-1/2 z-[100] btn btn-sm btn-ghost backdrop-blur-md bg-white/5 border border-white/10 text-gray-300 hover:text-white rounded-full px-5 py-2 shadow-lg transition-all hover:bg-white/10">
+            <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>
+            Atmospheres
+          </button>
+          
+          <!-- Stashed Active Atmosphere Indicator -->
+          @if (activeAtmosphere(); as activeId) {
+            <div class="absolute bottom-16 left-1/2 -translate-x-1/2 z-[100] flex items-center justify-center gap-2 animate-fade-in backdrop-blur-md bg-black/40 px-3 py-1.5 rounded-full border border-white/5 shadow-lg">
+              <div class="w-1.5 h-1.5 rounded-full animate-pulse" [style.background]="getActiveAtmosphereColor()"></div>
+              <span class="text-[10px] text-gray-300 uppercase tracking-wider">
+                {{ getActiveAtmosphereName() }} Active
+              </span>
+              <button (click)="deactivateAtmosphere()" class="text-[10px] text-red-400 hover:text-red-300 transition-colors ml-1 underline">Stop</button>
+            </div>
+          }
+        }
       }
 
       <div class="text-center">Active theme: {{ effectiveTheme().name }}</div>

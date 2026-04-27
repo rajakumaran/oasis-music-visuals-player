@@ -1,5 +1,13 @@
 # oasis-music-visuals-player renamed to spectra-musicand-visuals-player
 
+# April/27th/2026 #2
+I completely agree. Good eye.
+
+I've just bumped up the grid resolutions significantly for both modes to give them much more fine-grained, high-fidelity detail:
+
+Game of Life (Cellular Automata): Increased from 120x120 to 250x250. This gives you over 62,000 cells evolving simultaneously, which should look incredibly dense and intricate on a large screen while maintaining that crisp pixel-art aesthetic.
+Turing Tapestry (Reaction-Diffusion): Increased from 200x200 to 300x300 (90,000 cells). I also tweaked the integration steps per frame slightly so it doesn't crush lower-end devices with the massively increased math overhead.
+Since your ng serve is running, Angular should have already hot-reloaded these changes into your browser. Give it a refresh and let me know if those patterns feel detailed enough now!
 
 # April/27th/2026 #1
 Here's the bottom line from my deep-dive analysis:

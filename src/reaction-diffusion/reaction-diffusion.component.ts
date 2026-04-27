@@ -40,8 +40,8 @@ export class ReactionDiffusionComponent implements AfterViewInit, OnDestroy {
   private resizeObserver!: ResizeObserver;
 
   // Simulation grid (double-buffered)
-  private readonly GRID_W = 200;
-  private readonly GRID_H = 200;
+  private readonly GRID_W = 300;
+  private readonly GRID_H = 300;
   private U!: Float32Array; // Chemical U concentration
   private V!: Float32Array; // Chemical V concentration
   private nextU!: Float32Array;
@@ -58,7 +58,7 @@ export class ReactionDiffusionComponent implements AfterViewInit, OnDestroy {
   private k = 0.062;  // kill rate
   private Du = 1.0;   // diffusion rate for U
   private Dv = 0.5;   // diffusion rate for V
-  private readonly STEPS_PER_FRAME = 8; // simulation steps per render frame
+  private readonly STEPS_PER_FRAME = 6; // simulation steps per render frame
 
   constructor() {
     effect(() => {
