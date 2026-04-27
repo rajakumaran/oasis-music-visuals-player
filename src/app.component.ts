@@ -14,6 +14,8 @@ import { FireworksComponent } from './fireworks/fireworks.component';
 import { RadarPulseComponent } from './radar-pulse/radar-pulse.component';
 import { TerrainPeaksComponent } from './terrain-peaks/terrain-peaks.component';
 import { CymaticsComponent } from './cymatics/cymatics.component';
+import { ReactionDiffusionComponent } from './reaction-diffusion/reaction-diffusion.component';
+import { CellularAutomataComponent } from './cellular-automata/cellular-automata.component';
 import { inject as vercelAnalytics } from '@vercel/analytics';
 
 type LightSourcePosition = 'none' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center-stage' | 'top-center';
@@ -21,7 +23,25 @@ type SynergyDriveMode = 'atmosphere' | 'rhythm' | 'transient';
 type SynergyDriveSetting = SynergyDriveMode | 'smart';
 type Algorithm = 'basic' | 'stft-fractal' | 'wavelet-harmonic';
 type VisualizerEngine = 'synergy' | 'algorithm' | 'pure-stft';
-type QuickVibe = 'chill' | 'energy' | 'cosmic' | 'retro' | null;
+type AtmosphereId = 'dreamscape' | 'inferno' | 'stardust' | 'neon-district' | 'golden-hour' | 'hyperdrive' | 'zen-garden' | 'laboratory' | 'chaos-theory';
+
+interface AtmosphereConfig {
+  id: AtmosphereId;
+  name: string;
+  icon: string;
+  description: string;
+  accentColor: string;
+  glowColor: string;
+  themeNames: string[];
+  engine: VisualizerEngine;
+  synergyDrive: SynergyDriveSetting;
+  kaleidoscope: boolean;
+  lightSource: LightSourcePosition;
+  autoSensitivity: boolean;
+  sensitivity: number;
+  rotationInterval: number; // ms between theme switches within this atmosphere
+  isPro?: boolean;
+}
 
 interface AuraRing { id: number; radius: number; opacity: number; thickness: number; hue: number; }
 interface AuraParticle { id: number; x: number; y: number; opacity: number; size: number; }
@@ -29,7 +49,7 @@ interface AuraParticle { id: number; x: number; y: number; opacity: number; size
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FullscreenToggleComponent, WebglVisualizerComponent, OscilloscopeComponent, SpectrogramComponent, ParticleStormComponent, FireworksComponent, RadarPulseComponent, TerrainPeaksComponent, CymaticsComponent],
+  imports: [CommonModule, FullscreenToggleComponent, WebglVisualizerComponent, OscilloscopeComponent, SpectrogramComponent, ParticleStormComponent, FireworksComponent, RadarPulseComponent, TerrainPeaksComponent, CymaticsComponent, ReactionDiffusionComponent, CellularAutomataComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -105,8 +125,11 @@ export class AppComponent implements OnInit, OnDestroy {
   showCockpitButton = signal(false);
   private cockpitAutoHideTimeout: any;
 
-  // --- Quick Vibe (Simple Mode) ---
-  activeVibe = signal<QuickVibe>(null);
+  // --- Atmospheres (One-Tap Experiences) ---
+  activeAtmosphere = signal<AtmosphereId | null>(null);
+  chaosTheoryDismissals = signal(0);
+  showChaosTheory = signal(true);
+  private atmosphereRotationTimer: any = null;
 
   private readonly resizeListener = () => {
     this.updateDecayFactor();
@@ -254,6 +277,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.stopKaleidoscope();
     clearTimeout(this.showTickerTimeout);
     clearTimeout(this.hideTickerTimeout);
+    if (this.atmosphereRotationTimer) clearInterval(this.atmosphereRotationTimer);
   }
 
   private setupTicker(): void {
@@ -881,6 +905,9 @@ export class AppComponent implements OnInit, OnDestroy {
   themes: EqualizerTheme[] = [
     // --- ★ Cymatics: Sound Made Visible ---
     { name: 'Cymatics', type: 'cymatics', base: 'bg-[#020206]', display: 'bg-black', bar: '', sliderTrack: 'bg-indigo-900/50', sliderThumb: 'bg-violet-400', text: 'text-violet-300', accent: '#a78bfa', button: 'bg-indigo-900/70', buttonHover: 'hover:bg-indigo-800/70', highlight: 'bg-violet-500/50' },
+    // --- ★ E.M. Mathematical Modes ---
+    { name: 'Turing Tapestry', type: 'reaction-diffusion', base: 'bg-[#020206]', display: 'bg-black', bar: '', sliderTrack: 'bg-teal-900/50', sliderThumb: 'bg-teal-400', text: 'text-teal-300', accent: '#14b8a6', button: 'bg-teal-900/70', buttonHover: 'hover:bg-teal-800/70', highlight: 'bg-teal-500/50' },
+    { name: 'Game of Life', type: 'cellular-automata', base: 'bg-[#020206]', display: 'bg-black', bar: '', sliderTrack: 'bg-lime-900/50', sliderThumb: 'bg-lime-400', text: 'text-lime-300', accent: '#84cc16', button: 'bg-lime-900/70', buttonHover: 'hover:bg-lime-800/70', highlight: 'bg-lime-500/50' },
     // --- Mathematical / Fractal 3D Modules ---
     { name: 'Strange Attractor', type: 'webgl', webglMode: 'strange-attractor', base: 'bg-[#000005]', display: '#000005', bar: '', sliderTrack: 'bg-cyan-900/50', sliderThumb: 'bg-cyan-400', text: 'text-cyan-300', accent: '#0891b2', button: 'bg-cyan-900/70', buttonHover: 'hover:bg-cyan-800/70', highlight: 'bg-cyan-500/50' },
     // { name: 'Ford Spheres 3D', type: 'webgl', webglMode: 'ford-spheres', base: 'bg-[#050510]', display: '#020205', bar: '', sliderTrack: 'bg-amber-900/50', sliderThumb: 'bg-amber-400', text: 'text-amber-300', accent: '#d97706', button: 'bg-amber-900/70', buttonHover: 'hover:bg-amber-800/70', highlight: 'bg-amber-500/50' },
@@ -1036,42 +1063,206 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  // --- Quick Vibe Presets ---
-  // Categorize ALL themes by type into vibe buckets
-  private readonly VIBE_TYPES: Record<string, string[]> = {
-    'chill':  ['cymatics', 'nova', 'ripple', 'polar-rose', 'diamond', 'orbits'],
-    'energy': ['particle-storm', 'fireworks', 'glass-box'],
-    'cosmic': ['webgl', 'oscilloscope', 'radar-pulse', 'fractal', 'spectrogram'],
-    'retro':  ['led', 'shadow', 'convex', 'concave', 'glossy', 'glass', '3d'],
-  };
+  // --- ✦ Atmospheres — One-Tap Experiences ---
+  readonly ATMOSPHERES: AtmosphereConfig[] = [
+    {
+      id: 'dreamscape', name: 'Dreamscape', icon: 'fa-cloud-moon',
+      description: 'Soft, flowing visuals. Perfect for late-night listening.',
+      accentColor: '#a78bfa', glowColor: 'rgba(167, 139, 250, 0.4)',
+      themeNames: ['Cymatics', 'Nova', 'Ripple Field', 'Polar Rose Bloom', 'Diamond Cascade', 'Orbit Rings', 'Celestial Sphere', 'Turing Tapestry'],
+      engine: 'pure-stft', synergyDrive: 'atmosphere', kaleidoscope: true,
+      lightSource: 'center-stage', autoSensitivity: true, sensitivity: 1.2,
+      rotationInterval: 30000,
+    },
+    {
+      id: 'inferno', name: 'Inferno', icon: 'fa-fire-flame-curved',
+      description: 'Explosive energy. Bass hits like thunder.',
+      accentColor: '#f97316', glowColor: 'rgba(249, 115, 22, 0.4)',
+      themeNames: ['Fireworks', 'Particle Storm', 'Glass Box', 'Bass Inferno', 'Molten Core', 'Gold Standard Fire Opal'],
+      engine: 'synergy', synergyDrive: 'rhythm', kaleidoscope: true,
+      lightSource: 'bottom-left', autoSensitivity: false, sensitivity: 2.0,
+      rotationInterval: 10000,
+    },
+    {
+      id: 'stardust', name: 'Stardust', icon: 'fa-wand-magic-sparkles',
+      description: 'Deep space immersion with nebulas and singularities.',
+      accentColor: '#d946ef', glowColor: 'rgba(217, 70, 239, 0.4)',
+      themeNames: ['Audio Nebula', 'Quantum Singularity', 'Strange Attractor', 'Infinite Menger', 'Cosmic Rift 2.0', 'Voxel Waves', 'Game of Life'],
+      engine: 'synergy', synergyDrive: 'smart', kaleidoscope: true,
+      lightSource: 'none', autoSensitivity: true, sensitivity: 1.2,
+      rotationInterval: 15000,
+    },
+    {
+      id: 'neon-district', name: 'Neon District', icon: 'fa-city',
+      description: 'Cyberpunk streets. Glowing bars and digital rain.',
+      accentColor: '#22d3ee', glowColor: 'rgba(34, 211, 238, 0.4)',
+      themeNames: ['Cyberpunk', 'Matrix', 'Neon Cyber Grid', 'Cyberdeck', 'Cyber Metropolis', 'Classic LED Neon Blue', 'Vaporwave Retro'],
+      engine: 'algorithm', synergyDrive: 'smart', kaleidoscope: true,
+      lightSource: 'top-center', autoSensitivity: true, sensitivity: 1.4,
+      rotationInterval: 15000,
+    },
+    {
+      id: 'golden-hour', name: 'Golden Hour', icon: 'fa-sun',
+      description: 'Warm, analog textures. Vintage hi-fi vibes.',
+      accentColor: '#fbbf24', glowColor: 'rgba(251, 191, 36, 0.4)',
+      themeNames: ['Pioneer', 'Pioneer Aurora', 'Pioneer Sunset', 'Marantz', 'Marantz Lava Flow', 'Marantz Ocean Depth', 'Woodgrain', 'Gold Standard', 'Art Deco', 'Muknics'],
+      engine: 'pure-stft', synergyDrive: 'smart', kaleidoscope: false,
+      lightSource: 'top-right', autoSensitivity: true, sensitivity: 1.2,
+      rotationInterval: 30000,
+    },
+    {
+      id: 'hyperdrive', name: 'Hyperdrive', icon: 'fa-rocket',
+      description: 'Warp speed. Every beat launches you forward.',
+      accentColor: '#06b6d4', glowColor: 'rgba(6, 182, 212, 0.4)',
+      themeNames: ['Voxel Waves', 'Audio Terrain', 'VoxelScape', 'Cyber Metropolis', 'Quantum Singularity', 'CRT Oscilloscope'],
+      engine: 'synergy', synergyDrive: 'transient', kaleidoscope: true,
+      lightSource: 'none', autoSensitivity: false, sensitivity: 2.5,
+      rotationInterval: 10000,
+    },
+    {
+      id: 'zen-garden', name: 'Zen Garden', icon: 'fa-spa',
+      description: 'Meditative calm. Geometry breathing with the music.',
+      accentColor: '#34d399', glowColor: 'rgba(52, 211, 153, 0.4)',
+      themeNames: ['Polar Rose Bloom', 'Diamond Cascade', 'Orbit Rings', 'Ripple Field', 'Celestial Sphere', 'Ocean Floor', 'Aquamarine Dream', 'Nova', 'Turing Tapestry'],
+      engine: 'pure-stft', synergyDrive: 'atmosphere', kaleidoscope: true,
+      lightSource: 'center-stage', autoSensitivity: true, sensitivity: 1.0,
+      rotationInterval: 45000,
+    },
+    {
+      id: 'laboratory', name: 'Laboratory', icon: 'fa-flask-vial',
+      description: 'Pure mathematics. Chaos, life, and chemistry.',
+      accentColor: '#a3e635', glowColor: 'rgba(163, 230, 53, 0.4)',
+      themeNames: ['Cymatics', 'Strange Attractor', 'Turing Tapestry', 'Game of Life', 'Infinite Menger'],
+      engine: 'pure-stft', synergyDrive: 'smart', kaleidoscope: false,
+      lightSource: 'none', autoSensitivity: true, sensitivity: 1.3,
+      rotationInterval: 20000,
+    },
+    {
+      id: 'chaos-theory', name: 'Chaos Theory', icon: 'fa-dice',
+      description: 'Total randomization. Every setting shuffled.',
+      accentColor: '#f43f5e', glowColor: 'rgba(244, 63, 94, 0.5)',
+      themeNames: [], // empty = use ALL themes
+      engine: 'pure-stft', synergyDrive: 'smart', kaleidoscope: true,
+      lightSource: 'none', autoSensitivity: true, sensitivity: 1.2,
+      rotationInterval: 10000,
+      isPro: true,
+    },
+  ];
 
-  private getVibeThemes(vibe: string): EqualizerTheme[] {
-    const types = this.VIBE_TYPES[vibe] || [];
-    const available = this.themes.filter(t => types.includes(t.type));
-    // For free users, further filter to free themes
-    if (!this.isPro()) {
-      return available.filter(t => this.licenseService.isThemeFree(t.name));
+  private getAtmosphereThemes(atmosphere: AtmosphereConfig): EqualizerTheme[] {
+    let pool: EqualizerTheme[];
+    if (atmosphere.themeNames.length === 0) {
+      // Chaos Theory: use ALL themes
+      pool = [...this.themes];
+    } else {
+      pool = this.themes.filter(t => atmosphere.themeNames.includes(t.name));
     }
-    return available;
+    // Free users can only cycle free themes
+    if (!this.isPro()) {
+      pool = pool.filter(t => this.licenseService.isThemeFree(t.name));
+    }
+    return pool.length > 0 ? pool : [this.themes[0]]; // fallback
   }
 
-  applyQuickVibe(vibe: QuickVibe) {
-    this.activeVibe.set(vibe);
-    if (!vibe) return;
+  applyAtmosphere(id: AtmosphereId) {
+    const atmosphere = this.ATMOSPHERES.find(a => a.id === id)!;
 
-    const vibeThemes = this.getVibeThemes(vibe);
-    if (vibeThemes.length === 0) return;
+    // --- Chaos Theory soft gate ---
+    if (atmosphere.isPro && !this.isPro()) {
+      this.showUpgradeModal.set(true);
+      const count = this.chaosTheoryDismissals() + 1;
+      this.chaosTheoryDismissals.set(count);
+      if (count >= 3) {
+        this.showChaosTheory.set(false);
+        return; // don't apply after 3rd dismissal
+      }
+      // Still apply even though modal is shown (user can dismiss and enjoy)
+    }
 
-    // Pick a random theme from this vibe category
-    const randomIndex = Math.floor(Math.random() * vibeThemes.length);
-    this.selectedTheme.set(vibeThemes[randomIndex]);
+    // If same atmosphere tapped again, deactivate
+    if (this.activeAtmosphere() === id) {
+      this.deactivateAtmosphere();
+      return;
+    }
 
-    // Set optimal engine per vibe
-    const engineMap: Record<string, VisualizerEngine> = {
-      'chill': 'pure-stft', 'energy': 'pure-stft',
-      'cosmic': 'synergy', 'retro': 'pure-stft',
-    };
-    this.visualizerEngine.set(engineMap[vibe] || 'pure-stft');
+    this.activeAtmosphere.set(id);
+
+    // Apply all settings
+    const themePool = this.getAtmosphereThemes(atmosphere);
+    const randomTheme = themePool[Math.floor(Math.random() * themePool.length)];
+    this.selectedTheme.set(randomTheme);
+
+    this.visualizerEngine.set(atmosphere.engine);
+    this.synergyDriveMode.set(atmosphere.synergyDrive);
+    this.isKaleidoscope.set(atmosphere.kaleidoscope);
+    this.lightSourcePosition.set(atmosphere.lightSource);
+    this.autoSensitivity.set(atmosphere.autoSensitivity);
+    if (!atmosphere.autoSensitivity) {
+      this.sensitivity.set(atmosphere.sensitivity);
+    }
+
+    // Disable conflicting auto-features (we manage rotation ourselves)
+    this.isAutoSwitching.set(false);
+    this.isStyleFusionOn.set(false);
+
+    // Start atmosphere auto-rotation
+    this.startAtmosphereRotation(atmosphere);
+
+    // Auto-hide cockpits for immersive experience
+    this.stashCockpits();
+  }
+
+  deactivateAtmosphere() {
+    this.activeAtmosphere.set(null);
+    this.stopAtmosphereRotation();
+  }
+
+  private startAtmosphereRotation(atmosphere: AtmosphereConfig) {
+    this.stopAtmosphereRotation();
+
+    this.atmosphereRotationTimer = setInterval(() => {
+      const themePool = this.getAtmosphereThemes(atmosphere);
+      if (themePool.length <= 1) return;
+
+      // Pick a different theme than current
+      let nextTheme: EqualizerTheme;
+      do {
+        nextTheme = themePool[Math.floor(Math.random() * themePool.length)];
+      } while (nextTheme.name === this.selectedTheme().name && themePool.length > 1);
+      this.selectedTheme.set(nextTheme);
+
+      // Chaos Theory: also randomize engine, drive, light, kaleidoscope
+      if (atmosphere.id === 'chaos-theory') {
+        const engines: VisualizerEngine[] = ['synergy', 'algorithm', 'pure-stft'];
+        const drives: SynergyDriveSetting[] = ['smart', 'atmosphere', 'rhythm', 'transient'];
+        const lights: LightSourcePosition[] = ['none', 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'center-stage', 'top-center'];
+        this.visualizerEngine.set(engines[Math.floor(Math.random() * engines.length)]);
+        this.synergyDriveMode.set(drives[Math.floor(Math.random() * drives.length)]);
+        this.lightSourcePosition.set(lights[Math.floor(Math.random() * lights.length)]);
+        this.isKaleidoscope.set(Math.random() > 0.3); // 70% chance ON
+      }
+    }, atmosphere.rotationInterval);
+  }
+
+  private stopAtmosphereRotation() {
+    if (this.atmosphereRotationTimer) {
+      clearInterval(this.atmosphereRotationTimer);
+      this.atmosphereRotationTimer = null;
+    }
+  }
+
+  getActiveAtmosphereName(): string {
+    const id = this.activeAtmosphere();
+    if (!id) return '';
+    const atm = this.ATMOSPHERES.find(a => a.id === id);
+    return atm ? atm.name : '';
+  }
+
+  getActiveAtmosphereColor(): string {
+    const id = this.activeAtmosphere();
+    if (!id) return '#a78bfa';
+    const atm = this.ATMOSPHERES.find(a => a.id === id);
+    return atm ? atm.accentColor : '#a78bfa';
   }
 
   onVisualizerInteraction() {

@@ -6,6 +6,7 @@ export interface EqualizerTheme {
   | 'helix' | 'polar-rose' | 'diamond' | 'orbits' | 'ripple' | 'nova'
   | 'particle-storm' | 'fireworks' | 'radar-pulse' | 'terrain-peaks'
   | 'oscilloscope' | 'spectrogram' | 'cymatics'
+  | 'reaction-diffusion' | 'cellular-automata'
   | 'base';
   base: string;
   display: string;

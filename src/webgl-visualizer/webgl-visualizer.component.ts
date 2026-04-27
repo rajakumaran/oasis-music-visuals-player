@@ -538,48 +538,52 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
     this.scene.add(this.metropolisGroup);
   }
 
-  // ============= STRANGE ATTRACTOR (Aizawa) =============
+  // ============= STRANGE ATTRACTOR (Live Lorenz System — "Lorenz Legacy") =============
+  // Real-time ODE integration: FFT drives σ, ρ, β. Beats perturb the system.
   private createStrangeAttractorVisualizer() {
     this.attractorGroup = new THREE.Group();
-    const numParticles = 8000;
+    // 64 independent particles, each tracing the Lorenz attractor
+    // with slightly different initial conditions for rich trail density
+    const numTrails = 64;
+    const trailLength = 128;
+    const numParticles = numTrails * trailLength;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(numParticles * 3);
     const colors = new Float32Array(numParticles * 3);
-    const accent = new THREE.Color(this.theme().accent || '#ffffff');
     this.attractorData = [];
 
-    let x = 0.1, y = 0, z = 0;
-    const dt = 0.01;
-    const a = 0.95, b = 0.7, c = 0.6, d = 3.5, e = 0.25, f = 0.1;
-    
-    for (let i = 0; i < numParticles; i++) {
-        const dx = (z - b) * x - d * y;
-        const dy = d * x + (z - b) * y;
-        const dz = c + a * z - (Math.pow(z, 3) / 3) - (x * x + y * y) * (1 + e * z) + f * z * Math.pow(x, 3);
-        
-        x += dx * dt;
-        y += dy * dt;
-        z += dz * dt;
+    // Seed each trail with a slightly perturbed initial condition
+    for (let t = 0; t < numTrails; t++) {
+      const x0 = 0.1 + (Math.random() - 0.5) * 2;
+      const y0 = (Math.random() - 0.5) * 2;
+      const z0 = 20 + (Math.random() - 0.5) * 5;
+      for (let p = 0; p < trailLength; p++) {
+        const idx = t * trailLength + p;
+        positions[idx * 3] = x0;
+        positions[idx * 3 + 1] = y0;
+        positions[idx * 3 + 2] = z0;
+        this.attractorData.push({ x: x0, y: y0, z: z0, originalIdx: idx });
 
-        positions[i * 3] = x * 2;
-        positions[i * 3 + 1] = y * 2;
-        positions[i * 3 + 2] = z * 2;
-        
-        this.attractorData.push({ x: x * 2, y: y * 2, z: z * 2, originalIdx: i });
-
-        const mixRatio = i / numParticles;
-        const cColor = accent.clone().offsetHSL(mixRatio * 0.2, 0, 0);
-        colors[i * 3] = cColor.r; colors[i * 3 + 1] = cColor.g; colors[i * 3 + 2] = cColor.b;
+        // Color: frequency-mapped (trail index → hue, red for low-freq trails, blue for high)
+        const hueRatio = t / numTrails;
+        const r = Math.max(0, 1 - hueRatio * 2);
+        const g = 1 - Math.abs(hueRatio - 0.5) * 2;
+        const b = Math.max(0, hueRatio * 2 - 1);
+        const fade = 0.3 + (p / trailLength) * 0.7; // tail fades
+        colors[idx * 3] = r * fade;
+        colors[idx * 3 + 1] = g * fade;
+        colors[idx * 3 + 2] = b * fade;
+      }
     }
-    
+
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    
+
     const material = new THREE.PointsMaterial({
-        size: 0.1, vertexColors: true, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending
+        size: 0.08, vertexColors: true, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending
     });
     this.attractorParticles = new THREE.Points(geometry, material);
-    this.attractorGroup.position.set(0, 3, 0);
+    this.attractorGroup.position.set(0, 0, 0);
     this.attractorGroup.add(this.attractorParticles);
     this.scene.add(this.attractorGroup);
   }
@@ -796,24 +800,91 @@ export class WebglVisualizerComponent implements AfterViewInit, OnDestroy {
 
   private animateStrangeAttractor(barData: number[], elapsedTime: number) {
       if (!this.attractorGroup) return;
-      const bass = barData.slice(0, 4).reduce((a, b) => a + b, 0) / 4;
-      
-      const positions = this.attractorParticles.geometry.attributes.position.array as Float32Array;
-      
-      this.attractorGroup.rotation.y = elapsedTime * 0.1;
-      this.attractorGroup.rotation.z = Math.sin(elapsedTime * 0.05) * 0.2;
-      
-      for (let i = 0; i < this.attractorData.length; i++) {
-          const orig = this.attractorData[i];
-          const dist = Math.sqrt(orig.x*orig.x + orig.y*orig.y + orig.z*orig.z);
-          const expansion = 1 + bass * (1 / (1 + dist));
-          
-          positions[i * 3] = orig.x * expansion;
-          positions[i * 3 + 1] = orig.y * expansion;
-          positions[i * 3 + 2] = orig.z * expansion;
+      const trailLength = 128;
+      const numTrails = 64;
+
+      // --- Frequency bands ---
+      const bassCount = Math.max(1, Math.floor(barData.length * 0.15));
+      const trebleStart = Math.floor(barData.length * 0.7);
+      const bass = barData.slice(0, bassCount).reduce((a, b) => a + b, 0) / bassCount;
+      const mids = barData.slice(bassCount, trebleStart).reduce((a, b) => a + b, 0) / Math.max(1, trebleStart - bassCount);
+      const treble = barData.slice(trebleStart).reduce((a, b) => a + b, 0) / Math.max(1, barData.length - trebleStart);
+
+      // --- FFT-driven Lorenz parameters ---
+      // σ (sigma): Prandtl number — treble makes tighter loops
+      const sigma = 10 + treble * 8;
+      // ρ (rho): Rayleigh number — bass drives wilder chaos
+      const rho = 20 + bass * 20;
+      // β (beta): geometric factor — mids modulate
+      const beta = 2.667 + mids * 1.5;
+
+      const dt = 0.005;
+      const scale = 0.25; // world-space scaling
+
+      // Beat perturbation
+      const currentBeat = this.beat();
+      let perturbation = 0;
+      if (currentBeat.timestamp > this.lastBeatTimestamp && currentBeat.strength > 0.3) {
+        perturbation = currentBeat.strength * 3.0;
       }
+
+      const positions = this.attractorParticles.geometry.attributes.position.array as Float32Array;
+
+      // --- Run live ODE integration per trail ---
+      for (let t = 0; t < numTrails; t++) {
+        // The "head" of each trail is the last point
+        const headIdx = t * trailLength + trailLength - 1;
+        const head = this.attractorData[headIdx];
+
+        // Lorenz system: dx/dt = σ(y-x), dy/dt = x(ρ-z)-y, dz/dt = xy - βz
+        let x = head.x, y = head.y, z = head.z;
+        const dxdt = sigma * (y - x);
+        const dydt = x * (rho - z) - y;
+        const dzdt = x * y - beta * z;
+
+        x += dxdt * dt;
+        y += dydt * dt;
+        z += dzdt * dt;
+
+        // Beat perturbation: inject random displacement
+        if (perturbation > 0) {
+          x += (Math.random() - 0.5) * perturbation;
+          y += (Math.random() - 0.5) * perturbation;
+          z += (Math.random() - 0.5) * perturbation;
+        }
+
+        // Shift trail: move each point to the position of the next
+        for (let p = 0; p < trailLength - 1; p++) {
+          const curIdx = t * trailLength + p;
+          const nextIdx = curIdx + 1;
+          this.attractorData[curIdx].x = this.attractorData[nextIdx].x;
+          this.attractorData[curIdx].y = this.attractorData[nextIdx].y;
+          this.attractorData[curIdx].z = this.attractorData[nextIdx].z;
+        }
+
+        // Set new head position
+        head.x = x;
+        head.y = y;
+        head.z = z;
+
+        // Update GPU buffer
+        for (let p = 0; p < trailLength; p++) {
+          const idx = t * trailLength + p;
+          const d = this.attractorData[idx];
+          positions[idx * 3]     = d.x * scale;
+          positions[idx * 3 + 1] = d.z * scale - 5; // center vertically (z is up in Lorenz)
+          positions[idx * 3 + 2] = d.y * scale;
+        }
+      }
+
       this.attractorParticles.geometry.attributes.position.needsUpdate = true;
-      (this.attractorParticles.material as THREE.PointsMaterial).size = 0.05 + bass * 0.2;
+
+      // Dynamic particle size: bass expands trails
+      (this.attractorParticles.material as THREE.PointsMaterial).size = 0.06 + bass * 0.15;
+
+      // Slow auto-rotation
+      this.attractorGroup.rotation.y = elapsedTime * 0.08;
+      this.attractorGroup.rotation.x = Math.sin(elapsedTime * 0.04) * 0.15;
   }
 
   private animateFordSpheres(barData: number[], elapsedTime: number) {

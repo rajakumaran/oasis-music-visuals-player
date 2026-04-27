@@ -94,22 +94,50 @@
         </button>
       </div>
 
-      <!-- Quick Vibe Panel — simple mode for casual users (visible when cockpits hidden) -->
+      <!-- ✦ Atmospheres Panel — one-tap auto-play experiences (visible when cockpits hidden) -->
       @if (!showCockpits()) {
-        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 px-4 py-2 rounded-full bg-gray-950/80 backdrop-blur-xl border border-gray-700/40 shadow-lg">
-          <span class="text-[10px] text-gray-500 uppercase tracking-wider font-medium mr-1 hidden sm:block">Vibe</span>
-          <button (click)="applyQuickVibe('chill')" [class]="'btn btn-xs rounded-full border-none transition-all ' + (activeVibe() === 'chill' ? 'bg-violet-600 text-white shadow-[0_0_10px_rgba(139,92,246,0.4)]' : 'bg-gray-800/80 text-gray-400 hover:text-white hover:bg-gray-700')" title="Calm, flowing visuals">
-            <i class="fa-solid fa-moon mr-1 text-[10px]"></i>Chill
-          </button>
-          <button (click)="applyQuickVibe('energy')" [class]="'btn btn-xs rounded-full border-none transition-all ' + (activeVibe() === 'energy' ? 'bg-emerald-600 text-white shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'bg-gray-800/80 text-gray-400 hover:text-white hover:bg-gray-700')" title="High-energy, explosive visuals">
-            <i class="fa-solid fa-bolt mr-1 text-[10px]"></i>Energy
-          </button>
-          <button (click)="applyQuickVibe('cosmic')" [class]="'btn btn-xs rounded-full border-none transition-all ' + (activeVibe() === 'cosmic' ? 'bg-cyan-600 text-white shadow-[0_0_10px_rgba(6,182,212,0.4)]' : 'bg-gray-800/80 text-gray-400 hover:text-white hover:bg-gray-700')" title="Deep space, immersive 3D">
-            <i class="fa-solid fa-star mr-1 text-[10px]"></i>Cosmic
-          </button>
-          <button (click)="applyQuickVibe('retro')" [class]="'btn btn-xs rounded-full border-none transition-all ' + (activeVibe() === 'retro' ? 'bg-amber-600 text-white shadow-[0_0_10px_rgba(217,119,6,0.4)]' : 'bg-gray-800/80 text-gray-400 hover:text-white hover:bg-gray-700')" title="Classic LED, vintage feel">
-            <i class="fa-solid fa-radio mr-1 text-[10px]"></i>Retro
-          </button>
+        <div class="atmosphere-panel absolute bottom-3 left-1/2 -translate-x-1/2 z-[100] w-[95vw] max-w-3xl">
+          <!-- Panel Header -->
+          <div class="flex items-center justify-center gap-2 mb-2">
+            <span class="text-[10px] text-gray-400/80 uppercase tracking-[0.25em] font-semibold">✦ Atmospheres</span>
+            <span class="text-[9px] text-gray-500/60 italic hidden sm:inline">— One tap. Sit back. Enjoy.</span>
+          </div>
+
+          <!-- Atmosphere Buttons Grid -->
+          <div class="atmosphere-grid">
+            @for (atm of ATMOSPHERES; track atm.id) {
+              @if (atm.id !== 'chaos-theory' || showChaosTheory()) {
+                <button
+                  (click)="applyAtmosphere(atm.id)"
+                  class="atmosphere-btn group"
+                  [class.atmosphere-btn-active]="activeAtmosphere() === atm.id"
+                  [style.--atm-accent]="atm.accentColor"
+                  [style.--atm-glow]="atm.glowColor"
+                  [title]="atm.description">
+                  <!-- Active glow ring -->
+                  @if (activeAtmosphere() === atm.id) {
+                    <div class="atmosphere-active-ring"></div>
+                  }
+                  <div class="atmosphere-btn-content">
+                    <i [class]="'fa-solid ' + atm.icon + ' atmosphere-icon'"></i>
+                    <span class="atmosphere-name">{{ atm.name }}</span>
+                    <span class="atmosphere-desc hidden sm:block">{{ atm.description }}</span>
+                  </div>
+                </button>
+              }
+            }
+          </div>
+
+          <!-- Active Atmosphere Indicator -->
+          @if (activeAtmosphere(); as activeId) {
+            <div class="flex items-center justify-center mt-2 gap-2 animate-fade-in">
+              <div class="w-1.5 h-1.5 rounded-full animate-pulse" [style.background]="getActiveAtmosphereColor()"></div>
+              <span class="text-[10px] text-gray-400 uppercase tracking-wider">
+                {{ getActiveAtmosphereName() }} Active
+              </span>
+              <button (click)="deactivateAtmosphere()" class="text-[10px] text-gray-500 hover:text-white transition-colors ml-1 underline">Stop</button>
+            </div>
+          }
         </div>
       }
 
@@ -179,6 +207,20 @@
               }
               @case ('cymatics') {
                 <app-cymatics
+                  [bars]="visualizerBars()"
+                  [beat]="beat()"
+                  [musicProfile]="effectiveSynergyDriveMode()"
+                />
+              }
+              @case ('reaction-diffusion') {
+                <app-reaction-diffusion
+                  [bars]="visualizerBars()"
+                  [beat]="beat()"
+                  [musicProfile]="effectiveSynergyDriveMode()"
+                />
+              }
+              @case ('cellular-automata') {
+                <app-cellular-automata
                   [bars]="visualizerBars()"
                   [beat]="beat()"
                   [musicProfile]="effectiveSynergyDriveMode()"
