@@ -236,6 +236,14 @@ export class AppComponent implements OnInit, OnDestroy {
     effect(() => this.isAutoSwitching() ? this.startAutoSwitching() : this.stopAutoSwitching());
     effect(() => (this.isKaleidoscope() && (this.isPlaying() || this.audioSource() === 'microphone')) ? this.startKaleidoscope() : this.stopKaleidoscope());
     effect(() => this.isStyleFusionOn() ? this.startStyleFusion() : this.stopStyleFusion());
+
+    // Log the active theme to the console for easy debugging/awareness
+    effect(() => {
+      const theme = this.effectiveTheme();
+      if (theme) {
+        console.log(`[Spectra] Now Playing Visualizer: ${theme.name}`);
+      }
+    });
   }
 
   async enterOasis() {
@@ -414,11 +422,17 @@ export class AppComponent implements OnInit, OnDestroy {
 
       for (let i = 0; i < bars; i++) {
         const index = Math.max(lastIndex + 1, Math.floor(Math.exp(((i + 1) / bars) * logLength)));
-        const rawValue = index > lastIndex ? (this.sliceMax(data, lastIndex, index) / 255) : 0;
+        let rawValue = index > lastIndex ? (this.sliceMax(data, lastIndex, index) / 255) : 0;
+        
+        // Apply sensitivity so quiet songs still show up
+        rawValue *= sensitivityValue;
 
-        // Direct passthrough — no smoothedBars, no decay, no sensitivity scaling
-        // Just the pure FFT magnitude, clamped to [0, 1]
-        output[i] = Math.min(1, Math.max(0, rawValue));
+        // Even "pure" STFT needs a tiny bit of smoothing, otherwise it flickers at 0 too fast to be seen
+        const fastDecay = 0.6; // much faster dropoff than the 0.94 algorithm
+        const currentValue = this.smoothedBars[i] || 0;
+        this.smoothedBars[i] = rawValue >= currentValue ? rawValue : currentValue * fastDecay;
+
+        output[i] = Math.min(1, Math.max(0, this.smoothedBars[i]));
         lastIndex = index;
       }
 

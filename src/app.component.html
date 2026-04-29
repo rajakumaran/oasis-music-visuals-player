@@ -166,9 +166,17 @@
         }
       }
 
-      <div class="text-center">Active theme: {{ effectiveTheme().name }}</div>
+      <!-- Removed plain text active theme indicator from here -->
       <div id="visualizer-display-wrapper" class="relative flex-1 min-h-[40vh] bg-cover bg-center overflow-hidden" [style.background-image]="backgroundImageUrl() ? 'url(' + backgroundImageUrl()! + ')' : null">
         <app-fullscreen-toggle targetElementId="visualizer-display-wrapper"></app-fullscreen-toggle>
+        
+        <!-- Elegant Active Theme Badge -->
+        <div class="absolute top-4 left-1/2 -translate-x-1/2 z-[50] animate-fade-in pointer-events-none flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-md bg-black/40 border border-white/5 shadow-lg">
+          <div class="w-2 h-2 rounded-full animate-pulse" [style.background]="effectiveTheme().accent"></div>
+          <span class="text-xs text-white/80 uppercase tracking-widest font-semibold" [style.color]="effectiveTheme().accent">
+            {{ effectiveTheme().name }}
+          </span>
+        </div>
         <div [class]="'absolute inset-0 transition-opacity ' + effectiveTheme().display"></div>
         
         @if (effectiveTheme().type === 'glass-box') {

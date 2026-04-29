@@ -23,6 +23,7 @@ input[type=range].vertical {
 
 .bar-wrapper>div {
   width: 100%;
+  min-height: 4px;
 }
 
 /* --- 3D Bar Visualizer Styles --- */
