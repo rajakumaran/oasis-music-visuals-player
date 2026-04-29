@@ -1,5 +1,25 @@
 # oasis-music-visuals-player renamed to spectra-musicand-visuals-player
 
+# April/29th/2026 #1
+
+Viewed app.component.ts:415-440
+Searched for "frequencyData"
+Searched for "autoSensitivityMultiplier"
+Viewed app.component.ts:100-130
+Edited app.component.ts
+Ran command: `npx ng build`
+
+Okay, I am almost 100% sure I know why the *Golden Hour* wasn't rendering while *Neon District* was!
+
+Both of these use the traditional bars, but they rely on two completely different math engines under the hood. *Neon District* uses the `algorithm` engine (which has a built-in "decay" so the bars slowly fall after a beat hits). *Golden Hour* uses the `pure-stft` engine, which we designed to be the raw, unfiltered audio data.
+
+Because the `pure-stft` engine had **zero decay** to keep it "raw", the transient spikes from the music were dropping back to zero instantly (within a single 16ms frame). For the browser's DOM rendering—and the human eye—this meant the bars were flickering back to 0% height so fast that they looked completely invisible or broken!
+
+**The Fix:**
+I just injected a micro-decay (`0.6` factor) directly into the `pure-stft` engine. It's still incredibly fast and raw compared to the other algorithms (which use `0.94`), but it holds the bars on-screen for just a few extra milliseconds—enough for the browser to render them and for you to actually see them moving!
+
+If you restart your `ng serve` and test Golden Hour, the bars should be dancing exactly as you'd expect.
+
 # April/27th/2026 #2
 I completely agree. Good eye.
 
