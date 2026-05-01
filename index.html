@@ -2,10 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Spectra — See Your Music</title>
+  <meta name="description" content="60+ real-time music visualizer themes powered by STFT spectral analysis. Physics-based Cymatics, WebGL 3D, and classic LED modes. Upload your music and see it come alive.">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/spectra-logo.png">
+  <link rel="apple-touch-icon" href="/spectra-logo.png">
+
+  <!-- Open Graph (Facebook, LinkedIn, Discord, iMessage) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Spectra — See Your Music">
+  <meta property="og:description" content="60+ real-time music visualizer themes. Physics-based Cymatics, WebGL 3D fractals, and classic LED modes. Powered by raw STFT spectral analysis.">
+  <meta property="og:image" content="https://spectra.damnittameitai.co/spectra-og-card.png">
+  <meta property="og:image:width" content="1792">
+  <meta property="og:image:height" content="1024">
+  <meta property="og:url" content="https://spectra.damnittameitai.co">
+  <meta property="og:site_name" content="Spectra">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Spectra — See Your Music">
+  <meta name="twitter:description" content="60+ real-time music visualizer themes. Physics-based Cymatics, WebGL 3D fractals, and classic LED modes.">
+  <meta name="twitter:image" content="https://spectra.damnittameitai.co/spectra-og-card.png">
+
+  <!-- Fonts & Styles -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <meta name="google-adsense-account" content="ca-pub-9513364039433406">
-  <title>Audio Oasis Equalizer</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.2/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <script src="/tailwind-cdn.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <style>
     /* Custom scrollbar for a better look */
@@ -13,7 +40,7 @@
       width: 8px;
     }
     ::-webkit-scrollbar-track {
-      background: #1f2937;
+      background: #1f2937; 
     }
     ::-webkit-scrollbar-thumb {
       background: #4b5563;
@@ -33,34 +60,12 @@
     input[type=range]:focus {
         outline: none;
     }
-    /* Track */
-    input[type=range]::-webkit-slider-runnable-track {
-        height: 4px;
-        border-radius: 2px;
-        background: var(--track-bg, #4b5563);
-    }
-    input[type=range]::-moz-range-track {
-        height: 4px;
-        border-radius: 2px;
-        background: var(--track-bg, #4b5563);
-    }
-    /* Thumb */
-    input[type=range]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        margin-top: -6px; /* Position thumb relative to track */
-        height: 16px;
-        width: 16px;
-        border-radius: 2px;
-        border: 1px solid rgba(0,0,0,0.5);
-        background: var(--thumb-bg, #6b7280);
-    }
-    input[type=range]::-moz-range-thumb {
-        height: 16px;
-        width: 16px;
-        border-radius: 2px;
-        border: 1px solid rgba(0,0,0,0.5);
-        background: var(--thumb-bg, #6b7280);
+    /* DaisyUI overrides for vertical range */
+    input[type=range].vertical {
+      writing-mode: bt-lr;
+      appearance: slider-vertical;
+      -webkit-appearance: slider-vertical;
+      padding: 0 5px;
     }
   </style>
 <script type="importmap">
@@ -76,13 +81,30 @@
     "@angular/core": "https://next.esm.sh/@angular/core@^21.0.1?external=rxjs",
     "@angular/platform-browser": "https://next.esm.sh/@angular/platform-browser@^21.0.1?external=rxjs",
     "@angular/common": "https://next.esm.sh/@angular/common@^21.0.1?external=rxjs",
-    "@google/genai": "https://esm.sh/@google/genai"
+    "@google/genai": "https://esm.sh/@google/genai",
+    "three": "https://esm.sh/three@0.164.1",
+    "three/examples/jsm/controls/OrbitControls.js": "https://esm.sh/three@0.164.1/examples/jsm/controls/OrbitControls.js",
+    "three/examples/jsm/objects/Reflector.js": "https://esm.sh/three@0.164.1/examples/jsm/objects/Reflector.js",
+    "three/examples/jsm/postprocessing/EffectComposer.js": "https://esm.sh/three@0.164.1/examples/jsm/postprocessing/EffectComposer.js",
+    "three/examples/jsm/postprocessing/RenderPass.js": "https://esm.sh/three@0.164.1/examples/jsm/postprocessing/RenderPass.js",
+    "three/examples/jsm/postprocessing/UnrealBloomPass.js": "https://esm.sh/three@0.164.1/examples/jsm/postprocessing/UnrealBloomPass.js",
+    "@vercel/analytics": "https://esm.sh/@vercel/analytics@^1.6.1?external=rxjs",
+    "three/": "https://esm.sh/three@^0.183.1/"
   }
 }
 </script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-SDG4HXKX1T"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-SDG4HXKX1T');
+</script>
 <link rel="stylesheet" href="/index.css">
 </head>
-<body class="bg-gray-900 text-gray-300 font-sans antialiased">
+<body class="bg-gray-950 text-gray-300 antialiased" style="font-family: 'Inter', system-ui, -apple-system, sans-serif;">
   <app-root></app-root>
 </body>
 </html>

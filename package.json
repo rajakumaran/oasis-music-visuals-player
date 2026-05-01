@@ -1,7 +1,7 @@
 {
-  "name": "audio-oasis-equalizer",
+  "name": "spectra-music-and-visuals-player",
   "private": true,
-  "version": "0.0.0",
+  "version": "6.9.9",
   "type": "module",
   "scripts": {
     "dev": "ng serve",
@@ -9,19 +9,24 @@
     "preview": "ng serve --configuration=production"
   },
   "dependencies": {
-    "rxjs": "^7.8.2",
-    "@angular/compiler": "^21.0.0",
-    "@angular/core": "^21.0.0",
-    "@angular/platform-browser": "^21.0.0",
-    "@angular/common": "^21.0.0",
+    "@angular/build": "^21.1.0",
+    "@angular/cli": "^21.1.0",
+    "@angular/common": "^21.1.0",
+    "@angular/compiler": "^21.1.0",
+    "@angular/compiler-cli": "^21.1.0",
+    "@angular/core": "^21.1.0",
+    "@angular/platform-browser": "^21.1.0",
     "@google/genai": "latest",
-    "@angular/build": "^21.0.0",
-    "@angular/cli": "^21.0.0",
-    "@angular/compiler-cli": "^21.0.0",
+    "three": "^0.183.1",
+    "@vercel/analytics": "^1.6.1",
+    "audit": "^0.0.6",
+    "fix": "^0.0.6",
+    "rxjs": "^7.8.2",
     "tailwindcss": "latest"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
+    "three": "^0.182.0",
     "typescript": "^5.9.3",
     "vite": "^6.2.0"
   }

@@ -22,10 +22,13 @@ export class FullscreenToggleComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     document.addEventListener('fullscreenchange', this.fullscreenChangeHandler);
+    // screen.orientation 'change' fires on Android Chrome for both physical and programmatic rotation
+    (screen.orientation as any)?.addEventListener('change', this.fullscreenChangeHandler);
   }
 
   ngOnDestroy() {
     document.removeEventListener('fullscreenchange', this.fullscreenChangeHandler);
+    (screen.orientation as any)?.removeEventListener('change', this.fullscreenChangeHandler);
   }
 
   toggleFullscreen(): void {
@@ -35,13 +38,36 @@ export class FullscreenToggleComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!document.fullscreenElement) {
-      elem.requestFullscreen().catch(err => {
-        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-      });
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
+    const isIos = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isNativeFullscreen = !!document.fullscreenElement;
+    const isIosFullscreen = elem.classList.contains('fullscreen-ios');
+
+    if (isNativeFullscreen || isIosFullscreen) { // EXIT
+      if (isIosFullscreen) {
+        elem.classList.remove('fullscreen-ios');
+        document.body.classList.remove('fullscreen-ios-body');
+        this.isFullscreen.set(false); // Manually update for iOS
+      }
+      if (isNativeFullscreen && document.exitFullscreen) {
+        document.exitFullscreen().then(() => {
+          // Unlock orientation when leaving fullscreen
+          try { (screen.orientation as any)?.unlock(); } catch (_) { }
+        }).catch(() => { });
+      }
+    } else { // ENTER
+      if (isIos) {
+        elem.classList.add('fullscreen-ios');
+        document.body.classList.add('fullscreen-ios-body');
+        this.isFullscreen.set(true); // Manually update for iOS
+      } else if (elem.requestFullscreen) {
+        elem.requestFullscreen().then(() => {
+          // Attempt to lock landscape on Android — silently ignore if unsupported
+          try {
+            (screen.orientation as any)?.lock('landscape').catch(() => { });
+          } catch (_) { }
+        }).catch(err => {
+          console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
       }
     }
   }

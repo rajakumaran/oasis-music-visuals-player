@@ -1,105 +1,147 @@
 /* This can be used for styles that are hard to achieve with Tailwind or for component-specific overrides. */
 /* Styles for vertical EQ faders */
 input[type=range].vertical {
-  writing-mode: bt-lr; /* IE */
-  -webkit-appearance: slider-vertical; /* WebKit */
+  writing-mode: bt-lr;
+  /* IE */
+  -webkit-appearance: slider-vertical;
+  /* WebKit */
+  appearance: slider-vertical;
+  /* Standard */
   width: 8px;
   height: 100%;
   padding: 0 5px;
 }
 
+/* --- Wrapper for all 2D bar types --- */
+.bar-wrapper {
+  flex: 1 1 0%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.bar-wrapper>div {
+  width: 100%;
+  min-height: 4px;
+}
+
 /* --- 3D Bar Visualizer Styles --- */
 .bar-3d {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  /* Leave a 4px gap on the right for the side face */
-  width: calc(100% - 4px); 
-  transition: height 75ms ease-out;
+  position: relative;
+  width: 100%;
+  /* height transitions removed — STFT trembling requires instant DOM updates */
   border-radius: 1px;
 }
 
-/* Top face of the 3D bar */
 .bar-3d::before {
+  /* Top face */
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 4px; /* Determines the "depth" of the top face */
-  background: inherit; /* Inherits gradient/color from the parent */
-  filter: brightness(1.5); /* Make it appear lighter, as if lit from above */
+  height: 4px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.1));
   transform: translateY(-100%);
   border-radius: 1px 1px 0 0;
 }
 
-/* Side face of the 3D bar */
 .bar-3d::after {
+  /* Side face */
   content: '';
   position: absolute;
   top: 0;
   left: 100%;
-  width: 4px; /* Same as the gap left in .bar-3d width */
+  width: 4px;
   height: 100%;
   background: inherit;
-  filter: brightness(0.6); /* Make it appear darker, as if in shadow */
+  filter: brightness(0.6);
   border-radius: 0 1px 1px 0;
+}
+
+/* Generic/Individual Bar Styles for different themes */
+.bar-shadow,
+.bar-glossy,
+.bar-glass,
+.bar-convex,
+.bar-concave {
+  /* height transitions removed — STFT trembling requires instant DOM updates */
 }
 
 
 /* --- 3D Classic LED Visualizer Styles --- */
 .led-segment {
-  /* Creates an inset shadow to give the segment depth */
-  box-shadow: inset 0 0 2px 1px rgba(0,0,0,0.5);
+  box-shadow: inset 0 0 2px 1px rgba(0, 0, 0, 0.5);
   position: relative;
   transition: background-color 100ms ease-in-out, opacity 100ms ease-in-out;
 }
 
 .led-off {
-  background-color: #374151; /* gray-700 */
+  background-color: #374151;
+  /* gray-700 */
   opacity: 0.25;
 }
 
 .led-on {
-  opacity: 0.95; /* Add slight translucency to on segments */
+  opacity: 0.95
+    /* Add slight translucency to on segments was 0.95 */
 }
 
 /* Add a pseudo-element to create the "glow" effect on lit LEDs */
 .led-on::after {
-    content: '';
-    position: absolute;
-    top: 1px;
-    left: 1px;
-    right: 1px;
-    bottom: 1px;
-    /* The glow color is inherited from the parent's text color */
-    box-shadow: 0 0 4px 1px currentColor;
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  right: 1px;
+  bottom: 1px;
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  right: 1px;
+  bottom: 1px;
+  /* The glow color is inherited from the parent's text color */
+  box-shadow: 0 0 5px 1px currentColor;
 }
 
 .led-green {
-  background-color: #22c55e; /* green-500 */
+  background-color: #22c55e;
+  /* green-500 */
   color: #22c55e;
 }
 
 .led-yellow {
-  background-color: #facc15; /* yellow-400 */
+  background-color: #facc15;
+  /* yellow-400 */
   color: #facc15;
 }
 
 .led-red {
-  background-color: #ef4444; /* red-600 */
+  background-color: #ef4444;
+  /* red-600 */
   color: #ef4444;
 }
 
 /* --- Ticker Animation --- */
 @keyframes scroll-left {
-  from { transform: translateX(100%); }
-  to { transform: translateX(-100%); }
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
 }
 
 @keyframes scroll-right {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(100%); }
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
 }
 
 .animate-left {
@@ -110,25 +152,29 @@ input[type=range].vertical {
   animation: scroll-right 20s linear infinite;
 }
 
-/* --- Fullscreen Styles --- */
-#visualizer-display-wrapper:fullscreen {
-  display: flex;
-  flex-direction: column;
-  padding: 2rem;
-  background: black !important; /* Force black background for immersion */
+/* --- Fade-in for engine controls --- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-#visualizer-display-wrapper:fullscreen .visualizer-content {
-  width: 100%;
-  flex-grow: 1;
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
 }
 
 /* --- Glossy Bar Visualizer Styles --- */
 .bar-glossy {
   position: relative;
   border-radius: 2px 2px 0 0;
-  transition: height 75ms ease-out;
 }
+
 .bar-glossy::before {
   content: '';
   position: absolute;
@@ -140,33 +186,84 @@ input[type=range].vertical {
   border-radius: 2px 2px 0 0;
 }
 
+/* --- Cyberdeck Theme (2040 Gadget UI) --- */
+.cyberdeck-bg {
+  background-color: #0d1117;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+.cyberdeck-display {
+  background: radial-gradient(ellipse at center, rgba(17, 24, 39, 0.9) 0%, rgba(3, 7, 18, 0.95) 100%);
+  box-shadow: inset 0 0 20px 5px rgba(0, 0, 0, 0.7);
+}
+
+.btn-cyber {
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  box-shadow: 0 2px 0 #334155, 0 3px 5px rgba(0, 0, 0, 0.4);
+  transition: all 0.1s ease-out;
+}
+
+.btn-cyber:hover {
+  background-color: #334155;
+  border-color: #475569;
+  color: #cbd5e1;
+}
+
+.btn-cyber:active,
+.btn-cyber.btn-active {
+  transform: translateY(2px);
+  box-shadow: 0 0px 0 #334155, 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 0 5px rgba(0, 0, 0, 0.3);
+  background-color: #1a2433;
+}
+
+.btn-cyber.btn-primary {
+  background-color: #0e7490;
+  border-color: #0891b2;
+  color: white;
+  box-shadow: 0 2px 0 #0e7490, 0 3px 5px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(236, 72, 153, 0.3);
+}
+
+.btn-cyber.btn-primary:hover {
+  background-color: #0891b2;
+  border-color: #06b6d4;
+  box-shadow: 0 2px 0 #0e7490, 0 3px 5px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(236, 72, 153, 0.3), 0 0 15px rgba(103, 232, 249, 0.5);
+}
+
+.btn-cyber.btn-primary:active {
+  background-color: #155e75;
+  transform: translateY(2px);
+  box-shadow: 0 0px 0 #0e7490, 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(236, 72, 153, 0.5);
+}
+
+
 /* --- Glass Bar Visualizer Styles --- */
 .bar-glass {
-  transition: height 75ms ease-out, box-shadow 300ms ease-out;
+  transition: box-shadow 300ms ease-out; /* height transition removed for STFT trembling */
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-bottom: none;
   /* Subtle backlight glow */
-  box-shadow: 0 0 12px 1px rgba(200, 220, 255, 0.35);
+  box-shadow: 0 0 16px 2px rgba(200, 220, 255, 0.4);
 }
 
 /* --- Neon Glow Bar for Cyberpunk Theme --- */
 .bar-neon-glow {
   border-radius: 2px;
-  /* Multiple shadows create a soft, layered glow */
-  box-shadow: 0 0 2px #fff, 
-              0 0 5px #22d3ee, 
-              0 0 10px #22d3ee;
-  transition: height 75ms ease-out, box-shadow 75ms ease-out;
+  box-shadow: 0 0 2px #fff, 0 0 5px #22d3ee, 0 0 10px #22d3ee;
+  transition: box-shadow 75ms ease-out; /* height transition removed for STFT trembling */
 }
 
-/* --- Convex Bar Style --- */
-.bar-convex {
+/* --- Convex/Concave Bar Styles --- */
+.bar-convex,
+.bar-concave {
   position: relative;
-  transition: height 75ms ease-out;
 }
+
 .bar-convex::before {
   content: '';
   position: absolute;
@@ -181,8 +278,9 @@ input[type=range].vertical {
 /* --- Concave Bar Style --- */
 .bar-concave {
   position: relative;
-  transition: height 75ms ease-out;
+  /* height transition removed — STFT trembling requires instant DOM updates */
 }
+
 .bar-concave::before {
   content: '';
   position: absolute;
@@ -190,12 +288,735 @@ input[type=range].vertical {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(to right, rgba(0,0,0,0.5), transparent 40%, transparent 60%, rgba(0,0,0,0.5));
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.5), transparent 40%, transparent 60%, rgba(0, 0, 0, 0.5));
   border-radius: inherit;
 }
 
 /* --- Kaleidoscope transition for non-LED themes --- */
-.visualizer-content {
+.visualizer-content-host {
   transition: filter 100ms linear;
   will-change: filter;
+  overflow: hidden;
+  /* prevent SVG filter bleed (Aura, plasma glow, etc.) outside panel */
 }
+
+/* --- Holiday Christmas Full Background --- */
+.holiday-christmas-bells-and-diamonds {
+  background-image: url('/assets/images/Christmas-decoration-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.holiday-christmas {
+  background-image: url('https://static.videezy.com/system/resources/thumbnails/000/008/808/original/light-blue-magenta-ornaments-4k-christmas-motion-background-loop.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* --- Glass Box Theme Styles --- */
+.visualizer-box-3d {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 500px;
+  overflow: hidden;
+}
+
+.visualizer-stage {
+  position: relative;
+  width: 90%;
+  height: 80%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  transform: translateZ(-100px);
+  transform-style: preserve-3d;
+  -webkit-box-reflect: below 1px linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.4));
+}
+
+.bar-glass-box {
+  /* height transition removed — STFT trembling requires instant DOM updates */
+  border-radius: 1px;
+  filter: drop-shadow(0 0 4px currentColor);
+  width: 100%;
+}
+
+.glass-pane-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), transparent 30%, transparent 70%, rgba(0, 0, 0, 0.05));
+  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
+}
+
+/* --- New Themes --- */
+.aura-viz {
+  mix-blend-mode: screen;
+}
+
+.glyph-viz path {
+  fill: none;
+  stroke: #a7f3d0;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1000;
+  transition: opacity 150ms ease-out, stroke-width 150ms ease-out;
+}
+
+/* --- New Crystal Case Overlay for Glass Box Theme --- */
+.crystal-case-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  /* Creates the beveled edge illusion */
+  box-shadow: inset 0 0 12px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Creates the specular sheen on top */
+.crystal-case-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.15) 5%, transparent 40%);
+  border-radius: inherit;
+}
+
+/* --- Futuristic Theme Styles --- */
+.neural-nodes circle {
+  fill: #06b6d4;
+  /* cyan-500 */
+  transition: r 75ms ease-out, opacity 75ms ease-out;
+}
+
+.neural-connections line {
+  stroke: #22d3ee;
+  /* cyan-400 */
+  stroke-width: 0.5px;
+  transition: opacity 150ms ease-out;
+}
+
+.plasma-field path {
+  fill: none;
+  stroke: #d946ef;
+  /* fuchsia-500 */
+  stroke-width: 1.5;
+  transition: opacity 150ms ease-out;
+}
+
+/* --- Fullscreen Styles --- */
+.cosmic-rift-bg {
+  background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+  overflow: hidden;
+  position: relative;
+}
+
+.cosmic-rift-bg::after {
+  content: "";
+  position: absolute;
+  height: 2px;
+  width: 2px;
+  top: -2px;
+  background: linear-gradient(to right, #6366f1, #ec4899, #f43f5e, #f97316);
+  border-radius: 100%;
+  animation-duration: 4s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-name: -move;
+  box-shadow: 0 0 1px 0px #fff, 0 0 1px 0px #fff, 0 0 2px 0px #fff;
+}
+
+@keyframes -move {
+  from {
+    transform: rotate(0deg) translateX(150px);
+  }
+
+  to {
+    transform: rotate(360deg) translateX(150px);
+  }
+}
+
+.woodgrain-bg {
+  background-color: #5d3a2a;
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, .07) 50%, transparent 50%),
+    linear-gradient(90deg, rgba(255, 255, 255, .13) 50%, transparent 50%),
+    linear-gradient(90deg, transparent 50%, rgba(255, 255, 255, .17) 50%),
+    linear-gradient(90deg, transparent 50%, rgba(255, 255, 255, .19) 50%);
+  background-size: 13px, 29px, 37px, 53px;
+}
+
+.art-deco-bar {
+  background: linear-gradient(to top, #ca8a04, #fde047);
+  border-left: 1px solid #a16207;
+  border-right: 1px solid #a16207;
+}
+
+/* --- Styles for NEW Advanced Visualizers --- */
+.aura-bloom-viz circle {
+  transition: r 75ms ease-out, opacity 75ms ease-out, stroke-width 75ms ease-out;
+  transform-origin: center;
+  will-change: r, opacity, stroke-width;
+}
+
+.rhythmic-glyphs-viz>g,
+.rhythmic-glyphs-viz>circle {
+  transition: opacity 100ms ease-out, transform 100ms ease-out;
+  transform-origin: center;
+  will-change: opacity, transform;
+}
+
+.rhythmic-glyphs-viz use,
+.rhythmic-glyphs-viz>circle {
+  stroke: #14b8a6;
+  /* teal-500 */
+  stroke-width: 1.5;
+  fill: rgba(20, 184, 166, 0.2);
+}
+
+.rhythmic-glyphs-viz .sparkle-ring {
+  fill: none;
+  stroke: #a7f3d0;
+  /* emerald-200 */
+  stroke-width: 2;
+  stroke-dasharray: 2 10;
+}
+
+.liquify-surface {
+  fill: #99f6e4;
+  /* teal-200 */
+}
+
+/* --- Misc & Legacy Theme Styles --- */
+.visualizer-content-host {
+  transition: filter 100ms linear;
+  will-change: filter;
+  overflow: hidden;
+}
+
+.ford-circles-viz circle {
+  fill: #fb7185;
+  /* rose-400 */
+  transition: r 75ms ease-out, opacity 75ms ease-out;
+  will-change: r, opacity;
+}
+
+
+/* --- Fullscreen Styles & iOS Fallback --- */
+#fullscreen-controls-toggle-btn,
+#fullscreen-controls-close-btn {
+  display: none;
+}
+
+body.fullscreen-ios-body {
+  overflow: hidden;
+}
+
+#visualizer-section:fullscreen,
+#visualizer-section.fullscreen-ios {
+  display: block;
+  position: fixed !important;
+  inset: 0;
+  z-index: 1000;
+  background: black !important;
+  padding: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+#visualizer-section:fullscreen>.flex.justify-between,
+#visualizer-section.fullscreen-ios>.flex.justify-between {
+  display: none;
+}
+
+#visualizer-section:fullscreen #visualizer-display-wrapper,
+#visualizer-section.fullscreen-ios #visualizer-display-wrapper {
+  position: absolute;
+  inset: 0;
+  height: 100% !important;
+  width: 100% !important;
+  border-radius: 0;
+}
+
+#visualizer-section:fullscreen #fullscreen-controls-toggle-btn,
+#visualizer-section.fullscreen-ios #fullscreen-controls-toggle-btn {
+  display: flex;
+  position: absolute;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 20;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+  color: white;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  transition: all 0.2s ease-in-out;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#visualizer-section:fullscreen #fullscreen-controls-toggle-btn:hover,
+#visualizer-section.fullscreen-ios #fullscreen-controls-toggle-btn:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+  transform: scale(1.1);
+}
+
+#visualizer-section:fullscreen #controls-container,
+#visualizer-section.fullscreen-ios #controls-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.5rem 2rem 2rem 2rem;
+  transform: translateY(100%);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease;
+  will-change: transform, opacity;
+}
+
+#visualizer-section:fullscreen #controls-container.active,
+#visualizer-section.fullscreen-ios #controls-container.active {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+#visualizer-section:fullscreen #controls-container.active #fullscreen-controls-close-btn,
+#visualizer-section.fullscreen-ios #controls-container.active #fullscreen-controls-close-btn {
+  display: flex;
+  position: absolute;
+  top: -2.5rem;
+  right: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem 0.5rem 0 0;
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  cursor: pointer;
+}
+
+.ford-circle {
+  fill: currentColor;
+  opacity: 0.7;
+  transition: r 75ms ease-out, cy 75ms ease-out;
+}
+
+/* --- Helix DNA Theme --- */
+.helix-strand {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.helix-strand-1 {
+  stroke: #22d3ee;
+}
+
+.helix-strand-2 {
+  stroke: #ec4899;
+}
+
+.helix-rung {
+  stroke: rgba(255, 255, 255, 0.6);
+  stroke-width: 0.5;
+  stroke-dasharray: 1 1;
+}
+
+/* --- Polar Rose Theme --- */
+.polar-rose-path {
+  fill: none;
+  stroke: #f472b6;
+  stroke-width: 1;
+  fill: rgba(244, 114, 182, 0.08);
+}
+
+/* --- Diamond Cascade Theme --- */
+.diamond-facet {
+  stroke: rgba(255, 255, 255, 0.3);
+  stroke-width: 0.3;
+  transition: opacity 33ms linear;
+}
+
+/* --- Orbit Rings Theme --- */
+.orbit-ring {
+  fill: none;
+  stroke: #60a5fa;
+  stroke-width: 0.4;
+}
+
+.orbit-electron {
+  fill: #93c5fd;
+  filter: drop-shadow(0 0 2px #93c5fd);
+}
+
+.orbit-nucleus {
+  fill: #3b82f6;
+  filter: drop-shadow(0 0 4px #3b82f6);
+}
+
+/* --- Ripple Field Theme --- */
+.ripple-dot {
+  fill: #5eead4;
+  transition: cx 33ms linear, cy 33ms linear, r 33ms linear;
+}
+
+/* --- Nova Theme --- */
+.nova-ray {
+  stroke-linecap: round;
+  transition: opacity 33ms linear;
+}
+
+.canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* --- Mobile Orientation: prevent iOS text inflation on rotation --- */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* --- Safe-area insets for notched/punch-hole phones in landscape --- */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* ==========================================================================
+   Subtle 3D Button System
+   Adds physical depth and a click-press animation to control buttons.
+   Works on top of DaisyUI btn classes without overriding theme colors.
+   ========================================================================== */
+
+.btn-3d {
+  position: relative;
+  transform: translateY(0px);
+  box-shadow:
+    0 4px 0 rgba(0, 0, 0, 0.40),
+    0 6px 14px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  /* top sheen */
+  transition:
+    transform 0.08s ease-out,
+    box-shadow 0.08s ease-out;
+  will-change: transform;
+}
+
+.btn-3d:hover {
+  box-shadow:
+    0 5px 0 rgba(0, 0, 0, 0.40),
+    0 8px 18px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.btn-3d:active,
+.btn-3d.btn-active {
+  transform: translateY(3px);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.40),
+    0 2px 4px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Larger depth for the main Play/Pause button */
+.btn-3d-lg {
+  position: relative;
+  transform: translateY(0px);
+  box-shadow:
+    0 6px 0 rgba(0, 0, 0, 0.45),
+    0 10px 24px rgba(0, 0, 0, 0.30),
+    inset 0 2px 0 rgba(255, 255, 255, 0.18);
+  transition:
+    transform 0.08s ease-out,
+    box-shadow 0.08s ease-out;
+  will-change: transform;
+}
+
+.btn-3d-lg:hover {
+  box-shadow:
+    0 7px 0 rgba(0, 0, 0, 0.45),
+    0 12px 28px rgba(0, 0, 0, 0.35),
+    inset 0 2px 0 rgba(255, 255, 255, 0.22);
+}
+
+.btn-3d-lg:active {
+  transform: translateY(5px);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.45),
+    0 2px 6px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+/* ==========================================================================
+   Track Pre-Loading Progress Bars
+   Shows buffering progress per track in the playlist and under the player.
+   ========================================================================== */
+
+/* --- Playlist item: narrow inline progress bar --- */
+.track-progress-bar-container {
+  position: relative;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 3px;
+}
+
+.track-progress-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #38bdf8, #818cf8);
+  transition: width 200ms ease-out;
+  min-width: 4px;
+}
+
+.track-progress-label {
+  position: absolute;
+  right: 0;
+  top: 4px;
+  font-size: 9px;
+  opacity: 0.6;
+  line-height: 1;
+}
+
+/* --- Shimmer: used when progress is 0 (pending / indeterminate) --- */
+@keyframes progress-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.track-progress-shimmer {
+  background: linear-gradient(90deg,
+      rgba(56, 189, 248, 0.3) 25%,
+      rgba(129, 140, 248, 0.8) 50%,
+      rgba(56, 189, 248, 0.3) 75%);
+  background-size: 200% 100%;
+  animation: progress-shimmer 1.5s linear infinite;
+}
+
+/* Explicit fill once real progress arrives (overrides shimmer) */
+.track-progress-fill-animate {
+  background: linear-gradient(90deg, #38bdf8, #818cf8);
+  animation: none;
+}
+
+/* --- Footer buffering bar (wide, under track name) --- */
+.track-buffering-bar-container {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.10);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.track-buffering-bar-fill {
+  height: 100%;
+  width: 100%;
+  border-radius: 999px;
+}
+
+.track-buffering-shimmer {
+  background: linear-gradient(90deg,
+      rgba(56, 189, 248, 0.25) 25%,
+      rgba(129, 140, 248, 0.75) 50%,
+      rgba(56, 189, 248, 0.25) 75%);
+  background-size: 200% 100%;
+  animation: progress-shimmer 1.8s linear infinite;
+}
+
+/* ==========================================================================
+   ✦ Atmospheres Panel — One-Tap Auto-Play Experience Selector
+   Premium glassmorphism floating panel with per-atmosphere accent colors.
+   ========================================================================== */
+
+.atmosphere-panel {
+  pointer-events: auto;
+}
+
+.atmosphere-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 10px 12px;
+  background: rgba(3, 7, 18, 0.75);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Mobile: 2 rows × 4 columns → scrollable row on small screens */
+@media (max-width: 600px) {
+  .atmosphere-grid {
+    grid-template-columns: repeat(4, minmax(72px, 1fr));
+    gap: 4px;
+    padding: 8px;
+    border-radius: 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .atmosphere-grid::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* --- Individual Atmosphere Button --- */
+.atmosphere-btn {
+  --atm-accent: #a78bfa;
+  --atm-glow: rgba(167, 139, 250, 0.4);
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  min-height: 64px;
+}
+
+.atmosphere-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--atm-accent);
+  color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px var(--atm-glow);
+}
+
+.atmosphere-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px var(--atm-glow);
+}
+
+/* Active state */
+.atmosphere-btn-active {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--atm-accent);
+  color: white;
+  box-shadow:
+    0 0 20px var(--atm-glow),
+    0 0 40px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.atmosphere-btn-active .atmosphere-icon {
+  color: var(--atm-accent);
+  filter: drop-shadow(0 0 6px var(--atm-glow));
+  animation: atmosphere-icon-pulse 2s ease-in-out infinite;
+}
+
+/* Active glow ring — animated border pulse */
+.atmosphere-active-ring {
+  position: absolute;
+  inset: -1px;
+  border-radius: 12px;
+  border: 1.5px solid var(--atm-accent);
+  opacity: 0.6;
+  animation: atmosphere-ring-pulse 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Button inner content */
+.atmosphere-btn-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.atmosphere-icon {
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.atmosphere-btn:hover .atmosphere-icon {
+  color: var(--atm-accent);
+  transform: scale(1.2);
+}
+
+.atmosphere-name {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.atmosphere-desc {
+  font-size: 8px;
+  color: rgba(255, 255, 255, 0.35);
+  line-height: 1.3;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atmosphere-btn-active .atmosphere-desc {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* --- Animations --- */
+@keyframes atmosphere-icon-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.85; }
+}
+
+@keyframes atmosphere-ring-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.2; }
+}
+
+/* --- Responsive: very small screens → tighter layout --- */
+@media (max-width: 400px) {
+  .atmosphere-btn {
+    padding: 8px 4px;
+    min-height: 56px;
+    border-radius: 10px;
+  }
+  .atmosphere-icon {
+    font-size: 14px;
+  }
+  .atmosphere-name {
+    font-size: 9px;
+  }
+}
