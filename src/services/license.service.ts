@@ -59,6 +59,13 @@ export class LicenseService {
   constructor() {
     this.checkStoredLicense();
     this.checkActivationUrl();
+    this.checkLocalhostBypass();
+  }
+
+  private checkLocalhostBypass(): void {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      this.isPro.set(true);
+    }
   }
 
   /** Returns true if a theme name is available in the free tier */

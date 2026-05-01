@@ -252,6 +252,12 @@
                   [musicProfile]="effectiveSynergyDriveMode()"
                 />
               }
+              @case ('reaction-diffusion-gpu') {
+  <app-reaction-diffusion-gpu
+    [bars]="visualizerBars()"
+    [beat]="beat()"
+    [musicProfile]="effectiveSynergyDriveMode()" />
+}
               @case ('cellular-automata') {
                 <app-cellular-automata
                   [bars]="visualizerBars()"
@@ -398,7 +404,19 @@
               }
               @case ('diamond') {
                 <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-                  <defs><filter id="diamondGlow"><feGaussianBlur stdDeviation="0.8" result="blur"></feGaussianBlur><feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter></defs>
+                  <defs>
+                    <filter id="diamondGlow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="0.5" result="blur1"></feGaussianBlur>
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur2"></feGaussianBlur>
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="3.0" result="blur3"></feGaussianBlur>
+                      <feMerge>
+                        <feMergeNode in="blur3"></feMergeNode>
+                        <feMergeNode in="blur2"></feMergeNode>
+                        <feMergeNode in="blur1"></feMergeNode>
+                        <feMergeNode in="SourceGraphic"></feMergeNode>
+                      </feMerge>
+                    </filter>
+                  </defs>
                   <g class="diamond-viz" filter="url(#diamondGlow)">
                     @for (d of diamondData(); track d.id) {
                       <polygon [attr.points]="d.cx + ',' + (d.cy - 3 * d.scale) + ' ' + (d.cx + 2.5 * d.scale) + ',' + d.cy + ' ' + d.cx + ',' + (d.cy + 3 * d.scale) + ' ' + (d.cx - 2.5 * d.scale) + ',' + d.cy" class="diamond-facet" [style.opacity]="d.opacity" [style.fill]="'hsl(' + d.hue + ', 80%, 60%)'"></polygon>
@@ -408,7 +426,19 @@
               }
               @case ('orbits') {
                 <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-                  <defs><filter id="orbitGlow"><feGaussianBlur stdDeviation="0.6" result="blur"></feGaussianBlur><feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter></defs>
+                  <defs>
+                    <filter id="orbitGlow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="0.4" result="blur1"></feGaussianBlur>
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="blur2"></feGaussianBlur>
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur3"></feGaussianBlur>
+                      <feMerge>
+                        <feMergeNode in="blur3"></feMergeNode>
+                        <feMergeNode in="blur2"></feMergeNode>
+                        <feMergeNode in="blur1"></feMergeNode>
+                        <feMergeNode in="SourceGraphic"></feMergeNode>
+                      </feMerge>
+                    </filter>
+                  </defs>
                   <g filter="url(#orbitGlow)">
                     @for (orbit of orbitsData(); track orbit.id) {
                       <g [attr.transform]="'rotate(' + orbit.tilt + ' 50 50)'">
@@ -422,7 +452,19 @@
               }
               @case ('ripple') {
                 <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-                  <defs><filter id="rippleGlow"><feGaussianBlur stdDeviation="0.5" result="blur"></feGaussianBlur><feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter></defs>
+                  <defs>
+                    <filter id="rippleGlow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="0.3" result="blur1"></feGaussianBlur>
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="1.0" result="blur2"></feGaussianBlur>
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="2.0" result="blur3"></feGaussianBlur>
+                      <feMerge>
+                        <feMergeNode in="blur3"></feMergeNode>
+                        <feMergeNode in="blur2"></feMergeNode>
+                        <feMergeNode in="blur1"></feMergeNode>
+                        <feMergeNode in="SourceGraphic"></feMergeNode>
+                      </feMerge>
+                    </filter>
+                  </defs>
                   <g class="ripple-viz" filter="url(#rippleGlow)">
                     @for (dot of rippleData(); track dot.id) {
                       <circle [attr.cx]="dot.cx" [attr.cy]="dot.cy" [attr.r]="dot.r" [style.opacity]="dot.opacity" class="ripple-dot"></circle>
@@ -434,10 +476,15 @@
                 <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
                   <defs>
                     <filter id="novaGlow" x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur stdDeviation="1.5" result="blur"></feGaussianBlur>
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="0.5" result="blur1"></feGaussianBlur>
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur2"></feGaussianBlur>
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="3.0" result="blur3"></feGaussianBlur>
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="6.0" result="blur4"></feGaussianBlur>
                       <feMerge>
-                        <feMergeNode in="blur"></feMergeNode>
-                        <feMergeNode in="blur"></feMergeNode>
+                        <feMergeNode in="blur4"></feMergeNode>
+                        <feMergeNode in="blur3"></feMergeNode>
+                        <feMergeNode in="blur2"></feMergeNode>
+                        <feMergeNode in="blur1"></feMergeNode>
                         <feMergeNode in="SourceGraphic"></feMergeNode>
                       </feMerge>
                     </filter>

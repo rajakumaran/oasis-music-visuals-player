@@ -1,8 +1,8 @@
 export interface EqualizerTheme {
   name: string;
-  type: '3d' | 'led' | 'shadow' | 'glossy' | 'glass' | 'convex' | 'concave' | 'glass-box' | 'fractal' | 'neural' | 'plasma' | 'hyperlane' | 'aura' | 'glyphs' | 'liquid' | 'webgl' 
+  type: '3d' | 'led' | 'reaction-diffusion-gpu' | 'shadow' | 'glossy' | 'glass' | 'convex' | 'concave' | 'glass-box' | 'fractal' | 'neural' | 'plasma' | 'hyperlane' | 'aura' | 'glyphs' | 'liquid' | 'webgl'
   | 'webgl-grok-lattice' | 'webgl-grok-rift' | 'webgl-grok-neural-ember' | 'webgl-grok-collapse' | 'webgl-grok-aurora'
-  | 'webgl-shader-ferrofluid'  | 'webgl-shader-explosion' | 'webgl-shader-waves'| 'webgl-shader-fractal-zoom'| 'webgl-shader-nebula' | 'webgl-shader-plasma' | 'webgl-shader-plasma' | 'webgl-shader-geometry' | 'webgl-shader-particles' | 'webgl-shader-holo' | 'webgl-shader-fractal' | 'ford-circles'
+  | 'webgl-shader-ferrofluid' | 'webgl-shader-explosion' | 'webgl-shader-waves' | 'webgl-shader-fractal-zoom' | 'webgl-shader-nebula' | 'webgl-shader-plasma' | 'webgl-shader-plasma' | 'webgl-shader-geometry' | 'webgl-shader-particles' | 'webgl-shader-holo' | 'webgl-shader-fractal' | 'ford-circles'
   | 'helix' | 'polar-rose' | 'diamond' | 'orbits' | 'ripple' | 'nova'
   | 'particle-storm' | 'fireworks' | 'radar-pulse' | 'terrain-peaks'
   | 'oscilloscope' | 'spectrogram' | 'cymatics'
