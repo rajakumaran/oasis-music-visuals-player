@@ -176,9 +176,9 @@ export class ReactionDiffusionGpuComponent implements AfterViewInit, OnDestroy {
       .reduce((a, b) => a + b, 0) / (bars.length * 0.4);
     const treble = bars.slice(Math.floor(bars.length * 0.7)).reduce((a, b) => a + b, 0) / (bars.length * 0.3);
 
-    this.f = 0.032 + (bass / 255) * 0.048;
-    this.k = 0.055 + (treble / 255) * 0.022;
-    this.Dv = 0.32 + (mids / 255) * 0.48;
+    this.f = 0.032 + bass * 0.048;
+    this.k = 0.055 + treble * 0.022;
+    this.Dv = 0.32 + mids * 0.48;
 
     // Beat burst
     if (beat.timestamp > this.lastBeatTime && beat.strength > 0.28) {
