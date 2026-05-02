@@ -293,22 +293,8 @@ input[type=range].vertical {
 .bar-shadow {
   position: relative;
   border-radius: 2px 2px 0 0;
-  /* Smooth shadow glow transitions (NOT height — height must be instant for STFT trembling) */
   transition: box-shadow 75ms ease-out;
-  overflow: visible; /* allow side-glow box-shadows to bleed outside the bar */
-}
-
-/* Left-edge depth shadow — recreates the physical depth of the original Pioneer/Marantz look */
-.bar-shadow::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 3px;
-  height: 100%;
-  background: linear-gradient(to right, rgba(0,0,0,0.55), transparent);
-  border-radius: inherit;
-  pointer-events: none;
+  overflow: visible;
 }
 
 /* --- Convex/Concave Bar Styles --- */
