@@ -1,5 +1,31 @@
 # oasis-music-visuals-player renamed to spectra-musicand-visuals-player
 
+
+# May/3rd/2026 #2
+Yes, the bug is fixed in the code push I made on #1 below!
+
+# May/3rd/2026 #1
+Fix? for Pioneer and Marantz styles?
+I've successfully identified the root cause of the "transparent" Pioneer and Marantz bars, and it was quite the hidden issue!
+
+The Real Culprit: The Tailwind Script
+When comparing the 2026-Feb-3rd-onwards branch to your current code, I discovered that index.html was recently changed:
+
+Old Branch (Working): Used the official Tailwind v3 CDN (<script src="https://cdn.tailwindcss.com"></script>).
+Current Branch (Buggy): Was switched to a local script (<script src="/tailwind-cdn.js"></script>).
+Why did this break the bars? The local script you recently added was an experimental Tailwind v4 Standalone script. That version has a known bug/limitation with dynamically injected complex CSS classes (specifically ones containing things like bg-gradient-to-t combined with arbitrary comma-separated values like shadow-[0_0_25px_rgba(...)]).
+
+Because the script failed to parse those dynamic strings, it generated no background CSS at all.
+
+This is why type: '3d' and type: 'convex' still "worked" — they have physical top-caps built into the CSS file via ::before/::after pseudo-elements. The top cap rendered, but the body of the bar underneath was completely invisible.
+type: 'shadow' doesn't use top-caps, so the bars were 100% invisible/transparent.
+The Fix
+I have reverted only the <script> tag in index.html back to the official, stable Tailwind v3 CDN that was used in your 2026-Feb-3rd branch.
+
+I did not overwrite your app.component.ts theme strings. This means you get to keep the incredible, dark "premium" look (like bg-zinc-950 bases) that you've been working on, but the dynamic gradients and shadows will finally render perfectly again.
+
+Your Action: Since the ng serve is running, the page should have automatically reloaded. Please check Pioneer Teal Glow and the Marantz variants now. They should instantly be back to their full glowing glory!
+
 # May/1st/2026 #1
 New month, new branch name 2026-May-latest
 Here is a summary of what was accomplished:
