@@ -959,6 +959,7 @@ export class AppComponent implements OnInit, OnDestroy {
     { name: 'Pioneer Convex Sunset Burst', type: 'convex', base: 'bg-slate-950', display: 'bg-amber-950/70', bar: 'bg-gradient-to-t from-orange-900 via-orange-500 to-yellow-100 shadow-[0_0_20px_rgba(249,115,22,0.8),inset_0_2px_5px_rgba(255,255,255,0.6)]', sliderTrack: 'bg-amber-950/60', sliderThumb: 'bg-orange-400', text: 'text-orange-100', accent: 'text-orange-400', button: 'bg-amber-900/50 border border-amber-800/50', buttonHover: 'hover:bg-amber-800/50', highlight: 'bg-orange-500/40' },
     { name: 'Pioneer Neon Circuit', type: 'shadow', base: 'bg-slate-950', display: 'bg-lime-950/70', bar: 'bg-gradient-to-t from-lime-600 via-lime-400 to-green-100 shadow-[0_0_25px_rgba(132,204,22,0.8),-4px_0_10px_rgba(0,0,0,0.8)]', sliderTrack: 'bg-lime-950/60', sliderThumb: 'bg-lime-400', text: 'text-lime-200', accent: 'text-lime-400', button: 'bg-lime-900/50 border border-lime-800/50', buttonHover: 'hover:bg-lime-800/50', highlight: 'bg-lime-500/40' },
     { name: 'Pioneer', type: 'shadow', base: 'bg-slate-200', display: 'bg-blue-900/80', bar: 'bg-gradient-to-t from-sky-600 to-sky-400 shadow-[0_0_8px_#38bdf8,-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-blue-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
+    { name: 'Pioneer-real3D', type: 'real3d', base: 'bg-slate-200', display: 'bg-blue-900/80', bar: 'bg-gradient-to-t from-sky-600 to-sky-400 shadow-[0_0_8px_#38bdf8,-2px_0_5px_rgba(0,0,0,0.4)] rounded-t-sm', sliderTrack: 'bg-gray-400', sliderThumb: 'bg-white', text: 'text-gray-800', accent: 'text-blue-600', button: 'bg-gray-400', buttonHover: 'hover:bg-gray-500', highlight: 'bg-slate-300' },
     { name: 'Pioneer Convex', type: 'convex', base: 'bg-slate-950', display: 'bg-blue-950/70', bar: 'bg-gradient-to-t from-blue-900 via-blue-500 to-cyan-100 shadow-[0_0_20px_rgba(59,130,246,0.8),inset_0_2px_5px_rgba(255,255,255,0.6)]', sliderTrack: 'bg-blue-950/60', sliderThumb: 'bg-blue-400', text: 'text-blue-100', accent: 'text-blue-400', button: 'bg-blue-900/50 border border-blue-800/50', buttonHover: 'hover:bg-blue-800/50', highlight: 'bg-blue-500/40' },
     { name: 'Pioneer Neon Pink', type: 'shadow', base: 'bg-slate-950', display: 'bg-pink-950/70', bar: 'bg-gradient-to-t from-pink-600 via-pink-400 to-rose-200 shadow-[0_0_25px_rgba(236,72,153,0.8),-4px_0_10px_rgba(0,0,0,0.8)]', sliderTrack: 'bg-pink-950/60', sliderThumb: 'bg-pink-400', text: 'text-pink-200', accent: 'text-pink-400', button: 'bg-pink-900/50 border border-pink-800/50', buttonHover: 'hover:bg-pink-800/50', highlight: 'bg-pink-500/40' },
     { name: 'Pioneer Convex Emerald', type: 'convex', base: 'bg-slate-950', display: 'bg-emerald-950/70', bar: 'bg-gradient-to-t from-emerald-900 via-emerald-500 to-emerald-100 shadow-[0_0_20px_rgba(16,185,129,0.8),inset_0_2px_5px_rgba(255,255,255,0.6)]', sliderTrack: 'bg-emerald-950/60', sliderThumb: 'bg-emerald-400', text: 'text-emerald-100', accent: 'text-emerald-400', button: 'bg-emerald-900/50 border border-emerald-800/50', buttonHover: 'hover:bg-emerald-800/50', highlight: 'bg-emerald-500/40' },
@@ -971,6 +972,7 @@ export class AppComponent implements OnInit, OnDestroy {
     { name: 'Marantz Concave Gold', type: 'concave', base: 'bg-zinc-950', display: 'bg-black/90', bar: 'bg-gradient-to-t from-amber-600 via-amber-400 to-yellow-100 shadow-[0_0_20px_rgba(245,158,11,0.6),inset_0_2px_5px_rgba(255,255,255,0.4)] rounded-t-sm', sliderTrack: 'bg-zinc-800', sliderThumb: 'bg-amber-500', text: 'text-amber-100', accent: 'text-amber-400', button: 'bg-zinc-900 border border-amber-900/50', buttonHover: 'hover:bg-zinc-800', highlight: 'bg-amber-500/40' },
     { name: 'Marantz Retro Green', type: 'shadow', base: 'bg-zinc-950', display: 'bg-black/90', bar: 'bg-gradient-to-t from-green-600 via-green-400 to-lime-100 shadow-[0_0_25px_rgba(34,197,94,0.7),-2px_0_10px_rgba(0,0,0,0.8)] rounded-t-sm', sliderTrack: 'bg-zinc-800', sliderThumb: 'bg-green-500', text: 'text-green-100', accent: 'text-green-400', button: 'bg-zinc-900 border border-green-900/50', buttonHover: 'hover:bg-zinc-800', highlight: 'bg-green-500/40' },
     { name: 'Marantz', type: 'shadow', base: 'bg-zinc-950', display: 'bg-black/90', bar: 'bg-gradient-to-t from-blue-600 via-blue-400 to-cyan-100 shadow-[0_0_25px_rgba(59,130,246,0.7),-2px_0_10px_rgba(0,0,0,0.8)] rounded-t-sm', sliderTrack: 'bg-zinc-800', sliderThumb: 'bg-blue-500', text: 'text-blue-100', accent: 'text-blue-400', button: 'bg-zinc-900 border border-blue-900/50', buttonHover: 'hover:bg-zinc-800', highlight: 'bg-blue-500/40' },
+    { name: 'Marantz-real3D', type: 'real3d', base: 'bg-zinc-950', display: 'bg-black/90', bar: 'bg-gradient-to-t from-blue-600 via-blue-400 to-cyan-100 shadow-[0_0_25px_rgba(59,130,246,0.7),-2px_0_10px_rgba(0,0,0,0.8)] rounded-t-sm', sliderTrack: 'bg-zinc-800', sliderThumb: 'bg-blue-500', text: 'text-blue-100', accent: 'text-blue-400', button: 'bg-zinc-900 border border-blue-900/50', buttonHover: 'hover:bg-zinc-800', highlight: 'bg-blue-500/40' },
     { name: 'Marantz-variant1', type: 'shadow', base: 'bg-zinc-950', display: 'bg-black/95', bar: 'bg-gradient-to-t from-blue-600 via-blue-400 to-blue-200 shadow-[-2px_0_5px_rgba(0,0,0,0.8),-8px_0_25px_rgba(59,130,246,0.5)] rounded-t-sm', sliderTrack: 'bg-zinc-800', sliderThumb: 'bg-blue-500', text: 'text-blue-100', accent: 'text-blue-400', button: 'bg-zinc-900 border border-blue-900/50', buttonHover: 'hover:bg-zinc-800', highlight: 'bg-blue-500/40' },
     { name: 'Marantz-variant2', type: 'shadow', base: 'bg-zinc-950', display: 'bg-black/95', bar: 'bg-gradient-to-t from-sky-600 via-sky-400 to-white shadow-[-4px_0_5px_rgba(0,0,0,0.7),-6px_0_20px_rgba(14,165,233,0.5)] rounded-t-sm', sliderTrack: 'bg-zinc-800', sliderThumb: 'bg-sky-500', text: 'text-sky-100', accent: 'text-sky-400', button: 'bg-zinc-900 border border-sky-900/50', buttonHover: 'hover:bg-zinc-800', highlight: 'bg-sky-500/40' },
     { name: 'Marantz Concave', type: 'concave', base: 'bg-zinc-950', display: 'bg-black/90', bar: 'bg-gradient-to-t from-blue-600 via-blue-400 to-white shadow-[0_0_20px_rgba(59,130,246,0.6),inset_0_2px_5px_rgba(255,255,255,0.4)] rounded-t-sm', sliderTrack: 'bg-zinc-800', sliderThumb: 'bg-blue-500', text: 'text-blue-100', accent: 'text-blue-400', button: 'bg-zinc-900 border border-blue-900/50', buttonHover: 'hover:bg-zinc-800', highlight: 'bg-blue-500/40' },
@@ -1468,5 +1470,66 @@ export class AppComponent implements OnInit, OnDestroy {
   }
   onDragEnd() { this.draggedTrackIndex.set(null); }
 
-  // _reimplementUnchanged has been annihilated to restore class predictability and method stability
+  // --- 3D Interactive Plane Methods (Real3D) ---
+  interactiveTiltX = signal<number>(0);
+  interactiveTiltY = signal<number>(0);
+  isInteracting = signal<boolean>(false);
+  real3DTubeSize = signal<number>(24);
+
+  // Enable specifically for Pioneer-real3D and Marantz-real3D
+  get isInteractive3DTheme() {
+    const type = this.effectiveTheme().type;
+    return type === 'real3d';
+  }
+
+  // Extracts just the base gradient/color classes without shadows or border-radius
+  get cleanBarGradient() {
+    const fullBar = this.effectiveTheme().bar;
+    return fullBar.replace(/shadow-\[[^\]]*\]/g, '').replace(/rounded-[a-z0-9-]+/g, '').trim();
+  }
+
+  onVisualizerPointerMove(event: MouseEvent | TouchEvent) {
+    if (!this.isInteractive3DTheme) return;
+
+    let clientX, clientY;
+    if (event instanceof MouseEvent) {
+      clientX = event.clientX;
+      clientY = event.clientY;
+    } else if (event.touches && event.touches.length > 0) {
+      clientX = event.touches[0].clientX;
+      clientY = event.touches[0].clientY;
+    } else {
+      return;
+    }
+
+    const target = event.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const maxTilt = 30;
+    const tiltX = ((clientY - centerY) / (rect.height / 2)) * maxTilt;
+    const tiltY = -((clientX - centerX) / (rect.width / 2)) * maxTilt;
+
+    this.interactiveTiltX.set(tiltX);
+    this.interactiveTiltY.set(tiltY);
+    this.isInteracting.set(true);
+  }
+
+  onVisualizerPointerLeave() {
+    if (!this.isInteractive3DTheme) return;
+    this.interactiveTiltX.set(0);
+    this.interactiveTiltY.set(0);
+    this.isInteracting.set(false);
+  }
+
+  get visualizer3DTransform() {
+    if (!this.isInteractive3DTheme) return 'none';
+    
+    if (!this.isInteracting()) {
+      return 'perspective(1200px) rotateX(15deg) rotateY(0deg) scale(0.95)';
+    }
+    
+    return `perspective(1200px) rotateX(${this.interactiveTiltX()}deg) rotateY(${this.interactiveTiltY()}deg) scale(0.95)`;
+  }
 }

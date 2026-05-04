@@ -7,7 +7,7 @@ export interface EqualizerTheme {
   | 'particle-storm' | 'fireworks' | 'radar-pulse' | 'terrain-peaks'
   | 'oscilloscope' | 'spectrogram' | 'cymatics'
   | 'reaction-diffusion' | 'cellular-automata'
-  | 'base';
+  | 'real3d' | 'base';
   base: string;
   display: string;
   bar: string;
